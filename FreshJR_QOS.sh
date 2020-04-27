@@ -183,7 +183,7 @@ release=03/07/2019
 				ip6tables -D POSTROUTING -t mangle -o $wan -p tcp -m multiport --dports 119,563 -j MARK --set-mark ${Downloads_mark_up} &> /dev/null				#Usenet - 		(All outgoing traffic to WAN destination ports 119 & 563 --> Downloads )
 				ip6tables -A POSTROUTING -t mangle -o $wan -p tcp -m multiport --dports 119,563 -j MARK --set-mark ${Downloads_mark_up}
 
-				ip6tables -D OUTPUT -t mangle -o $wan -p udp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up} &> /dev/null					#VPN Fix -		(Fixes upload traffic not detected when the router is acting as a VPN Client)
+				ip6tables -D OUTPUT -t mangle -o $wan -p udp -m multiport ! --dports 53,123 -j MARK --set-mark ${Downloads_mark_up} &> /dev/null					#VPN Fix -		(Fixes upload traffic not detected when the router is acting as a VPN Client)
 				ip6tables -A OUTPUT -t mangle -o $wan -p udp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up}
 
 				ip6tables -D OUTPUT -t mangle -o $wan -p tcp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up} &> /dev/null					#VPN Fix -		(Fixes upload traffic not detected when the router is acting as a VPN Client)
