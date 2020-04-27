@@ -279,27 +279,27 @@ release=03/07/2019
 
 	tc_redirection_up_rules() {
 		echo "Applying  TC Up   Rules"
-		${tc} filter del dev eth0 parent 1: prio $1																					#remove original unidentified traffic rule
-		${tc} filter del dev eth0 parent 1: prio 22 &> /dev/null																	#remove original HTTPS rule
-		${tc} filter del dev eth0 parent 1: prio 23 &> /dev/null																	#remove original HTTPS rule
-		! [ -z "$tc4_up" ] && ${tc} filter add dev eth0 protocol all ${tc4_up}														#Script Interactively Defined Rule 4
-		! [ -z "$tc3_up" ] && ${tc} filter add dev eth0 protocol all ${tc3_up}														#Script Interactively Defined Rule 3
-		! [ -z "$tc2_up" ] && ${tc} filter add dev eth0 protocol all ${tc2_up}														#Script Interactively Defined Rule 2
-		! [ -z "$tc1_up" ] && ${tc} filter add dev eth0 protocol all ${tc1_up}														#Script Interactively Defined Rule 1
-		${tc} filter add dev eth0 protocol all prio 20 u32 match mark 0x4012003F 0xc03fffff flowid ${Web}							#         HTTP  rule with different destination
-		${tc} filter add dev eth0 protocol all prio 22 u32 match mark 0x40130000 0xc03f0000 flowid ${Web}							#recreate HTTPS rule with different destination
-		${tc} filter add dev eth0 protocol all prio 23 u32 match mark 0x40140000 0xc03f0000 flowid ${Web}							#recreate HTTPS rule with different destination
+		${tc} filter del dev $wan parent 1: prio $1																					#remove original unidentified traffic rule
+		${tc} filter del dev $wan parent 1: prio 22 &> /dev/null																	#remove original HTTPS rule
+		${tc} filter del dev $wan parent 1: prio 23 &> /dev/null																	#remove original HTTPS rule
+		! [ -z "$tc4_up" ] && ${tc} filter add dev $wan protocol all ${tc4_up}														#Script Interactively Defined Rule 4
+		! [ -z "$tc3_up" ] && ${tc} filter add dev $wan protocol all ${tc3_up}														#Script Interactively Defined Rule 3
+		! [ -z "$tc2_up" ] && ${tc} filter add dev $wan protocol all ${tc2_up}														#Script Interactively Defined Rule 2
+		! [ -z "$tc1_up" ] && ${tc} filter add dev $wan protocol all ${tc1_up}														#Script Interactively Defined Rule 1
+		${tc} filter add dev $wan protocol all prio 20 u32 match mark 0x4012003F 0xc03fffff flowid ${Web}							#         HTTP  rule with different destination
+		${tc} filter add dev $wan protocol all prio 22 u32 match mark 0x40130000 0xc03f0000 flowid ${Web}							#recreate HTTPS rule with different destination
+		${tc} filter add dev $wan protocol all prio 23 u32 match mark 0x40140000 0xc03f0000 flowid ${Web}							#recreate HTTPS rule with different destination
 		##UPLOAD APP_DB TRAFFIC REDIRECTION RULES START HERE  -- legacy method
 
-			${tc} filter add dev eth0 protocol all prio 2 u32 match mark 0x4000006B 0xc03fffff flowid ${Others}							#Snapchat
-			${tc} filter add dev eth0 protocol all prio 15 u32 match mark 0x400D0007 0xc03fffff flowid ${Downloads}						#Speedtest.net
-			${tc} filter add dev eth0 protocol all prio 15 u32 match mark 0x400D0086 0xc03fffff flowid ${Downloads}						#Google Play
-			${tc} filter add dev eth0 protocol all prio 15 u32 match mark 0x400D00A0 0xc03fffff flowid ${Downloads}						#Apple AppStore
-			${tc} filter add dev eth0 protocol all prio 50 u32 match mark 0x401A0000 0xc03f0000 flowid ${Downloads}						#Advertisement
+			${tc} filter add dev $wan protocol all prio 2 u32 match mark 0x4000006B 0xc03fffff flowid ${Others}							#Snapchat
+			${tc} filter add dev $wan protocol all prio 15 u32 match mark 0x400D0007 0xc03fffff flowid ${Downloads}						#Speedtest.net
+			${tc} filter add dev $wan protocol all prio 15 u32 match mark 0x400D0086 0xc03fffff flowid ${Downloads}						#Google Play
+			${tc} filter add dev $wan protocol all prio 15 u32 match mark 0x400D00A0 0xc03fffff flowid ${Downloads}						#Apple AppStore
+			${tc} filter add dev $wan protocol all prio 50 u32 match mark 0x401A0000 0xc03f0000 flowid ${Downloads}						#Advertisement
 
 		##UPLOAD APP_DB TRAFFIC REDIRECTION RULES END HERE  -- legacy method
-		${tc} filter add dev eth0 protocol all prio $1 u32 match mark 0x40000000 0x4000ffff flowid ${Others}						#recreate unidentified traffic rule with different destination - Routes Unidentified Traffic into webUI adjustable "Others" traffic container, instead of "Default" traffic container
-		${tc} filter add dev eth0 protocol all prio 10 u32 match mark 0x403f0001 0xc03fffff flowid ${Defaults}						#Used for iptables Default_mark_up functionality
+		${tc} filter add dev $wan protocol all prio $1 u32 match mark 0x40000000 0x4000ffff flowid ${Others}						#recreate unidentified traffic rule with different destination - Routes Unidentified Traffic into webUI adjustable "Others" traffic container, instead of "Default" traffic container
+		${tc} filter add dev $wan protocol all prio 10 u32 match mark 0x403f0001 0xc03fffff flowid ${Defaults}						#Used for iptables Default_mark_up functionality
 	}
 
 	custom_rates() {
@@ -313,14 +313,14 @@ release=03/07/2019
 		${tc} class change dev br0 parent 1:1 classid 1:16 htb ${PARMS}prio 7 rate ${DownRate6}Kbit ceil ${DownCeil6}Kbit burst ${DownBurst6} cburst ${DownCburst6}
 		${tc} class change dev br0 parent 1:1 classid 1:17 htb ${PARMS}prio 6 rate ${DownRate7}Kbit ceil ${DownCeil7}Kbit burst ${DownBurst7} cburst ${DownCburst7}
 
-		${tc} class change dev eth0 parent 1:1 classid 1:10 htb ${PARMS}prio 0 rate ${UpRate0}Kbit ceil ${UpCeil0}Kbit burst ${UpBurst0} cburst ${UpCburst0}
-		${tc} class change dev eth0 parent 1:1 classid 1:11 htb ${PARMS}prio 1 rate ${UpRate1}Kbit ceil ${UpCeil1}Kbit burst ${UpBurst1} cburst ${UpCburst1}
-		${tc} class change dev eth0 parent 1:1 classid 1:12 htb ${PARMS}prio 2 rate ${UpRate2}Kbit ceil ${UpCeil2}Kbit burst ${UpBurst2} cburst ${UpCburst2}
-		${tc} class change dev eth0 parent 1:1 classid 1:13 htb ${PARMS}prio 3 rate ${UpRate3}Kbit ceil ${UpCeil3}Kbit burst ${UpBurst3} cburst ${UpCburst3}
-		${tc} class change dev eth0 parent 1:1 classid 1:14 htb ${PARMS}prio 4 rate ${UpRate4}Kbit ceil ${UpCeil4}Kbit burst ${UpBurst4} cburst ${UpCburst4}
-		${tc} class change dev eth0 parent 1:1 classid 1:15 htb ${PARMS}prio 5 rate ${UpRate5}Kbit ceil ${UpCeil5}Kbit burst ${UpBurst5} cburst ${UpCburst5}
-		${tc} class change dev eth0 parent 1:1 classid 1:16 htb ${PARMS}prio 7 rate ${UpRate6}Kbit ceil ${UpCeil6}Kbit burst ${UpBurst6} cburst ${UpCburst6}
-		${tc} class change dev eth0 parent 1:1 classid 1:17 htb ${PARMS}prio 6 rate ${UpRate7}Kbit ceil ${UpCeil7}Kbit burst ${UpBurst7} cburst ${UpCburst7}
+		${tc} class change dev $wan parent 1:1 classid 1:10 htb ${PARMS}prio 0 rate ${UpRate0}Kbit ceil ${UpCeil0}Kbit burst ${UpBurst0} cburst ${UpCburst0}
+		${tc} class change dev $wan parent 1:1 classid 1:11 htb ${PARMS}prio 1 rate ${UpRate1}Kbit ceil ${UpCeil1}Kbit burst ${UpBurst1} cburst ${UpCburst1}
+		${tc} class change dev $wan parent 1:1 classid 1:12 htb ${PARMS}prio 2 rate ${UpRate2}Kbit ceil ${UpCeil2}Kbit burst ${UpBurst2} cburst ${UpCburst2}
+		${tc} class change dev $wan parent 1:1 classid 1:13 htb ${PARMS}prio 3 rate ${UpRate3}Kbit ceil ${UpCeil3}Kbit burst ${UpBurst3} cburst ${UpCburst3}
+		${tc} class change dev $wan parent 1:1 classid 1:14 htb ${PARMS}prio 4 rate ${UpRate4}Kbit ceil ${UpCeil4}Kbit burst ${UpBurst4} cburst ${UpCburst4}
+		${tc} class change dev $wan parent 1:1 classid 1:15 htb ${PARMS}prio 5 rate ${UpRate5}Kbit ceil ${UpCeil5}Kbit burst ${UpBurst5} cburst ${UpCburst5}
+		${tc} class change dev $wan parent 1:1 classid 1:16 htb ${PARMS}prio 7 rate ${UpRate6}Kbit ceil ${UpCeil6}Kbit burst ${UpBurst6} cburst ${UpCburst6}
+		${tc} class change dev $wan parent 1:1 classid 1:17 htb ${PARMS}prio 6 rate ${UpRate7}Kbit ceil ${UpCeil7}Kbit burst ${UpBurst7} cburst ${UpCburst7}
 	}
 
 ####################  DO NOT MODIFY BELOW  #####################
@@ -563,7 +563,7 @@ EOF
 			UpCburst7=$( echo ${line} | sed -n -e 's/.*cburst \([a-zA-z0-9]*\).*/\1/p' )
 		fi
 	done <<EOF
-		$( tc class show dev eth0 | grep "parent 1:1 " )
+		$( tc class show dev $wan | grep "parent 1:1 " )
 EOF
 
 
@@ -2138,7 +2138,7 @@ case "$arg1" in
 			if [ "$(nvram get script_usbmount)" == "/jffs/scripts/script_usbmount" ] && [ "$arg1" != "start" ] ; then
 				wan="$(iptables -vL -t mangle | grep -m 1 "BWDPI_FILTER" | tr -s ' ' | cut -d ' ' -f 7)"		#try to detect upload interface automatically
 				if [ -z "$wan" ] ; then
-					wan="eth0"
+					wan="$(nvram get wan0_ifname)"
 				fi
 				parse_iptablerule "${e1}" "${e2}" "${e3}" "${e4}" "${e5}" "${e6}" "${e7}" ip1_down ip1_up		##last two arguments are variables that get set "ByRef"
 				parse_iptablerule "${f1}" "${f2}" "${f3}" "${f4}" "${f5}" "${f6}" "${f7}" ip2_down ip2_up
