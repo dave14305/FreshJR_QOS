@@ -71,6 +71,23 @@ release=03/07/2019
 			iptables -D POSTROUTING -t mangle -o br0 -m mark --mark 0x80080000/0xc03f0000 -p tcp -m multiport --sports 80,443 -j MARK --set-mark ${Default_mark_down} &> /dev/null		#Gaming - (Incoming "Gaming" traffic from WAN source ports 80 & 443 -->  Defaults//GameDownloads)
 			iptables -A POSTROUTING -t mangle -o br0 -m mark --mark 0x80080000/0xc03f0000 -p tcp -m multiport --sports 80,443 -j MARK --set-mark ${Default_mark_down}
 
+			if [ "$(nvram get ipv6_service)" != "disabled" ] ; then
+				ip6tables -D POSTROUTING -t mangle -o br0 -p udp -m multiport --sports 500,4500 -j MARK --set-mark ${VOIP_mark_down} &> /dev/null				#Wifi Calling - (All incoming traffic from WAN source ports 500 & 4500 --> VOIP )
+				ip6tables -A POSTROUTING -t mangle -o br0 -p udp -m multiport --sports 500,4500 -j MARK --set-mark ${VOIP_mark_down}
+
+				ip6tables -D POSTROUTING -t mangle -o br0 -p udp --dport 16384:16415 -j MARK --set-mark ${VOIP_mark_down} &> /dev/null							#Facetime - 	(All incoming traffic to LAN destination ports 16384-16415 --> VOIP )
+				ip6tables -A POSTROUTING -t mangle -o br0 -p udp --dport 16384:16415 -j MARK --set-mark ${VOIP_mark_down}
+
+				ip6tables -D POSTROUTING -t mangle -o br0 -p tcp -m multiport --sports 119,563 -j MARK --set-mark ${Downloads_mark_down} &> /dev/null			#Usenet - 		(All incoming traffic from WAN source ports 119 & 563 --> Downloads )
+				ip6tables -A POSTROUTING -t mangle -o br0 -p tcp -m multiport --sports 119,563 -j MARK --set-mark ${Downloads_mark_down}
+
+				ip6tables -D POSTROUTING -t mangle -o br0 -m mark --mark 0x40000000/0xc0000000 -j MARK --set-xmark 0x80000000/0xC0000000 &> /dev/null			#VPN Fix -		(Fixes download traffic showing up in upload section when router is acting as a VPN Client)
+				ip6tables -A POSTROUTING -t mangle -o br0 -m mark --mark 0x40000000/0xc0000000 -j MARK --set-xmark 0x80000000/0xC0000000
+
+				ip6tables -D POSTROUTING -t mangle -o br0 -m mark --mark 0x80080000/0xc03f0000 -p tcp -m multiport --sports 80,443 -j MARK --set-mark ${Default_mark_down} &> /dev/null		#Gaming - (Incoming "Gaming" traffic from WAN source ports 80 & 443 -->  Defaults//GameDownloads)
+				ip6tables -A POSTROUTING -t mangle -o br0 -m mark --mark 0x80080000/0xc03f0000 -p tcp -m multiport --sports 80,443 -j MARK --set-mark ${Default_mark_down}
+			fi
+
 		##DOWNLOAD (INCOMMING TRAFFIC) CUSTOM RULES END HERE  -- legacy method
 
 		if [ "$( echo $gameCIDR | tr -cd '.' | wc -c )" -eq "3" ] ; then
@@ -147,8 +164,8 @@ release=03/07/2019
 			iptables -D POSTROUTING -t mangle -o $wan -p tcp -m multiport --dports 119,563 -j MARK --set-mark ${Downloads_mark_up} &> /dev/null				#Usenet - 		(All outgoing traffic to WAN destination ports 119 & 563 --> Downloads )
 			iptables -A POSTROUTING -t mangle -o $wan -p tcp -m multiport --dports 119,563 -j MARK --set-mark ${Downloads_mark_up}
 
-			iptables -D OUTPUT -t mangle -o $wan -p udp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up} &> /dev/null					#VPN Fix -		(Fixes upload traffic not detected when the router is acting as a VPN Client)
-			iptables -A OUTPUT -t mangle -o $wan -p udp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up}
+			iptables -D OUTPUT -t mangle -o $wan -p udp -m multiport ! --dports 53,123 -j MARK --set-mark ${Downloads_mark_up} &> /dev/null					#VPN Fix -		(Fixes upload traffic not detected when the router is acting as a VPN Client)
+			iptables -A OUTPUT -t mangle -o $wan -p udp -m multiport ! --dports 53,123 -j MARK --set-mark ${Downloads_mark_up}
 
 			iptables -D OUTPUT -t mangle -o $wan -p tcp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up} &> /dev/null					#VPN Fix -		(Fixes upload traffic not detected when the router is acting as a VPN Client)
 			iptables -A OUTPUT -t mangle -o $wan -p tcp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up}
@@ -156,6 +173,25 @@ release=03/07/2019
 			iptables -D POSTROUTING -t mangle -o $wan -m mark --mark 0x40080000/0xc03f0000 -p tcp -m multiport --sports 80,443 -j MARK --set-mark ${Default_mark_up} &> /dev/null   #Gaming - (Outgoing "Gaming" traffic to WAN destinations ports 80 & 443 -->  Defaults//GameDownloads)
 			iptables -A POSTROUTING -t mangle -o $wan -m mark --mark 0x40080000/0xc03f0000 -p tcp -m multiport --sports 80,443 -j MARK --set-mark ${Default_mark_up}
 
+			if [ "$(nvram get ipv6_service)" != "disabled" ]; then
+				ip6tables -D POSTROUTING -t mangle -o $wan -p udp -m multiport --dports 500,4500 -j MARK --set-mark ${VOIP_mark_up} &> /dev/null					#Wifi Calling - (All outgoing  traffic to WAN destination ports 500 & 4500 --> VOIP )
+				ip6tables -A POSTROUTING -t mangle -o $wan -p udp -m multiport --dports 500,4500 -j MARK --set-mark ${VOIP_mark_up}
+
+				ip6tables -D POSTROUTING -t mangle -o $wan -p udp --sport 16384:16415 -j MARK --set-mark ${VOIP_mark_up} &> /dev/null							#Facetime - 	(All outgoing traffic from LAN source ports 16384-16415 --> VOIP )
+				ip6tables -A POSTROUTING -t mangle -o $wan -p udp --sport 16384:16415 -j MARK --set-mark ${VOIP_mark_up}
+
+				ip6tables -D POSTROUTING -t mangle -o $wan -p tcp -m multiport --dports 119,563 -j MARK --set-mark ${Downloads_mark_up} &> /dev/null				#Usenet - 		(All outgoing traffic to WAN destination ports 119 & 563 --> Downloads )
+				ip6tables -A POSTROUTING -t mangle -o $wan -p tcp -m multiport --dports 119,563 -j MARK --set-mark ${Downloads_mark_up}
+
+				ip6tables -D OUTPUT -t mangle -o $wan -p udp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up} &> /dev/null					#VPN Fix -		(Fixes upload traffic not detected when the router is acting as a VPN Client)
+				ip6tables -A OUTPUT -t mangle -o $wan -p udp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up}
+
+				ip6tables -D OUTPUT -t mangle -o $wan -p tcp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up} &> /dev/null					#VPN Fix -		(Fixes upload traffic not detected when the router is acting as a VPN Client)
+				ip6tables -A OUTPUT -t mangle -o $wan -p tcp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up}
+
+				ip6tables -D POSTROUTING -t mangle -o $wan -m mark --mark 0x40080000/0xc03f0000 -p tcp -m multiport --sports 80,443 -j MARK --set-mark ${Default_mark_up} &> /dev/null   #Gaming - (Outgoing "Gaming" traffic to WAN destinations ports 80 & 443 -->  Defaults//GameDownloads)
+				ip6tables -A POSTROUTING -t mangle -o $wan -m mark --mark 0x40080000/0xc03f0000 -p tcp -m multiport --sports 80,443 -j MARK --set-mark ${Default_mark_up}
+			fi
 		##UPLOAD (OUTGOING TRAFFIC) CUSTOM RULES END HERE  -- legacy method
 
 		if [ "$( echo $gameCIDR | tr -cd '.' | wc -c )" -eq "3" ] ; then
@@ -2066,7 +2102,7 @@ case "$arg1" in
 			##iptables rules will only be reapplied on firewall "start" due to receiving interface name
 			wan="${2}"
 				if [ -z "$wan" ] ; then
-					wan="eth0"
+					wan="$(nvram get wan0_ifname)"
 				fi
 
 			parse_iptablerule "${e1}" "${e2}" "${e3}" "${e4}" "${e5}" "${e6}" "${e7}" ip1_down ip1_up		##last two arguments are variables that get set "ByRef"
