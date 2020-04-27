@@ -2062,6 +2062,11 @@ stock_install(){
 
 #Main program here, will execute different things depending on arguments
 arg1="$(echo "$1" | tr -d "-")"
+wan="${2}"
+if [ -z "$wan" ] ; then
+	wan="$(nvram get wan0_ifname)"
+fi
+
 case "$arg1" in
  'start'|'check'|'mount')																	##RAN ON FIREWALL-START OR CRON TASK, (RAN ONLY POST USB MOUNT IF USING STOCK ASUS FIRMWARE)
 	cru a FreshJR_QOS "30 3 * * * /jffs/scripts/FreshJR_QOS -check"			#makes sure daily check if active
@@ -2100,10 +2105,6 @@ case "$arg1" in
 
 		if [ "$arg1" == "start" ] ; then
 			##iptables rules will only be reapplied on firewall "start" due to receiving interface name
-			wan="${2}"
-				if [ -z "$wan" ] ; then
-					wan="$(nvram get wan0_ifname)"
-				fi
 
 			parse_iptablerule "${e1}" "${e2}" "${e3}" "${e4}" "${e5}" "${e6}" "${e7}" ip1_down ip1_up		##last two arguments are variables that get set "ByRef"
 			parse_iptablerule "${f1}" "${f2}" "${f3}" "${f4}" "${f5}" "${f6}" "${f7}" ip2_down ip2_up
