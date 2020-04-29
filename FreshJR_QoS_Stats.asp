@@ -97,8 +97,19 @@ overflow: hidden;
 text-overflow: ellipsis;
 }
 
+.input_15_table{
+	margin-left:0px;
+}
+.input_6_table{
+	margin-left:0px;
+}
+.input_option{
+	border-left-width:1px;
+	border-right-width:1px;
+}
 </style>
 <script>
+var custom_settings = <% get_custom_settings(); %>;
 var device = {};													// devices database --> device["IP"] = { mac: "AA:BB:CC:DD:EE:FF" , name:"name" }
 var clientlist = <% get_clientlist_from_json_database(); %>;		// data from /jffs/nmp_cl_json.js (used to correlate mac addresses to corresponding device names  )
 </script>
@@ -687,6 +698,7 @@ function populate_devicefilter(){
 
 
 function initial() {
+	SetCurrentPage();
 	set_FreshJR_mod_vars();
 	show_iptables_rules();
 	get_devicenames();						//used for printing name next to IP
@@ -1273,8 +1285,15 @@ function set_FreshJR_mod_vars()
 	}
 	else
 	{
-		var FreshJR_nvram1 = decodeURIComponent('<% nvram_char_to_ascii("",fb_comment); %>').replace(/>/g,";").split(";");			// nvram variables from feedbackpage repurposed for use with FreshJR_QOS
-		var FreshJR_nvram2 = decodeURIComponent('<% nvram_char_to_ascii("",fb_email_dbg); %>').replace(/>/g,";").split(";");		// nvram variables from feedbackpage repurposed for use with FreshJR_QOS
+		if ( custom_settings.freshjr_nvram1 == undefined )
+			var FreshJR_nvram1 = decodeURIComponent('<% nvram_char_to_ascii("",fb_comment); %>').replace(/>/g,";").split(";");			// nvram variables from feedbackpage repurposed for use with FreshJR_QOS
+		else
+			var FreshJR_nvram1 = custom_settings.freshjr_nvram1.replace(/>/g,";").split(";");
+		if ( custom_settings.freshjr_nvram2 == undefined )
+			var FreshJR_nvram2 = decodeURIComponent('<% nvram_char_to_ascii("",fb_email_dbg); %>').replace(/>/g,";").split(";");		// nvram variables from feedbackpage repurposed for use with FreshJR_QOS
+		else
+			var FreshJR_nvram2 = custom_settings.freshjr_nvram2.replace(/>/g,";").split(";");
+
 		if (FreshJR_nvram1.length == 21)
 		{
 			e1=FreshJR_nvram1[0];				document.getElementById('e1').value=e1;
@@ -1503,11 +1522,11 @@ function FreshJR_mod_apply()
 		var ucp6=document.getElementById('ucp6').value;			if (!(validate_percent(ucp6)))  ucp0="100";
 		var ucp7=document.getElementById('ucp7').value;			if (!(validate_percent(ucp7)))  ucp0="100";
 
-	var nvram1= e1 +";"+ e2 +";"+ e3 +";"+ e4 +";"+ e5 +";"+ e6 +";"+ e7 +">"+
+	custom_settings.freshjr_nvram1 = e1 +";"+ e2 +";"+ e3 +";"+ e4 +";"+ e5 +";"+ e6 +";"+ e7 +">"+
 				f1 +";"+ f2 +";"+ f3 +";"+ f4 +";"+ f5 +";"+ f6 +";"+ f7 +">"+
 				g1 +";"+ g2 +";"+ g3 +";"+ g4 +";"+ g5 +";"+ g6 +";"+ g7;
 
-	var nvram2= h1 +";"+ h2 +";"+ h3 +";"+ h4 +";"+ h5 +";"+ h6 +";"+ h7 +">"+
+	custom_settings.freshjr_nvram2= h1 +";"+ h2 +";"+ h3 +";"+ h4 +";"+ h5 +";"+ h6 +";"+ h7 +">"+
 				r1 +";"+ d1 +">"+
 				r2 +";"+ d2 +">"+
 				r3 +";"+ d3 +">"+
@@ -1519,17 +1538,20 @@ function FreshJR_mod_apply()
 				urp0 +";"+ urp1 +";"+ urp2 +";"+ urp3 +";"+ urp4 +";"+ urp5 +";"+ urp6 +";"+ urp7 +">"+
 				ucp0 +";"+ ucp1 +";"+ ucp2 +";"+ ucp3 +";"+ ucp4 +";"+ ucp5 +";"+ ucp6 +";"+ ucp7;
 
-	if (nvram1.length > 255){
-		nvram1 = ";;;;;;>;;;;;;>;;;;;;";
+	if (custom_settings.freshjr_nvram1 > 255){
+		custom_settings.freshjr_nvram2 = ";;;;;;>;;;;;;>;;;;;;";
 	}
 
-	if (nvram2.length > 255){
-		nvram2 = ";;;;;;>;>;>;>;>>>5;20;15;10;10;30;5;5>100;100;100;100;100;100;100;100>5;20;15;30;10;10;5;5>100;100;100;100;100;100;100;100";
+	if (custom_settings.freshjr_nvram2 > 255){
+		custom_settings.freshjr_nvram2 = ";;;;;;>;>;>;>;>>>5;20;15;10;10;30;5;5>100;100;100;100;100;100;100;100>5;20;15;30;10;10;5;5>100;100;100;100;100;100;100;100";
 	}
 
-	document.form.fb_comment.value = nvram1;
-	document.form.fb_email_dbg.value = nvram2;
-	document.form.action_script.value = "restart_qos;restart_firewall";
+	/* Store object as a string in the amng_custom hidden input field */
+	document.getElementById('amng_custom').value = JSON.stringify(custom_settings);
+
+	document.form.fb_comment.value = custom_settings.freshjr_nvram1;
+	document.form.fb_email_dbg.value = custom_settings.freshjr_nvram2;
+	//document.form.action_script.value = "restart_qos;restart_firewall";
 	document.form.submit();
 }
 
@@ -1608,6 +1630,11 @@ function validate_percent(input)
 	return 1
 }
 
+function SetCurrentPage() {
+		document.form.next_page.value = window.location.pathname.substring(1);
+		document.form.current_page.value = window.location.pathname.substring(1);
+}
+
 </script>
 </head>
 <body onload="initial();">
@@ -1617,14 +1644,15 @@ function validate_percent(input)
 <form method="post" name="form" action="/start_apply.htm" target="hidden_frame">
 <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get(" preferred_lang "); %>">
 <input type="hidden" name="firmver" value="<% nvram_get(" firmver "); %>">
-<input type="hidden" name="current_page" value="/QoS_Stats.asp">
-<input type="hidden" name="next_page" value="/QoS_Stats.asp">
+<input type="hidden" name="current_page" value="">
+<input type="hidden" name="next_page" value="">
 <input type="hidden" name="action_mode" value="apply">
 <input type="hidden" name="action_script" value="">
 <input type="hidden" name="action_wait" value="15">
 <input type="hidden" name="flag" value="">
 <input type="hidden" name="fb_comment" value="asd">
 <input type="hidden" name="fb_email_dbg" value="zxc">
+<input type="hidden" name="amng_custom" id="amng_custom" value="">
 <table class="content" align="center" cellpadding="0" cellspacing="0">
 <tr>
 <td width="17">&nbsp;</td>
