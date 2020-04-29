@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<!-- 
+<!--
 ##FreshJR_QOS_v8.8 released 03/06/2019
 Modification on-top of RMerlins QoS_Stats page taken from 384.9
  -->
@@ -24,7 +24,7 @@ Modification on-top of RMerlins QoS_Stats page taken from 384.9
 <script type="text/javascript" src="/general.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/js/table/table.js"></script>
-<script type="text/javascript" src="js/httpApi.js"></script>
+<script type="text/javascript" src="/js/httpApi.js"></script>
 <style>
 
 .tableApi_table th {
@@ -84,11 +84,11 @@ display:inline;
 
 
 div.localdeviceip{
-display:inline-block; 
-width:50%; 
+display:inline-block;
+width:50%;
 }
 span.devicename{
-display:inline-block; 
+display:inline-block;
 font-size:75%;
 width:50%;
 vertical-align: middle;
@@ -96,7 +96,6 @@ white-space: nowrap;
 overflow: hidden;
 text-overflow: ellipsis;
 }
-
 .input_15_table{
 	margin-left:-5px;
 	height:23px;
@@ -130,7 +129,6 @@ text-overflow: ellipsis;
 	border: 1px solid #929EA1;
 	color:#FFFFFF;
 }
-
 </style>
 <script>
 var device = {};													// devices database --> device["IP"] = { mac: "AA:BB:CC:DD:EE:FF" , name:"name" }
@@ -142,6 +140,11 @@ var tabledata;								//tabled of tracked connections after device-filtered
 var sortmode=6;								//current sort mode of tracked connections table (default =6)
 var dhcp_start = "<% nvram_get("dhcp_start"); %>"
 var dhcp_start = dhcp_start.substr(0, dhcp_start.lastIndexOf("."));
+var iptables_rulelist_array = "";
+var overlib_str0 = new Array();
+var overlib_str1 = new Array();
+var overlib_str2 = new Array();
+var overlib_str3 = new Array();
 var rulename1="Rule1";
 var rulename2="Rule2";
 var rulename3="Rule3";
@@ -187,6 +190,7 @@ if (qos_mode == 2) {
         bwdpi_app_rulelist_row = bwdpi_app_rulelist.split("<");
     }
     var category_title = ["Net Control Packets", "Gaming", "Video and Audio Streaming", "VoIP and Instant Messaging", "Web Surfing", "File Transferring", "Others", "Game Transferring"];
+		var class_title = ["Net Control", "Gaming", "Streaming", "VoIP and IM", "Web Surfing", "File Downloads", "Others", "Game Downloads"];
     var cat_id_array = [
         [9, 20],
         [8],
@@ -197,7 +201,7 @@ if (qos_mode == 2) {
         [7, 10, 11, 21, 23],
         []
     ];
-	
+
 	var c_net=bwdpi_app_rulelist_row.indexOf(cat_id_array[0].toString())
 	var c_gaming=bwdpi_app_rulelist_row.indexOf(cat_id_array[1].toString())
 	var c_streaming=bwdpi_app_rulelist_row.indexOf(cat_id_array[2].toString())
@@ -206,7 +210,7 @@ if (qos_mode == 2) {
 	var c_downloads=bwdpi_app_rulelist_row.indexOf(cat_id_array[5].toString())
 	var c_others=bwdpi_app_rulelist_row.indexOf(cat_id_array[6].toString())
 	var c_default=bwdpi_app_rulelist_row.indexOf(cat_id_array[7].toString())
-	
+
 } else {
     var category_title = ["", "Highest", "High", "Medium", "Low", "Lowest"];
 }
@@ -267,7 +271,7 @@ function cidr_start(addr) {
   addr=addr.split('/');
   var parts = addr[0].split('.').map(Number);
   var dec_ip = (parts[0] << 24) + (parts[1] << 16) + (parts[2] << 8) + (parts[3]) >>> 0;
-	var dec_mask= (4294967295 << 32-addr[1]) >>> 0;	
+	var dec_mask= (4294967295 << 32-addr[1]) >>> 0;
   return (dec_ip&dec_mask)>>>0;
 };
 
@@ -275,7 +279,7 @@ function cidr_end(addr) {
   addr=addr.split('/');
   var parts = addr[0].split('.').map(Number);
   var dec_ip = (parts[0] << 24) + (parts[1] << 16) + (parts[2] << 8) + (parts[3]) >>> 0;
-	var dec_mask= ~(4294967295 << 32-addr[1]) >>> 0;	
+	var dec_mask= ~(4294967295 << 32-addr[1]) >>> 0;
   return (dec_ip|dec_mask)>>>0;
 };
 
@@ -291,9 +295,9 @@ function draw_conntrack_table() {
 	//bwdpi_conntrack[i][7] = Traffic Category
 	tabledata = new Array(tablesize);
 	var j = 0;
-    for (var i = 0; i < bwdpi_conntrack.length; i++) 
-	{	
-		if (( deviceFilter == "*" || deviceFilter == bwdpi_conntrack[i][1] ) && ( j < tablesize ))
+    for (var i = 0; i < bwdpi_conntrack.length; i++)
+	{
+		if (( deviceFilter == "*" || deviceFilter == compIPV6(bwdpi_conntrack[i][1]) ) && ( j < tablesize ))
 		{
 			//format app name label into html
 			var label = bwdpi_conntrack[i][5];			(label.length > 27) ? size='style="font-size: 75%;"' : size = "" ;
@@ -303,77 +307,72 @@ function draw_conntrack_table() {
 			bwdpi_conntrack[i][5] =	'<div  class="t_item">' +
 									'<span class="t_label catrow cat' + qos_class + '"' + size + '>' + label + '</span>' +							//sort by Container Destination
 									'<span class="t_mark  catrow cat' + qos_class + '"' + size + '>MARK:' + mark + '</span>' +
-									'<div>';	
-			
-			//shorten IPV6
-			var isIPv6 = false;
+									'<div>';
+
 			if (bwdpi_conntrack[i][1].indexOf(":") >= 0) {
 				bwdpi_conntrack[i][1] = compIPV6(bwdpi_conntrack[i][1]);
-				isIPv6 = true;
 			}
 			if (bwdpi_conntrack[i][3].indexOf(":") >= 0) {
 				bwdpi_conntrack[i][3] = compIPV6(bwdpi_conntrack[i][3]);
-				isIPv6 = true;
 			}
-			
-			
+
 			//OVERRIDE LABEL - TC RULES
 			if (bwdpi_conntrack[i][7] == 0 && bwdpi_conntrack[i][6] == 0 )																			//unidentified
 				bwdpi_conntrack[i][5] =	'<div  class="t_item">' +
-						'<span class="t_label catrow cat' + c_others + '"' + size + '>' + label + '</span>' +				
+						'<span class="t_label catrow cat' + c_others + '"' + size + '>' + label + '</span>' +
 						'<span class="t_mark  catrow cat' + c_others + '"' + size + '>MARK:' + mark + '</span>' +
-						'<div>';	
-			
+						'<div>';
+
 			if (bwdpi_conntrack[i][7] == 13 && (bwdpi_conntrack[i][6] == 7 || bwdpi_conntrack[i][6] == 134 || bwdpi_conntrack[i][6] == 160) )		//speedtest + playstore + appstore
 				bwdpi_conntrack[i][5] =	'<div  class="t_item">' +
-						'<span class="t_label catrow cat' + c_downloads + '"' + size + '>' + label + '</span>' +				
+						'<span class="t_label catrow cat' + c_downloads + '"' + size + '>' + label + '</span>' +
 						'<span class="t_mark  catrow cat' + c_downloads + '"' + size + '>MARK:' + mark + '</span>' +
-						'<div>';	
-			
+						'<div>';
+
 			if (bwdpi_conntrack[i][7] == 0 && bwdpi_conntrack[i][6] == 107) 																		//snapchat
 				bwdpi_conntrack[i][5] =	'<div  class="t_item">' +
-						'<span class="t_label catrow cat' + c_others + '"' + size + '>' + label + '</span>' +				
+						'<span class="t_label catrow cat' + c_others + '"' + size + '>' + label + '</span>' +
 						'<span class="t_mark  catrow cat' + c_others + '"' + size + '>MARK:' + mark + '</span>' +
-						'<div>';	
-			
+						'<div>';
+
 			if (bwdpi_conntrack[i][7] == 26) 																										//advertisement
 				bwdpi_conntrack[i][5] =	'<div  class="t_item">' +
-						'<span class="t_label catrow cat' + c_downloads + '"' + size + '>' + label + '</span>' +				
+						'<span class="t_label catrow cat' + c_downloads + '"' + size + '>' + label + '</span>' +
 						'<span class="t_mark  catrow cat' + c_downloads + '"' + size + '>MARK:' + mark + '</span>' +
-						'<div>';	
-			
+						'<div>';
+
 			if (bwdpi_conntrack[i][7] == 19 || bwdpi_conntrack[i][7] == 20 || (  bwdpi_conntrack[i][7] == 18 && bwdpi_conntrack[i][6]==63) )		//https + TSL/SSL + http
 				bwdpi_conntrack[i][5] =	'<div  class="t_item">' +
-						'<span class="t_label catrow cat' + c_web + '"' + size + '>' + label + '</span>' +				
+						'<span class="t_label catrow cat' + c_web + '"' + size + '>' + label + '</span>' +
 						'<span class="t_mark  catrow cat' + c_web + '"' + size + '>MARK:' + mark + '</span>' +
-						'<div>';	
+						'<div>';
 
 			if (eval_rule(appdb1, bwdpi_conntrack[i][0], bwdpi_conntrack[i][2], bwdpi_conntrack[i][4], bwdpi_conntrack[i][1], bwdpi_conntrack[i][3], bwdpi_conntrack[i][7], bwdpi_conntrack[i][6]))
 				bwdpi_conntrack[i][5] =	'<div  class="t_item">' +
-						'<span class="t_label catrow cat' + appdb1[18] + '"' + size + '>' + label + ' ~</span>' +				
+						'<span class="t_label catrow cat' + appdb1[18] + '"' + size + '>' + label + ' ~</span>' +
 						'<span class="t_mark  catrow cat' + appdb1[18] + '"' + size + '>MARK:' + mark + '</span>' +
-						'<div>';	
-			
+						'<div>';
+
 			if (eval_rule(appdb2, bwdpi_conntrack[i][0], bwdpi_conntrack[i][2], bwdpi_conntrack[i][4], bwdpi_conntrack[i][1], bwdpi_conntrack[i][3], bwdpi_conntrack[i][7], bwdpi_conntrack[i][6]))
 				bwdpi_conntrack[i][5] =	'<div  class="t_item">' +
-						'<span class="t_label catrow cat' + appdb2[18] + '"' + size + '>' + label + ' ~</span>' +					
+						'<span class="t_label catrow cat' + appdb2[18] + '"' + size + '>' + label + ' ~</span>' +
 						'<span class="t_mark  catrow cat' + appdb2[18] + '"' + size + '>MARK:' + mark + '</span>' +
-						'<div>';	
-			
+						'<div>';
+
 			if (eval_rule(appdb3, bwdpi_conntrack[i][0], bwdpi_conntrack[i][2], bwdpi_conntrack[i][4], bwdpi_conntrack[i][1], bwdpi_conntrack[i][3], bwdpi_conntrack[i][7], bwdpi_conntrack[i][6]))
 				bwdpi_conntrack[i][5] =	'<div  class="t_item">' +
-						'<span class="t_label catrow cat' + appdb3[18] + '"' + size + '>' + label + ' ~</span>' +						
+						'<span class="t_label catrow cat' + appdb3[18] + '"' + size + '>' + label + ' ~</span>' +
 						'<span class="t_mark  catrow cat' + appdb3[18] + '"' + size + '>MARK:' + mark + '</span>' +
-						'<div>';	
-			
+						'<div>';
+
 			if (eval_rule(appdb4, bwdpi_conntrack[i][0], bwdpi_conntrack[i][2], bwdpi_conntrack[i][4], bwdpi_conntrack[i][1], bwdpi_conntrack[i][3], bwdpi_conntrack[i][7], bwdpi_conntrack[i][6]))
 				bwdpi_conntrack[i][5] =	'<div  class="t_item">' +
-						'<span class="t_label catrow cat' + appdb3[18] + '"' + size  + '>' + label + ' ~</span>' +						
+						'<span class="t_label catrow cat' + appdb3[18] + '"' + size  + '>' + label + ' ~</span>' +
 						'<span class="t_mark  catrow cat' + appdb3[18] + '"' + size + '>MARK:' + mark + '</span>' +
-						'<div>';	
+						'<div>';
 
-			
-			if (!isIPv6)
+
+			if (true)
 			{
 				//SHOW LOCAL DEVICES AT LEFT SIDE OF TABLE (FLIP POSITION IF REQUIRED)
 				if (bwdpi_conntrack[i][3].startsWith(dhcp_start))
@@ -381,80 +380,80 @@ function draw_conntrack_table() {
 					var temp = bwdpi_conntrack[i][3];
 					bwdpi_conntrack[i][3] = bwdpi_conntrack[i][1];
 					bwdpi_conntrack[i][1] = temp;
-					
+
 					temp = bwdpi_conntrack[i][4];
 					bwdpi_conntrack[i][4] = bwdpi_conntrack[i][2];
 					bwdpi_conntrack[i][2] = temp;
-					
+
 				}
-				
-				
+
+
 				//OVERRIDE LABEL - IPTABLE RULES
 				if (bwdpi_conntrack[i][4] == 500 || bwdpi_conntrack[i][4] == 4500)																		//wifi caling
 					bwdpi_conntrack[i][5] =	'<div  class="t_item">' +
-							'<span class="t_label catrow cat' + c_voip + '"' + size + '>Wi-Fi Calling</span>' +				
+							'<span class="t_label catrow cat' + c_voip + '"' + size + '>Wi-Fi Calling</span>' +
 							'<span class="t_mark  catrow cat' + c_voip + '"' + size + '>MARK:' + mark + '</span>' +
-							'<div>';	
+							'<div>';
 
 				if (bwdpi_conntrack[i][2] >= 16384 && bwdpi_conntrack[i][2] <= 16415)																	//facetime
 					bwdpi_conntrack[i][5] =	'<div  class="t_item">' +
-							'<span class="t_label catrow cat' + c_voip + '"' + size + '>Facetime</span>' +				
+							'<span class="t_label catrow cat' + c_voip + '"' + size + '>Facetime</span>' +
 							'<span class="t_mark  catrow cat' + c_voip + '"' + size + '>MARK:' + mark + '</span>' +
-							'<div>';	
+							'<div>';
 
 				if (bwdpi_conntrack[i][7] == 8 && (bwdpi_conntrack[i][4] == 80 || bwdpi_conntrack[i][4] == 443) && bwdpi_conntrack[i][0] == "tcp" )	{	//game downloads
 					label = "Game Transfering: " + label;
 					if (label.length > 27)	size='style="font-size: 75%;"';
 					bwdpi_conntrack[i][5] =	'<div  class="t_item">' +
-							'<span class="t_label catrow cat' + c_default + '"' + size + '>' + label + '</span>' +				
+							'<span class="t_label catrow cat' + c_default + '"' + size + '>' + label + '</span>' +
 							'<span class="t_mark  catrow cat' + c_default + '"' + size + '>MARK:' + mark + '</span>' +
-							'<div>';	
+							'<div>';
 				}
 				if (eval_rule(gamerule, bwdpi_conntrack[i][0], bwdpi_conntrack[i][2], bwdpi_conntrack[i][4], bwdpi_conntrack[i][1], bwdpi_conntrack[i][3], bwdpi_conntrack[i][7], bwdpi_conntrack[i][6]))
 					bwdpi_conntrack[i][5] =	'<div  class="t_item">' +
-							'<span class="t_label catrow cat' + gamerule[18] + '"' + size + '>Game Rule: Untracked</span>' +				
+							'<span class="t_label catrow cat' + gamerule[18] + '"' + size + '>Game Rule: Untracked</span>' +
 							'<span class="t_mark  catrow cat' + gamerule[18] + '"' + size + '>MARK:' + mark + '</span>' +
-							'<div>';				
-				
+							'<div>';
+
 				if (eval_rule(rule1, bwdpi_conntrack[i][0], bwdpi_conntrack[i][2], bwdpi_conntrack[i][4], bwdpi_conntrack[i][1], bwdpi_conntrack[i][3], bwdpi_conntrack[i][7], bwdpi_conntrack[i][6]))
 					bwdpi_conntrack[i][5] =	'<div  class="t_item">' +
-							'<span class="t_label catrow cat' + rule1[18] + '"' + size + '>'+rulename1+'</span>' +				
+							'<span class="t_label catrow cat' + rule1[18] + '"' + size + '>'+rulename1+'</span>' +
 							'<span class="t_mark  catrow cat' + rule1[18] + '"' + size + '>MARK:' + mark + '</span>' +
-							'<div>';	
+							'<div>';
 				if (eval_rule(rule2, bwdpi_conntrack[i][0], bwdpi_conntrack[i][2], bwdpi_conntrack[i][4], bwdpi_conntrack[i][1], bwdpi_conntrack[i][3], bwdpi_conntrack[i][7], bwdpi_conntrack[i][6]))
 					bwdpi_conntrack[i][5] =	'<div  class="t_item">' +
-							'<span class="t_label catrow cat' + rule2[18] + '"' + size + '>'+rulename2+'</span>' +				
+							'<span class="t_label catrow cat' + rule2[18] + '"' + size + '>'+rulename2+'</span>' +
 							'<span class="t_mark  catrow cat' + rule2[18] + '"' + size + '>MARK:' + mark + '</span>' +
 							'<div>';
 				if (eval_rule(rule3, bwdpi_conntrack[i][0], bwdpi_conntrack[i][2], bwdpi_conntrack[i][4], bwdpi_conntrack[i][1], bwdpi_conntrack[i][3], bwdpi_conntrack[i][7], bwdpi_conntrack[i][6]))
 					bwdpi_conntrack[i][5] =	'<div  class="t_item">' +
-							'<span class="t_label catrow cat' + rule3[18] + '"' + size + '>'+rulename3+'</span>' +				
+							'<span class="t_label catrow cat' + rule3[18] + '"' + size + '>'+rulename3+'</span>' +
 							'<span class="t_mark  catrow cat' + rule3[18] + '"' + size + '>MARK:' + mark + '</span>' +
 							'<div>';
 				if (eval_rule(rule4, bwdpi_conntrack[i][0], bwdpi_conntrack[i][2], bwdpi_conntrack[i][4], bwdpi_conntrack[i][1], bwdpi_conntrack[i][3], bwdpi_conntrack[i][7], bwdpi_conntrack[i][6]))
 					bwdpi_conntrack[i][5] =	'<div  class="t_item">' +
-							'<span class="t_label catrow cat' + rule4[18] + '"' + size + '>'+rulename4+'</span>' +				
+							'<span class="t_label catrow cat' + rule4[18] + '"' + size + '>'+rulename4+'</span>' +
 							'<span class="t_mark  catrow cat' + rule4[18] + '"' + size + '>MARK:' + mark + '</span>' +
 							'<div>';
-							
+
 				//PRETTY PRINT LOCAL DEVICE NAME NEXT TO IPv4 address
 				//(be placed after evaluation of custom rules due to injecting HTML into LocalIP field and breaking LocalIP data used for rule)
 				if (typeof device[bwdpi_conntrack[i][1]] != "undefined")
 				{
-					bwdpi_conntrack[i][1] =   
-					  '<div  title="' + bwdpi_conntrack[i][1].split('.')[3].padStart(3, '#') + '" class="localdeviceip">' + bwdpi_conntrack[i][1] + '</div>' + 
-					  '<span class="devicename">'  + device[bwdpi_conntrack[i][1]].name + '</span>'
+					bwdpi_conntrack[i][1] =
+					  //'<div  title="' + bwdpi_conntrack[i][1].split('.')[3].padStart(3, '#') + '" class="localdeviceip">' + bwdpi_conntrack[i][1] + '</div>' +
+						'<div  title="' + bwdpi_conntrack[i][1] + '" class="localdeviceip">' + device[bwdpi_conntrack[i][1]].name + '</div>'
 				}
-					
+
 			}
 
 			tabledata[j] = bwdpi_conntrack[i];
 			j++;
 		}
     }
-	j <= 30 ? tabledata.length = 30 : tabledata.length = j ;		//table will always contain at least 30 blank entries to maintain some scroll distance	
+	j <= 30 ? tabledata.length = 30 : tabledata.length = j ;		//table will always contain at least 30 blank entries to maintain some scroll distance
 	//draw table
-	updateTable()	
+	updateTable()
 }
 
 function updateTable()
@@ -544,11 +543,11 @@ function updateTable()
 		tabledata.sort(function(a,b) { return b[5].localeCompare(a[5])} );
 		break;
 	}
-	
+
 	//generate table
 	var tbl  = document.getElementById('tableContainer');
 	var code = '<tr class="row_title">'+header[0]+header[1]+header[2]+header[3]+header[4]+header[5]+'</tr>';
-	
+
     for(var i = 0; i < tabledata.length; i++){
 		if(tabledata[i])
 		{
@@ -565,7 +564,7 @@ function updateTable()
 		}
     }
 	if (tabledata[tablesize - 1] )
-	{	
+	{
 		code += '<tr class="row_tr data_tr" row_tr_idx="' + tablesize +' "><td style="text-align:center; font-weight:bold;" colspan="7">Reached table limit.  Please use device filter.</td>'
 	}
 	tbl.innerHTML = code;
@@ -580,7 +579,7 @@ function comma(n) {
 }
 
 function get_devicenames()
-{				
+{
 	// populate device["IP"].mac from nvram variable "dhcp_staticlist"
 	decodeURIComponent('<% nvram_char_to_ascii("", "dhcp_staticlist"); %>').split("<").forEach( element => {
 		if ( element.split(">")[1] ){
@@ -600,16 +599,16 @@ function get_devicenames()
 
 	//populate device["IP"].mac from the dhcp table
 	// disabled due to <get_leases_array()> taking 1 second to load.  This code is ran elsewhere asynchronously
-	// <'%' get_leases_array(); '%'>			//returns variable named leasearray[] 
+	// <'%' get_leases_array(); '%'>			//returns variable named leasearray[]
 	// leasearray.forEach( element => {
 		// if ( element[1] ){
 			// device[element[2]] = { mac:element[1].toUpperCase() , name:"DEBUG: DHCP" };
 			// device[element[2]] = { mac:element[1].toUpperCase() , name::element[3] };
 		// }
 	// });
-		
-		
-	//instead temporarily populate device["IP"].name from dhcp table		
+
+
+	//instead temporarily populate device["IP"].name from dhcp table
 	// used as stopgap source of partial information on page load until complete information is later available from asynchronous code
 	// is NOT ideal since the names using this method do not reflect nicknames and sometimes return "*" instead of a device name
 	dhcpnamelist = <% IP_dhcpLeaseInfo(); %>
@@ -621,7 +620,18 @@ function get_devicenames()
 				device[element[0]] = { mac:undefined , name:element[1]};
 		}
 	});
-		
+
+	<% get_ipv6net_array(); %>
+
+	ipv6clientarray.forEach( element => {
+		if ( element[2] ){
+			if( device[element[2].replace(/[0-9a-f]{2}$/,"00")] )
+				device[element[2].replace(/[0-9a-f]{2}$/,"00")].name = element[0];
+			else
+				device[element[2].replace(/[0-9a-f]{2}$/,"00")] = { mac:element[1] , name:element[0]};
+		}
+	});
+
 	// populate device["IP"].name from device["IP"].mac saved in /jffs/nmp_cl_json.js
 	// clientlist = is data set from /jffs/nmp_cl_json.js
 	for (var i in device) {
@@ -636,7 +646,7 @@ function get_devicenames()
 				device[i].name = clientlist[device[i].mac].name;
 			}
 		}
-	}	
+	}
 }
 
 function update_devicenames(leasearray)
@@ -644,15 +654,15 @@ function update_devicenames(leasearray)
 	// this code is after ajax call
 	leasearray.forEach( element => {
 		if ( element[1] ){
-			
+
 			mac = element[1].toUpperCase();
 			ip = element[2];
 			name = element[3];
-			
+
 			//update device["IP"].mac from DHCP table
 			//device[ip] = { mac:mac , name:"DEBUG: DHCP" };
 			device[ip] = { mac:mac , name:name };
-			
+
 			//update device{"IP"].name from /jffs/nmp_cl_json.js
 			if (typeof clientlist[mac] != "undefined")
 			{
@@ -665,21 +675,44 @@ function update_devicenames(leasearray)
 					device[ip].name = clientlist[mac].name;
 				}
 			}
-			
+
 			//update device filter drop down formated values
-			document.getElementById(ip).innerHTML = ip.padEnd(18,' ') + device[ip].name;
+			document.getElementById(ip).innerHTML = ip.padEnd(21) + device[ip].name;
 		}
 	});
 }
 
+function populate_classmenu(){
+	var code = "";
+	for (i = 0; i < class_title.length; i++) {
+	  code += '<option value="' + i + '">' + class_title[i] + "</option>\n";
+	}
+	document.getElementById('ipt_class_x').innerHTML=code;
+}
+
+// <select name="ipt_class_x" class="input_option">
+// 	<option value="0">Net Control</option>
+// 	<option value="3">VoIP</option>
+// 	<option value="1">Gaming</option>
+// 	<option value="6">Others</option>
+// 	<option value="4">Web Surfing</option>
+// 	<option value="2">Streaming</option>
+// 	<option value="7">Game Downloads</option>
+// 	<option value="5">File Downloads</option>
+// </select>
+
+
 function populate_devicefilter(){
 	var code = '<option value="*" > </option>';
+	var ipv6prefix = "<% nvram_get("ipv6_prefix"); %>";
+	var ipv6strip = ipv6prefix.replace(/::$/,":");
+
 	//Presort clients before adding clients into devicefilter to make it easier to read
 	keysSorted = Object.keys(device).sort(function(a,b){ return ip2dec(a)-ip2dec(b) })									// sort by IP
 	//keysSorted = Object.keys(device).sort(function(a,b){ return device[a].name.localeCompare(device[b].name) })		// sort by device name
 	for (i = 0; i < keysSorted.length; i++) {
 	  key = keysSorted[i];
-	  code += '<option id="' + key + '" value="' + key + '">' + key.padEnd(18,' ') + device[key].name + "</option>\n";
+	  code += '<option id="' + key + '" value="' + key + '">' + key.replace(ipv6strip,"").padEnd(21) + device[key].name + "</option>\n";
 	}
 	document.getElementById('devicefilter').innerHTML=code;
 }
@@ -687,21 +720,23 @@ function populate_devicefilter(){
 
 function initial() {
 	set_FreshJR_mod_vars();
+	show_iptables_rules();
 	get_devicenames();						//used for printing name next to IP
 	populate_devicefilter();				//used to populate drop down filter
+	populate_classmenu();
     show_menu();
     refreshRate = document.getElementById('refreshrate').value;
 	deviceFilter = document.getElementById('devicefilter').value;
     get_data();
-    //draw_conntrack_table();  get_data() already draws table	
+    //draw_conntrack_table();  get_data() already draws table
 	if (qos_mode == 0){		//if QoS is invalid
 		document.getElementById('filter_device').style.display = "none";
 		document.getElementById('tracked_connections').style.display = "none";
 		document.getElementById('refresh_data').style.display = "none";
 	}
      $.ajax({
-        url: "Main_DHCPStatus_Content.asp", 
-        success:   function(result){ 
+        url: "Main_DHCPStatus_Content.asp",
+        success:   function(result){
 			result = result.match(/leasearray=([\s\S]*?);/);
 			if (result[1]){
 				update_devicenames(eval(result[1])); //regex data string into actual array
@@ -759,14 +794,14 @@ function create_rule(Proto, Lport, Rport, Lip, Rip, Mark, Dst){
 	//rule[16]=Mark (General Category Match)
 	//rule[17]=Mark (Specific Traffic Match)
     //rule[18]=QoS Destination
-  
+
   rule[0]=0;
   if (Dst)	rule[18]=bwdpi_app_rulelist_row.indexOf(cat_id_array[Dst].toString());
   Proto = Proto.toLowerCase();
 	if ( Proto )
 	{
 		rule[1]=Proto;
-		if( Lport ) 
+		if( Lport )
 		{
 			if(Lport.startsWith("!")) {
 				rule[2]=1;
@@ -788,7 +823,7 @@ function create_rule(Proto, Lport, Rport, Lip, Rip, Mark, Dst){
 			}
 		}
 
-		if( Rport ) 
+		if( Rport )
 		{
 			if(Rport.startsWith("!")) {
 				rule[6]=1;
@@ -810,7 +845,7 @@ function create_rule(Proto, Lport, Rport, Lip, Rip, Mark, Dst){
 			}
 		}
 	}
-	
+
 	if ( Lip )
 	{
 		rule[0]+=16;
@@ -818,7 +853,7 @@ function create_rule(Proto, Lport, Rport, Lip, Rip, Mark, Dst){
 			rule[10]=1;
 			Lip=Lip.replace("!", "");
 		}
-		
+
 		if(Lip.includes("/")) {
 			rule[11]=cidr_start(Lip);
 			rule[12]=cidr_end(Lip);
@@ -828,7 +863,7 @@ function create_rule(Proto, Lport, Rport, Lip, Rip, Mark, Dst){
 			rule[12]=rule[11];
 		}
 	}
-	
+
 	if ( Rip )
 	{
 		rule[0]+=32;
@@ -836,7 +871,7 @@ function create_rule(Proto, Lport, Rport, Lip, Rip, Mark, Dst){
 			rule[13]=1;
 			Rip=Rip.replace("!", "");
 		}
-		
+
 		if(Rip.includes("/")) {
 			rule[14]=cidr_start(Rip);
 			rule[15]=cidr_end(Rip);
@@ -846,18 +881,18 @@ function create_rule(Proto, Lport, Rport, Lip, Rip, Mark, Dst){
 			rule[15]=rule[14];
 		}
 	}
-	
+
 	if ( Mark.length == 6 )
 	{
 		rule[0]+=64;
 		rule[16]=parseInt(Mark.substr(0,2),16);
-		
+
 		if (Mark.substr(-4) != "****")
 		{
 			rule[0]+=128;
 			rule[17]=parseInt(Mark.substr(-4),16);
 		}
-		
+
 	}
 
 	// console.log(rule);
@@ -867,26 +902,26 @@ function create_rule(Proto, Lport, Rport, Lip, Rip, Mark, Dst){
 function eval_rule(rule, CProto, CLport, CRport, CLip, CRip, CCat, CId){
 
 	//eval false if rule has no filters or destination specified
-	if (!rule || !rule[0] || (rule[18]==undefined) ) 	
+	if (!rule || !rule[0] || (rule[18]==undefined) )
 	{
 		// console.log("rule is not configured");
 		return 0;
 	}
-	
+
 	if ( rule[1] && CProto != rule[1] && rule[1] != "both" )
 	{
 		// console.log("protocol mismatch");
 		return 0;
 	}
-	
+
 	//if rule has local/remote ports specified
 	if (rule[0] & 15)
 	{
-		
+
 		if ((rule[0] & 15) <= 3 )							//if port rule is NOT a multiport match
 		{
 			if ( (rule[0] & 1) && !((CLport >= rule[3] && CLport <= rule[4])^(rule[2])) )
-			{    	
+			{
 				// console.log("local port mismatch");
 				return 0;
 			}
@@ -895,7 +930,7 @@ function eval_rule(rule, CProto, CLport, CRport, CLip, CRip, CCat, CId){
 				// console.log("remote port mismatch");
 				return 0;
 			}
-			
+
 		}
 		else if (( rule[0] & 15) == 4 )						//if port rule is ONLY a local multiport match
 		{
@@ -931,7 +966,7 @@ function eval_rule(rule, CProto, CLport, CRport, CLip, CRip, CCat, CId){
 			return 0;									//false since multiport match cannot be simultanously used with other port match
 		}
 	}
-	
+
 
 	// if rule has local IP specified
 	if ((rule[0] & 16) )
@@ -961,14 +996,14 @@ function eval_rule(rule, CProto, CLport, CRport, CLip, CRip, CCat, CId){
 	  // console.log("category mismatch");
 	  return 0;
     }
-		
+
 	// if rule has mark id specified
 	if ( (rule[0] & 128) && (rule[17] != CId) )
 	{
 	  // console.log("traffic ID mismatch");
 	  return 0;
 	}
-	  
+
 	// console.log("rule matches current connection");
 	return 1;
 
@@ -1130,8 +1165,112 @@ function rate2kbs(rate)
 			return ( comma(parseInt(rate.replace(/[^0-9]/g,"")/1024/8)) )
 		}
 	}
-	
+
 	return 0
+}
+
+function addRow(obj, head){
+	if(head == 1)
+		iptables_rulelist_array += "<"
+	else
+		iptables_rulelist_array += ">"
+
+	iptables_rulelist_array += obj.value;
+	obj.value = "";
+}
+
+function validForm(){
+	if(!Block_chars(document.form.ipt_local_port_x, ["<" ,">"])){
+				return false;
+	}
+
+	if(!Block_chars(document.form.ipt_remote_port_x, ["<" ,">"])){
+				return false;
+	}
+
+	if( document.form.ipt_local_ip_x.value == "" && document.form.ipt_remote_ip_x.value == "" && document.form.ipt_local_port_x.value == "" && document.form.ipt_remote_port_x.value == "" && document.form.ipt_mark_x.value == "" )
+		return false;
+
+	return true;
+}
+
+function addRow_Group(upper){
+	if(validForm()){
+		var rule_num = document.getElementById('iptables_rulelist_table').rows.length;
+		var item_num = document.getElementById('iptables_rulelist_table').rows[0].cells.length;
+		if(rule_num >= upper){
+			alert("This table only allows " + upper + " items!");
+			return;
+		}
+
+		addRow(document.form.ipt_local_ip_x, 1);
+		addRow(document.form.ipt_remote_ip_x, 0);
+		addRow(document.form.ipt_proto_x, 0);
+		addRow(document.form.ipt_local_port_x, 0);
+		addRow(document.form.ipt_remote_port_x, 0);
+		addRow(document.form.ipt_mark_x, 0);
+		addRow(document.form.ipt_class_x, 0);
+		document.form.ipt_proto_x.value="both";
+		document.form.ipt_class_x.value="0";
+		show_iptables_rules();
+	}
+}
+
+function del_Row(r){
+	var i=r.parentNode.parentNode.rowIndex;
+	document.getElementById('iptables_rulelist_table').deleteRow(i);
+	var iptables_rulelist_value = "";
+	for(k=0; k<document.getElementById('iptables_rulelist_table').rows.length; k++){
+		for(j=0; j<document.getElementById('iptables_rulelist_table').rows[k].cells.length-1; j++){
+			if(j == 0)
+				iptables_rulelist_value += "<";
+			else
+				iptables_rulelist_value += ">";
+			if(document.getElementById('iptables_rulelist_table').rows[k].cells[j].innerHTML.lastIndexOf("...")<0){
+				iptables_rulelist_value += document.getElementById('iptables_rulelist_table').rows[k].cells[j].innerHTML;
+			}else{
+				iptables_rulelist_value += document.getElementById('iptables_rulelist_table').rows[k].cells[j].title;
+			}
+		}
+	}
+	iptables_rulelist_array = iptables_rulelist_value;
+	if(iptables_rulelist_array == "")
+	show_iptables_rules();
+}
+
+function show_iptables_rules(){
+	var iptables_rulelist_row = decodeURIComponent(iptables_rulelist_array).split('<');
+	var code = "";
+
+	code +='<table width="100%" cellspacing="0" cellpadding="4" align="center" class="list_table" id="iptables_rulelist_table">';
+	if(iptables_rulelist_row.length == 1)
+		code +='<tr><td style="color:#FFCC00;" colspan="8">No rules defined</td></tr>';
+	else{
+		for(var i = 1; i < iptables_rulelist_row.length; i++){
+			overlib_str0[i] ="";
+			overlib_str1[i] ="";
+			overlib_str2[i] ="";
+			overlib_str3[i] ="";
+			class_disp_x = "";
+			code +='<tr id="row'+i+'">';
+			var iptables_rulelist_col = iptables_rulelist_row[i].split('>');
+			var wid=[19, 19, 9, 9, 9, 9, 21];
+				for(var j = 0; j < iptables_rulelist_col.length; j++){
+						if(j==2){
+							code +='<td width="'+wid[j]+'%">'+ iptables_rulelist_col[j].toUpperCase(); +'</td>';
+						}else if(j==6){
+							code +='<td width="'+wid[j]+'%">'+ class_title[iptables_rulelist_col[j]] +'</td>';
+						}else{
+						  code +='<td width="'+wid[j]+'%">'+ iptables_rulelist_col[j] +'</td>';
+						}
+				}
+				//code +='<td width="12%"><!--input class="edit_btn" onclick="edit_Row(this);" value=""/-->';
+				code +='<td width="6%"><!--input class="edit_btn" onclick="edit_Row(this);" value=""/-->';
+				code +='<input class="remove_btn" onclick="del_Row(this);" value=""/></td></tr>';
+		}
+	}
+	code +='</table>';
+	document.getElementById("iptables_rules_block").innerHTML = code;
 }
 
 function FreshJR_mod_toggle()
@@ -1161,7 +1300,7 @@ function set_FreshJR_mod_vars()
 	else
 	{
 		var FreshJR_nvram1 = decodeURIComponent('<% nvram_char_to_ascii("",fb_comment); %>').replace(/>/g,";").split(";");			// nvram variables from feedbackpage repurposed for use with FreshJR_QOS
-		var FreshJR_nvram2 = decodeURIComponent('<% nvram_char_to_ascii("",fb_email_dbg); %>').replace(/>/g,";").split(";");		// nvram variables from feedbackpage repurposed for use with FreshJR_QOS 
+		var FreshJR_nvram2 = decodeURIComponent('<% nvram_char_to_ascii("",fb_email_dbg); %>').replace(/>/g,";").split(";");		// nvram variables from feedbackpage repurposed for use with FreshJR_QOS
 		if (FreshJR_nvram1.length == 21)
 		{
 			e1=FreshJR_nvram1[0];				document.getElementById('e1').value=e1;
@@ -1172,7 +1311,7 @@ function set_FreshJR_mod_vars()
 			e6=FreshJR_nvram1[5];				document.getElementById('e6').value=e6;
 			e7=FreshJR_nvram1[6];				document.getElementById('e7').value=e7;
 			rule1=create_rule(e3, e4, e5, e1, e2, e6, e7);
-			
+
 			f1=FreshJR_nvram1[7];				document.getElementById('f1').value=f1;
 			f2=FreshJR_nvram1[8];				document.getElementById('f2').value=f2;
 			f3=FreshJR_nvram1[9].toLowerCase();	document.getElementById('f3').value=f3;
@@ -1181,7 +1320,7 @@ function set_FreshJR_mod_vars()
 			f6=FreshJR_nvram1[12];				document.getElementById('f6').value=f6;
 			f7=FreshJR_nvram1[13];				document.getElementById('f7').value=f7;
 			rule2=create_rule(f3, f4, f5, f1, f2, f6, f7);
-			
+
 			g1=FreshJR_nvram1[14];				document.getElementById('g1').value=g1;
 			g2=FreshJR_nvram1[15];				document.getElementById('g2').value=g2;
 			g3=FreshJR_nvram1[16].toLowerCase();document.getElementById('g3').value=g3;
@@ -1190,43 +1329,43 @@ function set_FreshJR_mod_vars()
 			g6=FreshJR_nvram1[19];				document.getElementById('g6').value=g6;
 			g7=FreshJR_nvram1[20];				document.getElementById('g7').value=g7;
 			rule3=create_rule(g3, g4, g5, g1, g2, g6, g7);
-		}	
+		}
 		if (FreshJR_nvram2.length == 49)
 		{
 			h1=FreshJR_nvram2[0];				document.getElementById('h1').value=h1;
 			h2=FreshJR_nvram2[1].toLowerCase(); document.getElementById('h2').value=h2;
 			h3=FreshJR_nvram2[2];				document.getElementById('h3').value=h3;
-			h4=FreshJR_nvram2[3];				document.getElementById('h4').value=h4;	
+			h4=FreshJR_nvram2[3];				document.getElementById('h4').value=h4;
 			h5=FreshJR_nvram2[4];				document.getElementById('h5').value=h5;
 			h6=FreshJR_nvram2[5];				document.getElementById('h6').value=h6;
 			h7=FreshJR_nvram2[6];				document.getElementById('h7').value=h7;
 			rule4=create_rule(h3, h4, h5, h1, h2, h6, h7);
-			
+
 			r1=FreshJR_nvram2[7];				document.getElementById('r1').value=r1;
 			d1=FreshJR_nvram2[8];				document.getElementById('d1').value=d1;
 			appdb1=create_rule("", "", "", "", "", r1, d1);
-			
+
 			r2=FreshJR_nvram2[9]; 				document.getElementById('r2').value=r2;
 			d2=FreshJR_nvram2[10];				document.getElementById('d2').value=d2;
 			appdb2=create_rule("", "", "", "", "", r2, d2);
-			
+
 			r3=FreshJR_nvram2[11];				document.getElementById('r3').value=r3;
 			d3=FreshJR_nvram2[12];				document.getElementById('d3').value=d3;
 			appdb3=create_rule("", "", "", "", "", r3, d3);
-			
+
 			r4=FreshJR_nvram2[13];				document.getElementById('r4').value=r4;
 			d4=FreshJR_nvram2[14];				document.getElementById('d4').value=d4;
 			appdb4=create_rule("", "", "", "", "", r4, d4);
-			
 
-			gameCIDR=FreshJR_nvram2[15];		document.getElementById('gameCIDR').value=gameCIDR;		
-			if (gameCIDR) 
+
+			gameCIDR=FreshJR_nvram2[15];		document.getElementById('gameCIDR').value=gameCIDR;
+			if (gameCIDR)
 				gamerule=create_rule("both", "", "!80,443", gameCIDR, "", "000000", "1");
 			else
 				gamerule=create_rule("", "", "", "", "", "", "");
 			ruleFLAG=FreshJR_nvram2[16];
-			
-			
+
+
 			drp0=parseInt(FreshJR_nvram2[17]);		if (drp0 >= 5 && drp0 < 100) document.getElementById('drp0').value=drp0;
 			drp1=parseInt(FreshJR_nvram2[18]);		if (drp1 >= 5 && drp1 < 100) document.getElementById('drp1').value=drp1;
 			drp2=parseInt(FreshJR_nvram2[19]);		if (drp2 >= 5 && drp2 < 100) document.getElementById('drp2').value=drp2;
@@ -1235,7 +1374,7 @@ function set_FreshJR_mod_vars()
 			drp5=parseInt(FreshJR_nvram2[22]);		if (drp5 >= 5 && drp5 < 100) document.getElementById('drp5').value=drp5;
 			drp6=parseInt(FreshJR_nvram2[23]);		if (drp6 >= 5 && drp6 < 100) document.getElementById('drp6').value=drp6;
 			drp7=parseInt(FreshJR_nvram2[24]);		if (drp7 >= 5 && drp7 < 100) document.getElementById('drp7').value=drp7;
-			
+
 			dcp0=parseInt(FreshJR_nvram2[25]);		if (dcp0 >= 5 && dcp0 <= 100) document.getElementById('dcp0').value=dcp0;
 			dcp1=parseInt(FreshJR_nvram2[26]);		if (dcp0 >= 5 && dcp0 <= 100) document.getElementById('dcp1').value=dcp1;
 			dcp2=parseInt(FreshJR_nvram2[27]);		if (dcp0 >= 5 && dcp0 <= 100) document.getElementById('dcp2').value=dcp2;
@@ -1244,7 +1383,7 @@ function set_FreshJR_mod_vars()
 			dcp5=parseInt(FreshJR_nvram2[30]);		if (dcp0 >= 5 && dcp0 <= 100) document.getElementById('dcp5').value=dcp5;
 			dcp6=parseInt(FreshJR_nvram2[31]);		if (dcp0 >= 5 && dcp0 <= 100) document.getElementById('dcp6').value=dcp6;
 			dcp7=parseInt(FreshJR_nvram2[32]);		if (dcp0 >= 5 && dcp0 <= 100) document.getElementById('dcp7').value=dcp7;
-			
+
 			urp0=parseInt(FreshJR_nvram2[33]);		if (urp0 >= 5 && urp0 < 100) document.getElementById('urp0').value=urp0;
 			urp1=parseInt(FreshJR_nvram2[34]);		if (urp1 >= 5 && urp1 < 100) document.getElementById('urp1').value=urp1;
 			urp2=parseInt(FreshJR_nvram2[35]);		if (urp2 >= 5 && urp2 < 100) document.getElementById('urp2').value=urp2;
@@ -1253,7 +1392,7 @@ function set_FreshJR_mod_vars()
 			urp5=parseInt(FreshJR_nvram2[38]);		if (urp5 >= 5 && urp5 < 100) document.getElementById('urp5').value=urp5;
 			urp6=parseInt(FreshJR_nvram2[39]);		if (urp6 >= 5 && urp6 < 100) document.getElementById('urp6').value=urp6;
 			urp7=parseInt(FreshJR_nvram2[40]);		if (urp7 >= 5 && urp7 < 100) document.getElementById('urp7').value=urp7;
-			
+
 			ucp0=parseInt(FreshJR_nvram2[41]);		if (ucp0 >= 5 && ucp0 <= 100) document.getElementById('ucp0').value=ucp0;
 			ucp1=parseInt(FreshJR_nvram2[42]);		if (ucp1 >= 5 && ucp1 <= 100) document.getElementById('ucp1').value=ucp1;
 			ucp2=parseInt(FreshJR_nvram2[43]);		if (ucp2 >= 5 && ucp2 <= 100) document.getElementById('ucp2').value=ucp2;
@@ -1276,7 +1415,7 @@ function FreshJR_mod_reset_down()
 		document.getElementById('drp5').value=30;
 		document.getElementById('drp6').value=5;
 		document.getElementById('drp7').value=5;
-		
+
 		document.getElementById('dcp0').value=100;
 		document.getElementById('dcp1').value=100;
 		document.getElementById('dcp2').value=100;
@@ -1297,7 +1436,7 @@ function FreshJR_mod_reset_up()
 		document.getElementById('urp5').value=10;
 		document.getElementById('urp6').value=5;
 		document.getElementById('urp7').value=5;
-		
+
 		document.getElementById('ucp0').value=100;
 		document.getElementById('ucp1').value=100;
 		document.getElementById('ucp2').value=100;
@@ -1317,7 +1456,7 @@ function FreshJR_mod_apply()
 		var e5=document.getElementById('e5').value;			if (!(validate_port(e5)))  e5="";
 		var e6=document.getElementById('e6').value;			if (!(validate_mark(e6)))  e6="";
 		var e7=document.getElementById('e7').value;
-		
+
 		var f1=document.getElementById('f1').value;			if (!(validate_ipv4(f1)))  f1="";
 		var f2=document.getElementById('f2').value;			if (!(validate_ipv4(f2)))  f2="";
 		var f3=document.getElementById('f3').value;
@@ -1325,7 +1464,7 @@ function FreshJR_mod_apply()
 		var f5=document.getElementById('f5').value;			if (!(validate_port(f5)))  f5="";
 		var f6=document.getElementById('f6').value;			if (!(validate_mark(f6)))  f6="";
 		var f7=document.getElementById('f7').value;
-		
+
 		var g1=document.getElementById('g1').value;			if (!(validate_ipv4(g1)))  g1="";
 		var g2=document.getElementById('g2').value;			if (!(validate_ipv4(g2)))  g2="";
 		var g3=document.getElementById('g3').value;
@@ -1333,7 +1472,7 @@ function FreshJR_mod_apply()
 		var g5=document.getElementById('g5').value;			if (!(validate_port(g5)))  g5="";
 		var g6=document.getElementById('g6').value;			if (!(validate_mark(g6)))  g6="";
 		var g7=document.getElementById('g7').value;
-		
+
 		var h1=document.getElementById('h1').value;			if (!(validate_ipv4(h1)))  h1="";
 		var h2=document.getElementById('h2').value;			if (!(validate_ipv4(h2)))  h2="";
 		var h3=document.getElementById('h3').value;
@@ -1341,22 +1480,22 @@ function FreshJR_mod_apply()
 		var h5=document.getElementById('h5').value;			if (!(validate_port(h5)))  h5="";
 		var h6=document.getElementById('h6').value;			if (!(validate_mark(h6)))  h6="";
 		var h7=document.getElementById('h7').value;
-		
+
 		var r1=document.getElementById('r1').value;			if (!(validate_mark(r1)))  r1="";
-		var d1=document.getElementById('d1').value;	
-		
+		var d1=document.getElementById('d1').value;
+
 		var r2=document.getElementById('r2').value;			if (!(validate_mark(r2)))  r2="";
 		var d2=document.getElementById('d2').value;
-		
+
 		var r3=document.getElementById('r3').value;			if (!(validate_mark(r3)))  r3="";
 		var d3=document.getElementById('d3').value;
-		
+
 		var r4=document.getElementById('r4').value;			if (!(validate_mark(r4)))  r4="";
 		var d4=document.getElementById('d4').value;
-		
+
 		var gameCIDR=document.getElementById('gameCIDR').value;		if (!(validate_ipv4(gameCIDR)))  gameCIDR="";
 		var ruleFLAG="FF"
-		
+
 		var drp0=document.getElementById('drp0').value;			if (!(validate_percent(drp0)))  drp0="5";
 		var drp1=document.getElementById('drp1').value;			if (!(validate_percent(drp1)))  drp1="20";
 		var drp2=document.getElementById('drp2').value;			if (!(validate_percent(drp2)))  drp2="15";
@@ -1372,7 +1511,7 @@ function FreshJR_mod_apply()
 		var dcp4=document.getElementById('dcp4').value;			if (!(validate_percent(dcp4)))  dcp4="10";
 		var dcp5=document.getElementById('dcp5').value;			if (!(validate_percent(dcp5)))  dcp5="10";
 		var dcp6=document.getElementById('dcp6').value;			if (!(validate_percent(dcp6)))  dcp6="5";
-		var dcp7=document.getElementById('dcp7').value;			if (!(validate_percent(dcp7)))  dcp7="5";	
+		var dcp7=document.getElementById('dcp7').value;			if (!(validate_percent(dcp7)))  dcp7="5";
 		var urp0=document.getElementById('urp0').value;			if (!(validate_percent(urp0)))  urp0="100";
 		var urp1=document.getElementById('urp1').value;			if (!(validate_percent(urp1)))  urp1="100";
 		var urp2=document.getElementById('urp2').value;			if (!(validate_percent(urp2)))  urp2="100";
@@ -1390,30 +1529,30 @@ function FreshJR_mod_apply()
 		var ucp6=document.getElementById('ucp6').value;			if (!(validate_percent(ucp6)))  ucp0="100";
 		var ucp7=document.getElementById('ucp7').value;			if (!(validate_percent(ucp7)))  ucp0="100";
 
-	var nvram1= e1 +";"+ e2 +";"+ e3 +";"+ e4 +";"+ e5 +";"+ e6 +";"+ e7 +">"+ 
-				f1 +";"+ f2 +";"+ f3 +";"+ f4 +";"+ f5 +";"+ f6 +";"+ f7 +">"+ 
+	var nvram1= e1 +";"+ e2 +";"+ e3 +";"+ e4 +";"+ e5 +";"+ e6 +";"+ e7 +">"+
+				f1 +";"+ f2 +";"+ f3 +";"+ f4 +";"+ f5 +";"+ f6 +";"+ f7 +">"+
 				g1 +";"+ g2 +";"+ g3 +";"+ g4 +";"+ g5 +";"+ g6 +";"+ g7;
-				
-	var nvram2= h1 +";"+ h2 +";"+ h3 +";"+ h4 +";"+ h5 +";"+ h6 +";"+ h7 +">"+ 
-				r1 +";"+ d1 +">"+ 
-				r2 +";"+ d2 +">"+ 
-				r3 +";"+ d3 +">"+ 
-				r4 +";"+ d4 +">"+ 
-				gameCIDR +">"+ 
-				ruleFLAG +">"+ 
-				drp0 +";"+ drp1 +";"+ drp2 +";"+ drp3 +";"+ drp4 +";"+ drp5 +";"+ drp6 +";"+ drp7 +">"+ 
-				dcp0 +";"+ dcp1 +";"+ dcp2 +";"+ dcp3 +";"+ dcp4 +";"+ dcp5 +";"+ dcp6 +";"+ dcp7 +">"+ 
-				urp0 +";"+ urp1 +";"+ urp2 +";"+ urp3 +";"+ urp4 +";"+ urp5 +";"+ urp6 +";"+ urp7 +">"+ 
+
+	var nvram2= h1 +";"+ h2 +";"+ h3 +";"+ h4 +";"+ h5 +";"+ h6 +";"+ h7 +">"+
+				r1 +";"+ d1 +">"+
+				r2 +";"+ d2 +">"+
+				r3 +";"+ d3 +">"+
+				r4 +";"+ d4 +">"+
+				gameCIDR +">"+
+				ruleFLAG +">"+
+				drp0 +";"+ drp1 +";"+ drp2 +";"+ drp3 +";"+ drp4 +";"+ drp5 +";"+ drp6 +";"+ drp7 +">"+
+				dcp0 +";"+ dcp1 +";"+ dcp2 +";"+ dcp3 +";"+ dcp4 +";"+ dcp5 +";"+ dcp6 +";"+ dcp7 +">"+
+				urp0 +";"+ urp1 +";"+ urp2 +";"+ urp3 +";"+ urp4 +";"+ urp5 +";"+ urp6 +";"+ urp7 +">"+
 				ucp0 +";"+ ucp1 +";"+ ucp2 +";"+ ucp3 +";"+ ucp4 +";"+ ucp5 +";"+ ucp6 +";"+ ucp7;
-				
+
 	if (nvram1.length > 255){
 		nvram1 = ";;;;;;>;;;;;;>;;;;;;";
-	}	
-	
+	}
+
 	if (nvram2.length > 255){
 		nvram2 = ";;;;;;>;>;>;>;>>>5;20;15;10;10;30;5;5>100;100;100;100;100;100;100;100>5;20;15;30;10;10;5;5>100;100;100;100;100;100;100;100";
-	}	
-	
+	}
+
 	document.form.fb_comment.value = nvram1;
 	document.form.fb_email_dbg.value = nvram2;
 	document.form.action_script.value = "restart_qos;restart_firewall";
@@ -1426,7 +1565,7 @@ function validate_ipv4(input)
 
 	input = input.replace(/^\!/,"");
 	input = input.split(".");
-	if (input.length != 4)			 		 			return false; //console.log("fail length");	
+	if (input.length != 4)			 		 			return false; //console.log("fail length");
 	for (var i = 0; i < input.length; i++)
 	{
 		if (i == 3 && /\//.test(input[3]) )
@@ -1437,19 +1576,19 @@ function validate_ipv4(input)
 		}
 		if(!(input[i] >= 0 && input[i] <= 255))			return false; //console.log("fail range");
 	}
-	
+
 	return 1;
 }
 
 function validate_port(input)
 {
 	if (!(input))								 return 1;			//is blank
-	
+
 	input = input.replace(/^\!/,"");
 	if (/[^0-9\:\,]/.test(input)) 					 	return false; //console.log("fail character");
-	
-	if ( input.includes(",") && input.includes(":") )	return false; //console.log("fail combination of delimiters");	
-	
+
+	if ( input.includes(",") && input.includes(":") )	return false; //console.log("fail combination of delimiters");
+
 	if ( input.includes(":") )
 	{
 		split = input.split(":");
@@ -1473,7 +1612,7 @@ function validate_port(input)
 function validate_mark(input)
 {
 	if (!(input)) 								return 1;				//is blank
-	
+
 	if (input.length != 6 )								return false;	//console.log("fail length");
 	if (input.substr(-4) == "****")
 	{
@@ -1532,11 +1671,62 @@ function validate_percent(input)
 <div id="FreshJR_mod_toggle" style="float:right; color:#FFCC00; display:inline-block; margin:5px; cursor:pointer;" onclick='FreshJR_mod_toggle()'>FreshJR Mod <small>(Customize)</small></div>
 <div style="margin-bottom:10px" class="splitLine"></div>
 
-<!-- FreshJR UI Start-->	
+<!-- FreshJR UI Start-->
 <div id="FreshJR_mod" style="display:none;">
 <div style="display:inline-block; margin:0px 0px 10px 5px; font-size:14px; text-shadow: 1px 1px 0px black;"><b>QoS Modification</b></div>
 <div style="display:inline-block; margin:-2px 5px 0px 0px; height:22px; width:136px; float:right; font-weight:bold;" class="titlebtn" onclick="FreshJR_mod_apply();"><span style="margin-left:10px; padding:0 0 0" align="center">Apply</span></div>
-<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" class="FormTable">		
+<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" class="FormTable_table">
+	<thead>
+		<tr>
+			<td colspan="8">iptables Rules&nbsp;(Max Limit : 12)</td>
+		</tr>
+	</thead>
+	<tbody>
+	<tr>
+		<th width="19%"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,25);">Local IP/CIDR</a></th>
+		<th width="19%"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,25);">Remote IP/CIDR</a></th>
+		<th width="9%"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,25);">Protocol</a></th>
+		<th width="9%"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,24);">Local Port</a></th>
+		<th width="9%"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,24);">Remote Port</a></th>
+		<th width="9%"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,24);">Mark</a></th>
+		<th width="21%"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,24);">Class</a></th>
+		<th width="6%">Add/Del</th>
+	</tr>
+	<tr>
+		<td>
+			<input type="text" maxlength="18" class="input_15_table" name="ipt_local_ip_x" onfocusout='validate_ipv4(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' autocorrect="off" autocapitalize="off"/>
+		</td>
+		<td>
+			<input type="text" maxlength="18" class="input_15_table" name="ipt_remote_ip_x" onfocusout='validate_ipv4(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' autocorrect="off" autocapitalize="off"/>
+		</td>
+		<td>
+			<select name="ipt_proto_x" class="input_option">
+				<option value="both">BOTH</option>
+				<option value="tcp">TCP</option>
+				<option value="udp">UDP</option>
+			</select>
+		</td>
+		<td>
+			<input type="text" maxlength="36" class="input_6_table" name="ipt_local_port_x" onfocusout='validate_port(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' autocomplete="off" autocorrect="off" autocapitalize="off">
+		</td>
+		<td>
+			<input type="text" maxlength="36" class="input_6_table" name="ipt_remote_port_x" onfocusout='validate_port(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' autocomplete="off" autocorrect="off" autocapitalize="off">
+		</td>
+		<td>
+			<input type="text" maxlength="6" class="input_6_table" name="ipt_mark_x" onfocusout='validate_mark(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' autocomplete="off" autocorrect="off" autocapitalize="off">
+		</td>
+		<td>
+			<select name="ipt_class_x" id="ipt_class_x" class="input_option">
+			</select>
+		</td>
+		<td>
+			<input type="button" class="add_btn" onClick="addRow_Group(12);" name="iptables_rules" value="">
+		</td>
+	</tr>
+</tbody>
+</table>
+<div id="iptables_rules_block"></div>
+<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" class="FormTable">
 <thead><td colspan="7">Iptable Rules (ipv4) </td></thead>
 	<tbody>
 		<tr>
@@ -1568,7 +1758,7 @@ function validate_percent(input)
 			<td><input type="text" class="input_6_table" maxlength="6"   style="background-color: rgb(204, 204, 204); cursor:default" readonly></td>
 			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option value="UDP">VoIP</option></select></td>
 		</tr>
-		
+
 		<tr>
 			<td><input type="text" class="input_15_table" maxlength="18" style="background-color: rgb(204, 204, 204); cursor:default" readonly></td>
 			<td><input type="text" class="input_15_table" maxlength="18" style="background-color: rgb(204, 204, 204); cursor:default" readonly></td>
@@ -1578,7 +1768,7 @@ function validate_percent(input)
 			<td><input type="text" class="input_6_table" maxlength="6"   style="background-color: rgb(204, 204, 204); cursor:default" readonly></td>
 			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option value="UDP">VoIP</option></select></td>
 		</tr>
-		
+
 		<tr>
 			<td><input type="text" class="input_15_table" maxlength="18" style="background-color: rgb(204, 204, 204); cursor:default" readonly></td>
 			<td><input type="text" class="input_15_table" maxlength="18" style="background-color: rgb(204, 204, 204); cursor:default" readonly></td>
@@ -1620,7 +1810,7 @@ function validate_percent(input)
 					<option value="7">Game Downloads</option>
 					<option value="5">File Downloads</option></select></td>
 		</tr>
-		
+
 		<tr>
 			<td><input id="f1" onfocusout='validate_ipv4(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_15_table" maxlength="18" autocomplete="off" autocorrect="off" autocapitalize="off"></td>
 			<td><input id="f2" onfocusout='validate_ipv4(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_15_table" maxlength="18" autocomplete="off" autocorrect="off" autocapitalize="off"></td>
@@ -1642,7 +1832,7 @@ function validate_percent(input)
 					<option value="7">Game Downloads</option>
 					<option value="5">File Downloads</option></select></td>
 		</tr>
-		
+
 		<tr>
 			<td><input id="g1" onfocusout='validate_ipv4(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_15_table" maxlength="18" autocomplete="off" autocorrect="off" autocapitalize="off"></td>
 			<td><input id="g2" onfocusout='validate_ipv4(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_15_table" maxlength="18" autocomplete="off" autocorrect="off" autocapitalize="off"></td>
@@ -1664,7 +1854,7 @@ function validate_percent(input)
 					<option value="7">Game Downloads</option>
 					<option value="5">File Downloads</option></select></td>
 		</tr>
-		
+
 		<tr>
 			<td><input id="h1" onfocusout='validate_ipv4(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_15_table" maxlength="18" autocomplete="off" autocorrect="off" autocapitalize="off"></td>
 			<td><input id="h2" onfocusout='validate_ipv4(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_15_table" maxlength="18" autocomplete="off" autocorrect="off" autocapitalize="off"></td>
@@ -1689,7 +1879,7 @@ function validate_percent(input)
 	</tbody>
 </table>
 
-<table border="0" cellpadding="4" cellspacing="0" class="FormTable" style="width:100%; margin:10px auto 10px auto">		
+<table border="0" cellpadding="4" cellspacing="0" class="FormTable" style="width:100%; margin:10px auto 10px auto">
 <thead><td colspan="3">AppDB Redirection (traffic control)</td></thead>
 	<tbody>
 		<tr>
@@ -1703,32 +1893,32 @@ function validate_percent(input)
 			<td><input type="text" class="input_6_table" maxlength="6"  style="background-color: rgb(204, 204, 204); cursor:default"  value="000000"></td>
 			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option>Others</option></select></td>
 		</tr>
-		
+
 		</tr>
 			<td>Snapchat </td>
 			<td><input type="text" class="input_6_table" maxlength="6"  style="background-color: rgb(204, 204, 204); cursor:default"  value="00006B"></td>
 			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option>Others</option></select></td>
 		</tr>
-		
+
 		</tr>
 			<td>Speedtest.net</td>
 			<td><input type="text" class="input_6_table" maxlength="6"  style="background-color: rgb(204, 204, 204); cursor:default"  value="0D0007"></td>
 			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option>File Downloads</option></select></td>
 		</tr>
-		
+
 		</tr>
 			<td>Google Play</td>
 			<td><input type="text" class="input_6_table" maxlength="6"  style="background-color: rgb(204, 204, 204); cursor:default"  value="0D0086"></td>
 			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option>File Downloads</option></select></td>
 		</tr>
-		
+
 		</tr>
 			<td>Apple AppStore </td>
 			<td><input type="text" class="input_6_table" maxlength="6"  style="background-color: rgb(204, 204, 204); cursor:default"  value="0D00A0"></td>
 			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option>File Downloads</option></select></td>
 		</tr>
-		
-		
+
+
 		</tr>
 			<td>World Wide Web HTTP</td>
 			<td><input type="text" class="input_6_table" maxlength="6"  style="background-color: rgb(204, 204, 204); cursor:default"  value="12003F"></td>
@@ -1740,19 +1930,19 @@ function validate_percent(input)
 			<td><input type="text" class="input_6_table" maxlength="6"  style="background-color: rgb(204, 204, 204); cursor:default"  value="13****"></td>
 			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option>Web Surfing</option></select></td>
 		</tr>
-		
+
 		</tr>
 			<td>TLS SSL Connections + Misc </td>
 			<td><input type="text" class="input_6_table" maxlength="6"  style="background-color: rgb(204, 204, 204); cursor:default"  value="14****"></td>
 			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option>Web Surfing</option></select></td>
 		</tr>
-		
+
 		</tr>
 			<td>Advertisement </td>
 			<td><input type="text" class="input_6_table" maxlength="6"  style="background-color: rgb(204, 204, 204); cursor:default"  value="1A****"></td>
 			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option>File Downloads</option></select></td>
 		</tr>
-		
+
 		</tr>
 			<td></td>
 			<td><input  id="r1" onfocusout='validate_mark(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_6_table" maxlength="6" autocomplete="off" autocorrect="off" autocapitalize="off"></td>
@@ -1808,7 +1998,7 @@ function validate_percent(input)
 	</tbody>
 </table>
 
-<table border="0" cellpadding="0" cellspacing="0" class="FormTable" style="float:left; width:350px; display:inline-table; margin: 10px auto 10px auto">		
+<table border="0" cellpadding="0" cellspacing="0" class="FormTable" style="float:left; width:350px; display:inline-table; margin: 10px auto 10px auto">
 <thead><td colspan="3">Download Bandwidth<small style="float:right; font-weight:normal; margin-right:10px; cursor:pointer;" onclick='FreshJR_mod_reset_down()'>Reset</small></td></thead>
 	<tbody>
 		<tr>
@@ -1859,7 +2049,7 @@ function validate_percent(input)
 	</tbody>
 </table>
 
-<table border="0" cellpadding="0" cellspacing="0" class="FormTable" style="float:right; width:350px; display:inline-table; margin-top:10px; margin: 10px auto 10px auto">	
+<table border="0" cellpadding="0" cellspacing="0" class="FormTable" style="float:right; width:350px; display:inline-table; margin-top:10px; margin: 10px auto 10px auto">
 <thead><td colspan="3">Upload Bandwidth<small style="float:right; font-weight:normal; margin-right:10px; cursor:pointer;" onclick='FreshJR_mod_reset_up()'>Reset</small></td></thead>
 	<tbody>
 		<tr>
