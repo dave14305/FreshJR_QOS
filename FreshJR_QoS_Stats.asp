@@ -96,39 +96,7 @@ white-space: nowrap;
 overflow: hidden;
 text-overflow: ellipsis;
 }
-.input_15_table{
-	margin-left:-5px;
-	height:23px;
-	width:117px;
-	line-height:23px \9;	/*IE*/
-	font-size:12px;
-	font-family: Lucida Console;
-	background: #596E74;
-	border: 1px solid #929EA1;
-	color:#FFFFFF;
-}
-.input_12_table{
-	margin-left:-5px;
-	height:23px;
-	width:90px;
-	line-height:23px \9;	/*IE*/
-	font-size:12px;
-	font-family: Lucida Console;
-	background: #596E74;
-	border: 1px solid #929EA1;
-	color:#FFFFFF;
-}
-.input_6_table{
-	margin-left:-5px;
-	height:23px;
-	width:50px;
-	line-height:23px \9;	/*IE*/
-	font-size:12px;
-	font-family: Lucida Console;
-	background: #596E74;
-	border: 1px solid #929EA1;
-	color:#FFFFFF;
-}
+
 </style>
 <script>
 var device = {};													// devices database --> device["IP"] = { mac: "AA:BB:CC:DD:EE:FF" , name:"name" }
@@ -1241,27 +1209,33 @@ function del_Row(r){
 function show_iptables_rules(){
 	var iptables_rulelist_row = decodeURIComponent(iptables_rulelist_array).split('<');
 	var code = "";
+	var overlib_str = "";
 
-	code +='<table width="100%" cellspacing="0" cellpadding="4" align="center" class="list_table" id="iptables_rulelist_table">';
+	code +='<table width="100%" border="1" cellspacing="0" cellpadding="4" align="center" class="list_table" id="iptables_rulelist_table">';
 	if(iptables_rulelist_row.length == 1)
 		code +='<tr><td style="color:#FFCC00;" colspan="8">No rules defined</td></tr>';
 	else{
 		for(var i = 1; i < iptables_rulelist_row.length; i++){
-			overlib_str0[i] ="";
-			overlib_str1[i] ="";
-			overlib_str2[i] ="";
-			overlib_str3[i] ="";
-			class_disp_x = "";
 			code +='<tr id="row'+i+'">';
 			var iptables_rulelist_col = iptables_rulelist_row[i].split('>');
-			var wid=[19, 19, 9, 9, 9, 9, 21];
+			var wid=[19, 19, 9, 9, 9, 9, 20];
 				for(var j = 0; j < iptables_rulelist_col.length; j++){
 						if(j==2){
 							code +='<td width="'+wid[j]+'%">'+ iptables_rulelist_col[j].toUpperCase(); +'</td>';
 						}else if(j==6){
 							code +='<td width="'+wid[j]+'%">'+ class_title[iptables_rulelist_col[j]] +'</td>';
-						}else{
-						  code +='<td width="'+wid[j]+'%">'+ iptables_rulelist_col[j] +'</td>';
+						}else if(j==3 || j==4){
+							if(iptables_rulelist_col[j].length > 5) {
+								overlib_str = iptables_rulelist_col[j];
+								iptables_rulelist_col[j] = iptables_rulelist_col[j].substring(0,5)+"&#8230;";
+								code +='<td width="'+wid[j]+'%" title="' + overlib_str + '">'+ iptables_rulelist_col[j] +'</td>';
+							}
+							else {
+						  	code +='<td width="'+wid[j]+'%">'+ iptables_rulelist_col[j] +'</td>';
+							}
+						}
+						else {
+							code +='<td width="'+wid[j]+'%">'+ iptables_rulelist_col[j] +'</td>';
 						}
 				}
 				//code +='<td width="12%"><!--input class="edit_btn" onclick="edit_Row(this);" value=""/-->';
@@ -1683,50 +1657,50 @@ function validate_percent(input)
 	</thead>
 	<tbody>
 	<tr>
-		<th width="19%"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,25);">Local IP/CIDR</a></th>
-		<th width="19%"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,25);">Remote IP/CIDR</a></th>
-		<th width="9%"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,25);">Protocol</a></th>
-		<th width="9%"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,24);">Local Port</a></th>
-		<th width="9%"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,24);">Remote Port</a></th>
-		<th width="9%"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,24);">Mark</a></th>
-		<th width="21%"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,24);">Class</a></th>
-		<th width="6%">Add/Del</th>
+		<th width="19%"><a href="javascript:void(0);" onClick="openHint(7,25);"><div class="table_text">Local IP/CIDR</div></a></th>
+		<th width="19%"><a href="javascript:void(0);" onClick="openHint(7,25);"><div class="table_text">Remote IP/CIDR</div></a></th>
+		<th width="9%"><a href="javascript:void(0);" onClick="openHint(7,25);"><div class="table_text">Protocol</div></a></th>
+		<th width="9%"><a href="javascript:void(0);" onClick="openHint(7,24);"><div class="table_text">Local Port</div></a></th>
+		<th width="9%"><a href="javascript:void(0);" onClick="openHint(7,24);"><div class="table_text">Remote Port</div></a></th>
+		<th width="9%"><a href="javascript:void(0);" onClick="openHint(7,24);"><div class="table_text">Mark</div></a></th>
+		<th width="20%"><a href="javascript:void(0);" onClick="openHint(7,24);"><div class="table_text">Class</div></a></th>
+		<th width="6%">Add / Del</th>
 	</tr>
 	<tr>
-		<td>
+		<td width="19%">
 			<input type="text" maxlength="18" class="input_15_table" name="ipt_local_ip_x" onfocusout='validate_ipv4(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' autocorrect="off" autocapitalize="off"/>
 		</td>
-		<td>
+		<td width="19%">
 			<input type="text" maxlength="18" class="input_15_table" name="ipt_remote_ip_x" onfocusout='validate_ipv4(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' autocorrect="off" autocapitalize="off"/>
 		</td>
-		<td>
+		<td width="9%">
 			<select name="ipt_proto_x" class="input_option">
 				<option value="both">BOTH</option>
 				<option value="tcp">TCP</option>
 				<option value="udp">UDP</option>
 			</select>
 		</td>
-		<td>
+		<td width="9%">
 			<input type="text" maxlength="36" class="input_6_table" name="ipt_local_port_x" onfocusout='validate_port(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' autocomplete="off" autocorrect="off" autocapitalize="off">
 		</td>
-		<td>
+		<td width="9%">
 			<input type="text" maxlength="36" class="input_6_table" name="ipt_remote_port_x" onfocusout='validate_port(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' autocomplete="off" autocorrect="off" autocapitalize="off">
 		</td>
-		<td>
+		<td width="9%">
 			<input type="text" maxlength="6" class="input_6_table" name="ipt_mark_x" onfocusout='validate_mark(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' autocomplete="off" autocorrect="off" autocapitalize="off">
 		</td>
-		<td>
+		<td width="20%">
 			<select name="ipt_class_x" id="ipt_class_x" class="input_option">
 			</select>
 		</td>
-		<td>
-			<input type="button" class="add_btn" onClick="addRow_Group(12);" name="iptables_rules" value="">
+		<td width="6%">
+			<div><input type="button" class="add_btn" onClick="addRow_Group(12);" value=""></div>
 		</td>
 	</tr>
 </tbody>
 </table>
-<div id="iptables_rules_block"></div>
-<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" class="FormTable">
+<div id="iptables_rules_block" style=""></div>
+<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" class="FormTable" style="display:none">
 <thead><td colspan="7">Iptable Rules (ipv4) </td></thead>
 	<tbody>
 		<tr>
