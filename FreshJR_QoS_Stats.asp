@@ -63,10 +63,9 @@ background-color:#6C604F;
 }
 span.catrow{
 padding: 4px 8px 4px 8px; color: white !important;
-border-radius: 5px; border: 1px #2f3a3e solid;
+border-radius: 5px; border: 1px #2C2E2F solid;
 white-space: nowrap;
 }
-
 
 div.t_item{
 cursor:default;
@@ -81,7 +80,6 @@ display:none;
 div.t_item:active span.t_mark{
 display:inline;
 }
-
 
 div.localdeviceip{
 display:inline-block;
@@ -108,6 +106,7 @@ text-overflow: ellipsis;
 	border-right-width:1px;
 }
 </style>
+
 <script>
 var custom_settings = <% get_custom_settings(); %>;
 var device = {};													// devices database --> device["IP"] = { mac: "AA:BB:CC:DD:EE:FF" , name:"name" }
@@ -119,11 +118,7 @@ var tabledata;								//tabled of tracked connections after device-filtered
 var sortmode=6;								//current sort mode of tracked connections table (default =6)
 var dhcp_start = "<% nvram_get("dhcp_start"); %>"
 var dhcp_start = dhcp_start.substr(0, dhcp_start.lastIndexOf("."));
-var iptables_rulelist_array = "";
-var overlib_str0 = new Array();
-var overlib_str1 = new Array();
-var overlib_str2 = new Array();
-var overlib_str3 = new Array();
+var iptables_rulelist_array;
 var rulename1="Rule1";
 var rulename2="Rule2";
 var rulename3="Rule3";
@@ -193,12 +188,13 @@ if (qos_mode == 2) {
 } else {
     var category_title = ["", "Highest", "High", "Medium", "Low", "Lowest"];
 }
+
 var pie_obj_ul, pie_obj_dl;
 var refreshRate;
 var timedEvent = 0;
 var color = ["#B3645B", "#B98F53", "#C6B36A", "#849E75", "#4C8FC0",  "#7C637A", "#2B6692",  "#6C604F"];
-var bwdpi_conntrack = []; 		//this variable is later updated via ajax call
-<% get_tcclass_array(); %>;
+//var bwdpi_conntrack = []; 		//this variable is later updated via ajax call
+//get_tcclass_array(); %>;
 var pieOptions = {
     segmentShowStroke: false,
     segmentStrokeColor: "#000",
@@ -1206,16 +1202,37 @@ function del_Row(r){
 				iptables_rulelist_value += "<";
 			else
 				iptables_rulelist_value += ">";
-			if(document.getElementById('iptables_rulelist_table').rows[k].cells[j].innerHTML.lastIndexOf("...")<0){
+			if(j == 2)
+				iptables_rulelist_value += document.getElementById('iptables_rulelist_table').rows[k].cells[j].innerHTML.toLowerCase();
+			else if(j == 6)
+				iptables_rulelist_value += class_title.indexOf(document.getElementById('iptables_rulelist_table').rows[k].cells[j].innerHTML);
+			else if(document.getElementById('iptables_rulelist_table').rows[k].cells[j].innerHTML.lastIndexOf("…")<0)
 				iptables_rulelist_value += document.getElementById('iptables_rulelist_table').rows[k].cells[j].innerHTML;
-			}else{
+			else
 				iptables_rulelist_value += document.getElementById('iptables_rulelist_table').rows[k].cells[j].title;
-			}
 		}
 	}
 	iptables_rulelist_array = iptables_rulelist_value;
 	if(iptables_rulelist_array == "")
 	show_iptables_rules();
+}
+
+function edit_Row(r){
+	var i=r.parentNode.parentNode.rowIndex;
+	document.form.ipt_local_ip_x.value = document.getElementById('iptables_rulelist_table').rows[i].cells[0].innerHTML;
+	document.form.ipt_remote_ip_x.value = document.getElementById('iptables_rulelist_table').rows[i].cells[1].innerHTML;
+	document.form.ipt_proto_x.value = document.getElementById('iptables_rulelist_table').rows[i].cells[2].innerHTML.toLowerCase();
+	if (document.getElementById('iptables_rulelist_table').rows[i].cells[3].innerHTML.lastIndexOf("…") < 0)
+		document.form.ipt_local_port_x.value = document.getElementById('iptables_rulelist_table').rows[i].cells[3].innerHTML;
+	else
+		document.form.ipt_local_port_x.value = document.getElementById('iptables_rulelist_table').rows[i].cells[3].title;
+	if (document.getElementById('iptables_rulelist_table').rows[i].cells[4].innerHTML.lastIndexOf("…") < 0)
+		document.form.ipt_remote_port_x.value = document.getElementById('iptables_rulelist_table').rows[i].cells[4].innerHTML;
+	else
+		document.form.ipt_remote_port_x.value = document.getElementById('iptables_rulelist_table').rows[i].cells[4].title;
+	document.form.ipt_mark_x.value = document.getElementById('iptables_rulelist_table').rows[i].cells[5].innerHTML;
+	document.form.ipt_class_x.value = class_title.indexOf(document.getElementById('iptables_rulelist_table').rows[i].cells[6].innerHTML);
+	del_Row(r);
 }
 
 function show_iptables_rules(){
@@ -1250,8 +1267,7 @@ function show_iptables_rules(){
 							code +='<td width="'+wid[j]+'%">'+ iptables_rulelist_col[j] +'</td>';
 						}
 				}
-				//code +='<td width="12%"><!--input class="edit_btn" onclick="edit_Row(this);" value=""/-->';
-				code +='<td width="6%"><!--input class="edit_btn" onclick="edit_Row(this);" value=""/-->';
+				code +='<td width="6%"><input class="edit_btn" onclick="edit_Row(this);" value=""/>';
 				code +='<input class="remove_btn" onclick="del_Row(this);" value=""/></td></tr>';
 		}
 	}
@@ -1285,14 +1301,27 @@ function set_FreshJR_mod_vars()
 	}
 	else
 	{
-		if ( custom_settings.freshjr_nvram1 == undefined )
-			var FreshJR_nvram1 = decodeURIComponent('<% nvram_char_to_ascii("",fb_comment); %>').replace(/>/g,";").split(";");			// nvram variables from feedbackpage repurposed for use with FreshJR_QOS
-		else
-			var FreshJR_nvram1 = custom_settings.freshjr_nvram1.replace(/>/g,";").split(";");
-		if ( custom_settings.freshjr_nvram2 == undefined )
-			var FreshJR_nvram2 = decodeURIComponent('<% nvram_char_to_ascii("",fb_email_dbg); %>').replace(/>/g,";").split(";");		// nvram variables from feedbackpage repurposed for use with FreshJR_QOS
-		else
-			var FreshJR_nvram2 = custom_settings.freshjr_nvram2.replace(/>/g,";").split(";");
+		if ( custom_settings.freshjr_nvram1 == undefined )  // rules not yet converted to API format
+			{
+				var FreshJR_nvram1 = decodeURIComponent('<% nvram_char_to_ascii("",fb_comment); %>').split(">");			// nvram variables from feedbackpage repurposed for use with FreshJR_QOS
+				custom_settings.freshjr_nvram1 = decodeURIComponent('<% nvram_char_to_ascii("",fb_comment); %>');   // assign custom settings from old nvram
+				// document.form.fb_comment.value = "";  // uncomment once script ready
+			}
+		else // rules are converted to API format
+			var FreshJR_nvram1 = custom_settings.freshjr_nvram1.split(">");
+		if ( custom_settings.freshjr_nvram2 == undefined )  // rules not yet converted to API format
+		{
+			var FreshJR_nvram2 = decodeURIComponent('<% nvram_char_to_ascii("",fb_email_dbg); %>').split(">");		// nvram variables from feedbackpage repurposed for use with FreshJR_QOS
+			custom_settings.freshjr_nvram2 = decodeURIComponent('<% nvram_char_to_ascii("",fb_email_dbg); %>');
+			// document.form.fb_email_dbg.value = "";  // uncomment once script ready
+		}
+		else // rules are converted to API format
+			var FreshJR_nvram2 = custom_settings.freshjr_nvram2.split(">");
+
+		if ( custom_settings.freshjr_iptables == undefined ) // rules not yet migrated to new API variables
+			iptables_rulelist_array = "<>>both>>!80,443>000000>1<>>udp>>500,4500>>3<>>udp>16384:16415>>>3<>>tcp>>119,563>>5<>>tcp>>80,443>08****>7";
+		else // rules are migrated to new API variables
+			iptables_rulelist_array = custom_settings.freshjr_iptables;
 
 		if (FreshJR_nvram1.length == 21)
 		{
@@ -1395,6 +1424,36 @@ function set_FreshJR_mod_vars()
 			ucp6=parseInt(FreshJR_nvram2[47]);		if (ucp6 >= 5 && ucp6 <= 100) document.getElementById('ucp6').value=ucp6;
 			ucp7=parseInt(FreshJR_nvram2[48]);		if (ucp7 >= 5 && ucp7 <= 100) document.getElementById('ucp7').value=ucp7;
 		}
+
+		// Append old rules to built-in rules in new format
+		//iptables_rulelist_array += "<"+e1+">"+e2+">"+e3+">"+e4+">"+e5+">"+e6+">"+e7;
+		for (var j=0;j<FreshJR_nvram1.length;j++) {
+			var iptable_temp_rule = "";
+			FreshJR_nvram1[j] = FreshJR_nvram1[j].split(";");
+			for (var k=0;k<FreshJR_nvram1[j].length;k++) {
+				if (k==0)
+					iptable_temp_rule += "<";
+				else
+					iptable_temp_rule += ">";
+				iptable_temp_rule += FreshJR_nvram1[j][k];
+			}
+			if (iptable_temp_rule != "<>>both>>>>0")
+				iptables_rulelist_array += iptable_temp_rule;
+		} // for nvram1
+		for (var j=0;j<1;j++) {
+			var iptable_temp_rule = "";
+			FreshJR_nvram2[j] = FreshJR_nvram2[j].split(";");
+			for (var k=0;k<FreshJR_nvram2[j].length;k++) {
+				if (k==0)
+					iptable_temp_rule += "<";
+				else
+					iptable_temp_rule += ">";
+				iptable_temp_rule += FreshJR_nvram2[j][k];
+			}
+			if (iptable_temp_rule != "<>>both>>>>0")
+				iptables_rulelist_array += iptable_temp_rule;
+		} // for nvram2
+
 	}
 }
 
@@ -1522,29 +1581,15 @@ function FreshJR_mod_apply()
 		var ucp6=document.getElementById('ucp6').value;			if (!(validate_percent(ucp6)))  ucp0="100";
 		var ucp7=document.getElementById('ucp7').value;			if (!(validate_percent(ucp7)))  ucp0="100";
 
-	custom_settings.freshjr_nvram1 = e1 +";"+ e2 +";"+ e3 +";"+ e4 +";"+ e5 +";"+ e6 +";"+ e7 +">"+
-				f1 +";"+ f2 +";"+ f3 +";"+ f4 +";"+ f5 +";"+ f6 +";"+ f7 +">"+
-				g1 +";"+ g2 +";"+ g3 +";"+ g4 +";"+ g5 +";"+ g6 +";"+ g7;
-
-	custom_settings.freshjr_nvram2= h1 +";"+ h2 +";"+ h3 +";"+ h4 +";"+ h5 +";"+ h6 +";"+ h7 +">"+
-				r1 +";"+ d1 +">"+
-				r2 +";"+ d2 +">"+
-				r3 +";"+ d3 +">"+
-				r4 +";"+ d4 +">"+
-				gameCIDR +">"+
-				ruleFLAG +">"+
-				drp0 +";"+ drp1 +";"+ drp2 +";"+ drp3 +";"+ drp4 +";"+ drp5 +";"+ drp6 +";"+ drp7 +">"+
-				dcp0 +";"+ dcp1 +";"+ dcp2 +";"+ dcp3 +";"+ dcp4 +";"+ dcp5 +";"+ dcp6 +";"+ dcp7 +">"+
-				urp0 +";"+ urp1 +";"+ urp2 +";"+ urp3 +";"+ urp4 +";"+ urp5 +";"+ urp6 +";"+ urp7 +">"+
-				ucp0 +";"+ ucp1 +";"+ ucp2 +";"+ ucp3 +";"+ ucp4 +";"+ ucp5 +";"+ ucp6 +";"+ ucp7;
-
-	if (custom_settings.freshjr_nvram1 > 255){
+	if (custom_settings.freshjr_nvram1.length > 255){
 		custom_settings.freshjr_nvram2 = ";;;;;;>;;;;;;>;;;;;;";
 	}
 
-	if (custom_settings.freshjr_nvram2 > 255){
+	if (custom_settings.freshjr_nvram2.length > 255){
 		custom_settings.freshjr_nvram2 = ";;;;;;>;>;>;>;>>>5;20;15;10;10;30;5;5>100;100;100;100;100;100;100;100>5;20;15;30;10;10;5;5>100;100;100;100;100;100;100;100";
 	}
+
+	custom_settings.freshjr_iptables = iptables_rulelist_array;
 
 	/* Store object as a string in the amng_custom hidden input field */
 	document.getElementById('amng_custom').value = JSON.stringify(custom_settings);
