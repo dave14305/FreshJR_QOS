@@ -2066,7 +2066,7 @@ case "$arg1" in
 			##iptables rules will only be reapplied on firewall "start" due to receiving interface name
 			wan="${2}"
 				if [ -z "$wan" ] ; then
-					wan="eth0"
+					wan="$(nvram get wan0_ifname)"
 				fi
 
 			parse_iptablerule "${e1}" "${e2}" "${e3}" "${e4}" "${e5}" "${e6}" "${e7}" ip1_down ip1_up		##last two arguments are variables that get set "ByRef"
@@ -2102,7 +2102,7 @@ case "$arg1" in
 			if [ "$(nvram get script_usbmount)" == "/jffs/scripts/script_usbmount" ] && [ "$arg1" != "start" ] ; then
 				wan="$(iptables -vL -t mangle | grep -m 1 "BWDPI_FILTER" | tr -s ' ' | cut -d ' ' -f 7)"		#try to detect upload interface automatically
 				if [ -z "$wan" ] ; then
-					wan="eth0"
+					wan="$(nvram get wan0_ifname)"
 				fi
 				parse_iptablerule "${e1}" "${e2}" "${e3}" "${e4}" "${e5}" "${e6}" "${e7}" ip1_down ip1_up		##last two arguments are variables that get set "ByRef"
 				parse_iptablerule "${f1}" "${f2}" "${f3}" "${f4}" "${f5}" "${f6}" "${f7}" ip2_down ip2_up
