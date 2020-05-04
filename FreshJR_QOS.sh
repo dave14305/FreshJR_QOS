@@ -780,6 +780,8 @@ read_nvram(){
 		am_settings_set freshjr_nvram2 ";;;;;;>;>;>;>;>>>5;20;15;10;10;30;5;5>100;100;100;100;100;100;100;100>5;20;15;30;10;10;5;5>100;100;100;100;100;100;100;100"
 	fi
 
+	# am_settings_get freshjr_iptables | sed 's/[<]/\n/g; s/[>]/;/g'
+
 	read \
 		e1 e2 e3 e4 e5 e6 e7 \
 		f1 f2 f3 f4 f5 f6 f7 \
@@ -2130,7 +2132,8 @@ install_webui() {
 }
 
 #Main program here, will execute different things depending on arguments
-. /usr/sbin/helper.sh
+
+. /usr/sbin/helper.sh  # initialize Merlin Addon API helper functions
 
 arg1="$(echo "$1" | tr -d "-")"
 wan="${2}"
@@ -2168,8 +2171,15 @@ case "$arg1" in
 			iptable_down_rules 2>&1 | logger -t "adaptive QOS"
 			iptable_up_rules 2>&1 | logger -t "adaptive QOS"
 
-			logger -t "adaptive QOS" -s -- "TC Modification Delayed Start (5min)"
-			sleep 300s
+			logger -t "adaptive QOS" -s -- "TC Modification Delayed Start"
+			#sleep 300s
+			sleepdelay=0
+			while [ "$(tc class show dev br0 | grep "parent 1:1 " | wc -l)" -lt 8 ] && [ "$(tc class show dev eth0 | grep "parent 1:1 " | wc -l)" -lt 8 ];
+			do
+				sleep 10s
+				sleepdelay=$(($sleepdelay+10))
+			done
+			logger -t "adaptive QOS" -s -- "TC Modification Delay ended after $sleepdelay seconds"
 		fi
 
 
