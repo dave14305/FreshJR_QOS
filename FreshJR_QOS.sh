@@ -279,27 +279,27 @@ release=03/07/2019
 
 	tc_redirection_up_rules() {
 		echo "Applying  TC Up   Rules"
-		${tc} filter del dev $wan parent 1: prio $1																					#remove original unidentified traffic rule
-		${tc} filter del dev $wan parent 1: prio 22 &> /dev/null																	#remove original HTTPS rule
-		${tc} filter del dev $wan parent 1: prio 23 &> /dev/null																	#remove original HTTPS rule
-		! [ -z "$tc4_up" ] && ${tc} filter add dev $wan protocol all ${tc4_up}														#Script Interactively Defined Rule 4
-		! [ -z "$tc3_up" ] && ${tc} filter add dev $wan protocol all ${tc3_up}														#Script Interactively Defined Rule 3
-		! [ -z "$tc2_up" ] && ${tc} filter add dev $wan protocol all ${tc2_up}														#Script Interactively Defined Rule 2
-		! [ -z "$tc1_up" ] && ${tc} filter add dev $wan protocol all ${tc1_up}														#Script Interactively Defined Rule 1
-		${tc} filter add dev $wan protocol all prio 20 u32 match mark 0x4012003F 0xc03fffff flowid ${Web}							#         HTTP  rule with different destination
-		${tc} filter add dev $wan protocol all prio 22 u32 match mark 0x40130000 0xc03f0000 flowid ${Web}							#recreate HTTPS rule with different destination
-		${tc} filter add dev $wan protocol all prio 23 u32 match mark 0x40140000 0xc03f0000 flowid ${Web}							#recreate HTTPS rule with different destination
+		${tc} filter del dev eth0 parent 1: prio $1																					#remove original unidentified traffic rule
+		${tc} filter del dev eth0 parent 1: prio 22 &> /dev/null																	#remove original HTTPS rule
+		${tc} filter del dev eth0 parent 1: prio 23 &> /dev/null																	#remove original HTTPS rule
+		! [ -z "$tc4_up" ] && ${tc} filter add dev eth0 protocol all ${tc4_up}														#Script Interactively Defined Rule 4
+		! [ -z "$tc3_up" ] && ${tc} filter add dev eth0 protocol all ${tc3_up}														#Script Interactively Defined Rule 3
+		! [ -z "$tc2_up" ] && ${tc} filter add dev eth0 protocol all ${tc2_up}														#Script Interactively Defined Rule 2
+		! [ -z "$tc1_up" ] && ${tc} filter add dev eth0 protocol all ${tc1_up}														#Script Interactively Defined Rule 1
+		${tc} filter add dev eth0 protocol all prio 20 u32 match mark 0x4012003F 0xc03fffff flowid ${Web}							#         HTTP  rule with different destination
+		${tc} filter add dev eth0 protocol all prio 22 u32 match mark 0x40130000 0xc03f0000 flowid ${Web}							#recreate HTTPS rule with different destination
+		${tc} filter add dev eth0 protocol all prio 23 u32 match mark 0x40140000 0xc03f0000 flowid ${Web}							#recreate HTTPS rule with different destination
 		##UPLOAD APP_DB TRAFFIC REDIRECTION RULES START HERE  -- legacy method
 
-			${tc} filter add dev $wan protocol all prio 2 u32 match mark 0x4000006B 0xc03fffff flowid ${Others}							#Snapchat
-			${tc} filter add dev $wan protocol all prio 15 u32 match mark 0x400D0007 0xc03fffff flowid ${Downloads}						#Speedtest.net
-			${tc} filter add dev $wan protocol all prio 15 u32 match mark 0x400D0086 0xc03fffff flowid ${Downloads}						#Google Play
-			${tc} filter add dev $wan protocol all prio 15 u32 match mark 0x400D00A0 0xc03fffff flowid ${Downloads}						#Apple AppStore
-			${tc} filter add dev $wan protocol all prio 50 u32 match mark 0x401A0000 0xc03f0000 flowid ${Downloads}						#Advertisement
+			${tc} filter add dev eth0 protocol all prio 2 u32 match mark 0x4000006B 0xc03fffff flowid ${Others}							#Snapchat
+			${tc} filter add dev eth0 protocol all prio 15 u32 match mark 0x400D0007 0xc03fffff flowid ${Downloads}						#Speedtest.net
+			${tc} filter add dev eth0 protocol all prio 15 u32 match mark 0x400D0086 0xc03fffff flowid ${Downloads}						#Google Play
+			${tc} filter add dev eth0 protocol all prio 15 u32 match mark 0x400D00A0 0xc03fffff flowid ${Downloads}						#Apple AppStore
+			${tc} filter add dev eth0 protocol all prio 50 u32 match mark 0x401A0000 0xc03f0000 flowid ${Downloads}						#Advertisement
 
 		##UPLOAD APP_DB TRAFFIC REDIRECTION RULES END HERE  -- legacy method
-		${tc} filter add dev $wan protocol all prio $1 u32 match mark 0x40000000 0x4000ffff flowid ${Others}						#recreate unidentified traffic rule with different destination - Routes Unidentified Traffic into webUI adjustable "Others" traffic container, instead of "Default" traffic container
-		${tc} filter add dev $wan protocol all prio 10 u32 match mark 0x403f0001 0xc03fffff flowid ${Defaults}						#Used for iptables Default_mark_up functionality
+		${tc} filter add dev eth0 protocol all prio $1 u32 match mark 0x40000000 0x4000ffff flowid ${Others}						#recreate unidentified traffic rule with different destination - Routes Unidentified Traffic into webUI adjustable "Others" traffic container, instead of "Default" traffic container
+		${tc} filter add dev eth0 protocol all prio 10 u32 match mark 0x403f0001 0xc03fffff flowid ${Defaults}						#Used for iptables Default_mark_up functionality
 	}
 
 	custom_rates() {
@@ -313,14 +313,14 @@ release=03/07/2019
 		${tc} class change dev br0 parent 1:1 classid 1:16 htb ${PARMS}prio 7 rate ${DownRate6}Kbit ceil ${DownCeil6}Kbit burst ${DownBurst6} cburst ${DownCburst6}
 		${tc} class change dev br0 parent 1:1 classid 1:17 htb ${PARMS}prio 6 rate ${DownRate7}Kbit ceil ${DownCeil7}Kbit burst ${DownBurst7} cburst ${DownCburst7}
 
-		${tc} class change dev $wan parent 1:1 classid 1:10 htb ${PARMS}prio 0 rate ${UpRate0}Kbit ceil ${UpCeil0}Kbit burst ${UpBurst0} cburst ${UpCburst0}
-		${tc} class change dev $wan parent 1:1 classid 1:11 htb ${PARMS}prio 1 rate ${UpRate1}Kbit ceil ${UpCeil1}Kbit burst ${UpBurst1} cburst ${UpCburst1}
-		${tc} class change dev $wan parent 1:1 classid 1:12 htb ${PARMS}prio 2 rate ${UpRate2}Kbit ceil ${UpCeil2}Kbit burst ${UpBurst2} cburst ${UpCburst2}
-		${tc} class change dev $wan parent 1:1 classid 1:13 htb ${PARMS}prio 3 rate ${UpRate3}Kbit ceil ${UpCeil3}Kbit burst ${UpBurst3} cburst ${UpCburst3}
-		${tc} class change dev $wan parent 1:1 classid 1:14 htb ${PARMS}prio 4 rate ${UpRate4}Kbit ceil ${UpCeil4}Kbit burst ${UpBurst4} cburst ${UpCburst4}
-		${tc} class change dev $wan parent 1:1 classid 1:15 htb ${PARMS}prio 5 rate ${UpRate5}Kbit ceil ${UpCeil5}Kbit burst ${UpBurst5} cburst ${UpCburst5}
-		${tc} class change dev $wan parent 1:1 classid 1:16 htb ${PARMS}prio 7 rate ${UpRate6}Kbit ceil ${UpCeil6}Kbit burst ${UpBurst6} cburst ${UpCburst6}
-		${tc} class change dev $wan parent 1:1 classid 1:17 htb ${PARMS}prio 6 rate ${UpRate7}Kbit ceil ${UpCeil7}Kbit burst ${UpBurst7} cburst ${UpCburst7}
+		${tc} class change dev eth0 parent 1:1 classid 1:10 htb ${PARMS}prio 0 rate ${UpRate0}Kbit ceil ${UpCeil0}Kbit burst ${UpBurst0} cburst ${UpCburst0}
+		${tc} class change dev eth0 parent 1:1 classid 1:11 htb ${PARMS}prio 1 rate ${UpRate1}Kbit ceil ${UpCeil1}Kbit burst ${UpBurst1} cburst ${UpCburst1}
+		${tc} class change dev eth0 parent 1:1 classid 1:12 htb ${PARMS}prio 2 rate ${UpRate2}Kbit ceil ${UpCeil2}Kbit burst ${UpBurst2} cburst ${UpCburst2}
+		${tc} class change dev eth0 parent 1:1 classid 1:13 htb ${PARMS}prio 3 rate ${UpRate3}Kbit ceil ${UpCeil3}Kbit burst ${UpBurst3} cburst ${UpCburst3}
+		${tc} class change dev eth0 parent 1:1 classid 1:14 htb ${PARMS}prio 4 rate ${UpRate4}Kbit ceil ${UpCeil4}Kbit burst ${UpBurst4} cburst ${UpCburst4}
+		${tc} class change dev eth0 parent 1:1 classid 1:15 htb ${PARMS}prio 5 rate ${UpRate5}Kbit ceil ${UpCeil5}Kbit burst ${UpBurst5} cburst ${UpCburst5}
+		${tc} class change dev eth0 parent 1:1 classid 1:16 htb ${PARMS}prio 7 rate ${UpRate6}Kbit ceil ${UpCeil6}Kbit burst ${UpBurst6} cburst ${UpCburst6}
+		${tc} class change dev eth0 parent 1:1 classid 1:17 htb ${PARMS}prio 6 rate ${UpRate7}Kbit ceil ${UpCeil7}Kbit burst ${UpBurst7} cburst ${UpCburst7}
 	}
 
 ####################  DO NOT MODIFY BELOW  #####################
@@ -761,12 +761,23 @@ read_nvram(){
 	OLDIFS=$IFS
 	IFS=";"
 
-	if [ $(nvram get fb_comment | sed 's/>/;/g' | tr -cd ';' | wc -c) -ne 20 ] ; then
-		$(nvram set fb_comment=";;;;;;>;;;;;;>;;;;;;")
+	if [ $(nvram get fb_comment | sed 's/>/;/g' | tr -cd ';' | wc -c) -eq 20 ] ; then
+		am_settings_set freshjr_nvram1 "$(nvram get fb_comment)"
+		nvram set fb_comment=""
+		nvram commit
+	fi
+	if [ $(nvram get fb_email_dbg | sed 's/>/;/g' | tr -cd ';' | wc -c) -eq 48 ] ; then
+		am_settings_set freshjr_nvram2 "$(nvram get fb_email_dbg)"
+		nvram set fb_email_dbg=""
+		nvram commit
 	fi
 
-	if [ $(nvram get fb_email_dbg | sed 's/>/;/g' | tr -cd ';' | wc -c) -ne 48 ] ; then
-		$(nvram set fb_email_dbg=";;;;;;>;>;>;>;>>>5;20;15;10;10;30;5;5>100;100;100;100;100;100;100;100>5;20;15;30;10;10;5;5>100;100;100;100;100;100;100;100")
+	if [ $(am_settings_get freshjr_nvram1 | sed 's/>/;/g' | tr -cd ';' | wc -c) -ne 20 ] ; then
+		am_settings_set freshjr_nvram1 ";;;;;;>;;;;;;>;;;;;;"
+	fi
+
+	if [ $(am_settings_get freshjr_nvram2 | sed 's/>/;/g' | tr -cd ';' | wc -c) -ne 48 ] ; then
+		am_settings_set freshjr_nvram2 ";;;;;;>;>;>;>;>>>5;20;15;10;10;30;5;5>100;100;100;100;100;100;100;100>5;20;15;30;10;10;5;5>100;100;100;100;100;100;100;100"
 	fi
 
 	read \
@@ -774,7 +785,7 @@ read_nvram(){
 		f1 f2 f3 f4 f5 f6 f7 \
 		g1 g2 g3 g4 g5 g6 g7 \
 <<EOF
-$(nvram get fb_comment | sed 's/>/;/g' )
+$(am_settings_get freshjr_nvram1 | sed 's/>/;/g' )
 EOF
 
 	read \
@@ -790,7 +801,7 @@ EOF
 		urp0 urp1 urp2 urp3 urp4 urp5 urp6 urp7 \
 		ucp0 ucp1 ucp2 ucp3 ucp4 ucp5 ucp6 ucp7 \
 <<EOF
-$(nvram get fb_email_dbg | sed 's/>/;/g' )
+$(am_settings_get freshjr_nvram2 | sed 's/>/;/g' )
 EOF
 	IFS=$OLDIFS
 
@@ -840,9 +851,11 @@ EOF
 
 ## helper function to save nvram variables in csv format
 save_nvram(){
-	$(nvram set fb_comment="${e1};${e2};${e3};${e4};${e5};${e6};${e7}>${f1};${f2};${f3};${f4};${f5};${f6};${f7}>${g1};${g2};${g3};${g4};${g5};${g6};${g7}")
-	$(nvram set fb_email_dbg="${h1};${h2};${h3};${h4};${h5};${h6};${h7}>${r1};${d1}>${r2};${d2}>${r3};${d3}>${r4};${d4}>${gameCIDR}>${ruleFLAG}>${drp0};${drp1};${drp2};${drp3};${drp4};${drp5};${drp6};${drp7}>${dcp0};${dcp1};${dcp2};${dcp3};${dcp4};${dcp5};${dcp6};${dcp7}>${urp0};${urp1};${urp2};${urp3};${urp4};${urp5};${urp6};${urp7}>${ucp0};${ucp1};${ucp2};${ucp3};${ucp4};${ucp5};${ucp6};${ucp7}")
-	$(nvram commit)
+	# nvram set fb_comment="${e1};${e2};${e3};${e4};${e5};${e6};${e7}>${f1};${f2};${f3};${f4};${f5};${f6};${f7}>${g1};${g2};${g3};${g4};${g5};${g6};${g7}"
+	# nvram set fb_email_dbg="${h1};${h2};${h3};${h4};${h5};${h6};${h7}>${r1};${d1}>${r2};${d2}>${r3};${d3}>${r4};${d4}>${gameCIDR}>${ruleFLAG}>${drp0};${drp1};${drp2};${drp3};${drp4};${drp5};${drp6};${drp7}>${dcp0};${dcp1};${dcp2};${dcp3};${dcp4};${dcp5};${dcp6};${dcp7}>${urp0};${urp1};${urp2};${urp3};${urp4};${urp5};${urp6};${urp7}>${ucp0};${ucp1};${ucp2};${ucp3};${ucp4};${ucp5};${ucp6};${ucp7}"
+	# nvram commit
+	am_settings_set freshjr_nvram1 "${e1};${e2};${e3};${e4};${e5};${e6};${e7}>${f1};${f2};${f3};${f4};${f5};${f6};${f7}>${g1};${g2};${g3};${g4};${g5};${g6};${g7}"
+	am_settings_set freshjr_nvram2 "${h1};${h2};${h3};${h4};${h5};${h6};${h7}>${r1};${d1}>${r2};${d2}>${r3};${d3}>${r4};${d4}>${gameCIDR}>${ruleFLAG}>${drp0};${drp1};${drp2};${drp3};${drp4};${drp5};${drp6};${drp7}>${dcp0};${dcp1};${dcp2};${dcp3};${dcp4};${dcp5};${dcp6};${dcp7}>${urp0};${urp1};${urp2};${urp3};${urp4};${urp5};${urp6};${urp7}>${ucp0};${ucp1};${ucp2};${ucp3};${ucp4};${ucp5};${ucp6};${ucp7}"
 }
 
 ## helper function for interactive menu mode
@@ -1932,7 +1945,7 @@ prompt_restart(){
 }
 
 menu(){
-    read_nvram
+  read_nvram
 	echo -en "\033c\e[3J"		#clear screen
 	echo -en '\033[?7l'			#disable line wrap
 	printf '\e[8;30;120t'		#set height/width of terminal
@@ -2060,7 +2073,65 @@ stock_install(){
 	echo ""
 }
 
+remove_webui() {
+	if nvram get rc_support | /bin/grep -q am_addons; then
+
+	  am_get_webui_page ${webpath}
+
+	  if [ -n "$am_webui_page" ] && [ "$am_webui_page" != "none" ]; then
+	    if [ -f /tmp/menuTree.js ]; then
+	      # Merlin
+	      sed -i "\~tabName: \"FreshJR QoS\"},~d" /tmp/menuTree.js
+	      umount /www/require/modules/menuTree.js 2>/dev/null
+	      if diff /tmp/menuTree.js /www/require/modules/menuTree.js; then
+	        rm /tmp/menuTree.js
+	      else
+	        # Still some modifications from another script so remount
+	        mount -o bind /tmp/menuTree.js /www/require/modules/menuTree.js
+	      fi
+		    if [ -f /www/user/"$am_webui_page" ]; then
+		        rm /www/user/"$am_webui_page"
+		    fi
+		  fi
+		  for i in $(/bin/grep -l FreshJR_QOS /www/user/user*.asp 2>/dev/null)
+		  do
+		    rm "$i"
+		  done
+		fi
+	fi
+}
+
+install_webui() {
+	if nvram get rc_support | /bin/grep -q am_addons; then
+		# if old bind mount exists, remove it
+		if mount | grep -q www_FreshJR_QoS_Stats.asp; then
+			umount /www/QoS_Stats.asp
+		fi
+		am_get_webui_page ${webpath}
+		if [ "$am_webui_page" = "none" ]
+		then
+				logger -t "adaptive QOS" -s "No slots to install web page"
+		elif [ ! -f /www/user/"$am_webui_page" ]; then
+			cp ${webpath} /www/user/"$am_webui_page"
+			if [ ! -f /tmp/menuTree.js ]; then
+				cp /www/require/modules/menuTree.js /tmp/
+				mount -o bind /tmp/menuTree.js /www/require/modules/menuTree.js
+			fi
+			if ! /bin/grep "{url: \"$am_webui_page\", tabName: \"FreshJR QoS\"}," /tmp/menuTree.js >/dev/null 2>&1; then
+				# Insert link at the end of the Tools menu.  Match partial string, since tabname can change between builds (if using an AS tag)
+				sed -i "\~tabName: \"FreshJR QoS\"},~d" /tmp/menuTree.js
+				sed -i "/url: \"QoS_Stats.asp\", tabName:/a {url: \"$am_webui_page\", tabName: \"FreshJR QoS\"}," /tmp/menuTree.js
+				# sed and binding mounts don't work well together, so remount modified file
+				umount /www/require/modules/menuTree.js 2>/dev/null
+				mount -o bind /tmp/menuTree.js /www/require/modules/menuTree.js
+			fi
+		fi
+	fi
+}
+
 #Main program here, will execute different things depending on arguments
+. /usr/sbin/helper.sh
+
 arg1="$(echo "$1" | tr -d "-")"
 wan="${2}"
 if [ -z "$wan" ] ; then
@@ -2083,24 +2154,7 @@ case "$arg1" in
 		done
 
 		##check if should mount QoS_stats page
-		if [ "$(uname -o)" == "ASUSWRT-Merlin" ] ; then
-			buildno="$(nvram get buildno)";										#Example "User12 v17.2 Beta4"
-			if [ "$(echo ${buildno} | tr -cd '.' | wc -c)" -ne 0 ]	; then					#if has decimal
-				CV="$(echo ${buildno} | cut -d "." -f 1 | grep -o '[0-9]\+' | tail -1)"		#get first number before decimal --> 17
-				MV="$(echo ${buildno} | cut -d "." -f 2 | grep -o '[0-9]\+' | head -1)"		#get first number after decimal  --> 2
-			else
-				CV="$(echo ${buildno} | grep -o '[0-9]\+' | head -1)"						#get first number --> 17
-				MV="0"
-			fi
-
-			if [ "${CV}" -ge "382" ] ; then
-				if ! [ "${webpath}" -ef "/www/QoS_Stats.asp" ] ; then
-					mount -o bind "${webpath}" /www/QoS_Stats.asp
-				fi
-			#elif [ "${CV}" = "384" ] && [ ${MV} -ge "9" ] ; then
-			fi
-		fi
-
+		install_webui
 		read_nvram	#needs to be set before parse_iptablerule or custom rates
 
 		if [ "$arg1" == "start" ] ; then
@@ -2261,23 +2315,7 @@ case "$arg1" in
 	fi
 	cru a FreshJR_QOS "30 3 * * * /jffs/scripts/FreshJR_QOS -check"
 
-	if [ "$(uname -o)" == "ASUSWRT-Merlin" ] ; then				  #Mounts webpage on RMerlin v382+
-		buildno="$(nvram get buildno)";										#Example "User12 v17.2 Beta4"
-		if [ "$(echo ${buildno} | tr -cd '.' | wc -c)" -ne 0 ]	; then					#if has decimal
-			CV="$(echo ${buildno} | cut -d "." -f 1 | grep -o '[0-9]\+' | tail -1)"		#get first number before decimal --> 17
-			MV="$(echo ${buildno} | cut -d "." -f 2 | grep -o '[0-9]\+' | head -1)"		#get first number after decimal  --> 2
-		else
-			CV="$(echo ${buildno} | grep -o '[0-9]\+' | head -1)"						#get first number --> 17
-			MV="0"
-		fi
-
-		if [ "${CV}" -ge "382" ] ; then
-			if ! [ "${webpath}" -ef "/www/QoS_Stats.asp" ] ; then
-				mount -o bind "${webpath}" /www/QoS_Stats.asp
-			fi
-		#elif [ "${CV}" = "384" ] && [ ${MV} -ge "9" ] ; then
-		fi
-	fi
+	install_webui
 
 	#shortcut to launching FreshJR_QOS  (/usr/bin was readonly)
 	alias freshjr="sh /jffs/scripts/FreshJR_QOS -menu"
@@ -2314,26 +2352,20 @@ case "$arg1" in
 	cru d FreshJR_QOS
 	rm -f /jffs/scripts/FreshJR_QOS
 
-	umount /www/QoS_Stats.asp &> /dev/null 			#suppresses error if present
-	mount -o bind /www/QoS_Stats.asp /www/QoS_Stats.asp
-	umount /www/QoS_Stats.asp &> /dev/null
+	remove_webui
 	rm -f "${webpath}"
 
 	if [ "$(nvram get script_usbmount)" == "/jffs/scripts/script_usbmount" ] ; then												   #only used on stock ASUS firmware installs
 		nvram unset script_usbmount
 	fi
-	nvram set fb_comment=""
-	nvram set fb_email_dbg=""
-	nvram commit
+	sed -i '/^freshjr_/d' /jffs/addons/custom_settings.txt
 	echo -e  "\033[1;32m FreshJR QOS has been uninstalled \033[0m"
 	;;
  'disable')																		## TURNS OFF SCRIPT BUT KEEP FILES
 	sed -i '/FreshJR_QOS/d' /jffs/scripts/firewall-start  2>/dev/null
 	sed -i '/FreshJR_QOS/d' /jffs/scripts/script_usbmount 2>/dev/null
 	cru d FreshJR_QOS
-	umount /www/QoS_Stats.asp &> /dev/null 			#suppresses error if present
-	mount -o bind /www/QoS_Stats.asp /www/QoS_Stats.asp
-	umount /www/QoS_Stats.asp &> /dev/null
+	remove_webui
 	;;
  'debug')
 	debug
@@ -2386,7 +2418,7 @@ case "$arg1" in
 
     ;;
  *)
-    read_nvram
+  read_nvram
 	echo -en "\033c\e[3J"		#clear screen
 	echo -en '\033[?7l'			#disable line wrap
 	# printf '\e[8;30;120t'		#set height/width of terminal
