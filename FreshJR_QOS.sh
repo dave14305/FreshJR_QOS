@@ -426,9 +426,8 @@ set_tc_variables(){
 			#logger -s "flowid = ${flowid} ==========="
 		fi
 
-	done <<EOF
-		$(cat /tmp/bwdpi/qosd.conf | sed 's/rule=//g' | sed '/na/q')
-EOF
+	done < $(cat /tmp/bwdpi/qosd.conf | sed 's/rule=//g' | sed '/na/q')
+
 
 	#calculate up/down rates
 	DownCeil="$(printf "%.0f" $(nvram get qos_ibw))"
@@ -516,9 +515,7 @@ EOF
 			DownBurst7=$( echo ${line} | sed -n -e 's/.* burst \([a-zA-z0-9]*\).*/\1/p' )
 			DownCburst7=$( echo ${line} | sed -n -e 's/.*cburst \([a-zA-z0-9]*\).*/\1/p' )
 		fi
-	done <<EOF
-		$( tc class show dev br0 | grep "parent 1:1 " )
-EOF
+	done < $( tc class show dev br0 | grep "parent 1:1 " )
 
 	#read existing burst/cburst per upload class
 	while read -r line;
@@ -562,10 +559,7 @@ EOF
 			UpBurst7=$( echo ${line} | sed -n -e 's/.* burst \([a-zA-z0-9]*\).*/\1/p' )
 			UpCburst7=$( echo ${line} | sed -n -e 's/.*cburst \([a-zA-z0-9]*\).*/\1/p' )
 		fi
-	done <<EOF
-		$( tc class show dev $wan | grep "parent 1:1 " )
-EOF
-
+	done < $( tc class show dev $wan | grep "parent 1:1 " )
 
 	#read parameters for fakeTC
 	PARMS=""
@@ -786,9 +780,7 @@ read_nvram(){
 		e1 e2 e3 e4 e5 e6 e7 \
 		f1 f2 f3 f4 f5 f6 f7 \
 		g1 g2 g3 g4 g5 g6 g7 \
-<<EOF
-$(am_settings_get freshjr_nvram1 | sed 's/>/;/g' )
-EOF
+< $(am_settings_get freshjr_nvram1 | sed 's/>/;/g' )
 
 	read \
 		h1 h2 h3 h4 h5 h6 h7 \
@@ -802,9 +794,8 @@ EOF
 		dcp0 dcp1 dcp2 dcp3 dcp4 dcp5 dcp6 dcp7 \
 		urp0 urp1 urp2 urp3 urp4 urp5 urp6 urp7 \
 		ucp0 ucp1 ucp2 ucp3 ucp4 ucp5 ucp6 ucp7 \
-<<EOF
-$(am_settings_get freshjr_nvram2 | sed 's/>/;/g' )
-EOF
+< $(am_settings_get freshjr_nvram2 | sed 's/>/;/g' )
+
 	IFS=$OLDIFS
 
 	#Verify each read nvram rate is between 5-100  (disabled unless needed in future)
