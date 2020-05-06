@@ -696,6 +696,7 @@ function populate_devicefilter(){
 function initial() {
 	SetCurrentPage();
 	set_FreshJR_mod_vars();
+	show_iptables_default_rules();
 	show_iptables_rules();
 	get_devicenames();						//used for printing name next to IP
 	populate_devicefilter();				//used to populate drop down filter
@@ -1192,6 +1193,46 @@ function addRow_Group(upper){
 	}
 }
 
+function del_defRow(r){
+	var i=r.parentNode.parentNode.rowIndex;
+	// put the contents into the edit bar in case user wants to change it and add it to user rules
+	document.form.ipt_local_ip_x.value = document.getElementById('iptables_defrulelist_table').rows[i].cells[0].innerHTML;
+	document.form.ipt_remote_ip_x.value = document.getElementById('iptables_defrulelist_table').rows[i].cells[1].innerHTML;
+	document.form.ipt_proto_x.value = document.getElementById('iptables_defrulelist_table').rows[i].cells[2].innerHTML.toLowerCase();
+	if (document.getElementById('iptables_defrulelist_table').rows[i].cells[3].innerHTML.lastIndexOf("…") < 0)
+		document.form.ipt_local_port_x.value = document.getElementById('iptables_defrulelist_table').rows[i].cells[3].innerHTML;
+	else
+		document.form.ipt_local_port_x.value = document.getElementById('iptables_defrulelist_table').rows[i].cells[3].title;
+	if (document.getElementById('iptables_defrulelist_table').rows[i].cells[4].innerHTML.lastIndexOf("…") < 0)
+		document.form.ipt_remote_port_x.value = document.getElementById('iptables_defrulelist_table').rows[i].cells[4].innerHTML;
+	else
+		document.form.ipt_remote_port_x.value = document.getElementById('iptables_defrulelist_table').rows[i].cells[4].title;
+	document.form.ipt_mark_x.value = document.getElementById('iptables_defrulelist_table').rows[i].cells[5].innerHTML;
+	document.form.ipt_class_x.value = class_title.indexOf(document.getElementById('iptables_defrulelist_table').rows[i].cells[6].innerHTML);
+	// delete row
+	document.getElementById('iptables_defrulelist_table').deleteRow(i);
+	var iptables_defrulelist_value = "";
+	for(k=0; k<document.getElementById('iptables_defrulelist_table').rows.length; k++){
+		for(j=0; j<document.getElementById('iptables_defrulelist_table').rows[k].cells.length-1; j++){
+			if(j == 0)
+				iptables_defrulelist_value += "<";
+			else
+				iptables_defrulelist_value += ">";
+			if(j == 2)
+				iptables_defrulelist_value += document.getElementById('iptables_defrulelist_table').rows[k].cells[j].innerHTML.toLowerCase();
+			else if(j == 6)
+				iptables_defrulelist_value += class_title.indexOf(document.getElementById('iptables_defrulelist_table').rows[k].cells[j].innerHTML);
+			else if(document.getElementById('iptables_defrulelist_table').rows[k].cells[j].innerHTML.lastIndexOf("…")<0)
+				iptables_defrulelist_value += document.getElementById('iptables_defrulelist_table').rows[k].cells[j].innerHTML;
+			else
+				iptables_defrulelist_value += document.getElementById('iptables_defrulelist_table').rows[k].cells[j].title;
+		}
+	}
+	iptables_defrulelist_array = iptables_defrulelist_value;
+	if(iptables_defrulelist_array == "")
+	show_iptables_default_rules();
+}
+
 function del_Row(r){
 	var i=r.parentNode.parentNode.rowIndex;
 	document.getElementById('iptables_rulelist_table').deleteRow(i);
@@ -1233,6 +1274,45 @@ function edit_Row(r){
 	document.form.ipt_mark_x.value = document.getElementById('iptables_rulelist_table').rows[i].cells[5].innerHTML;
 	document.form.ipt_class_x.value = class_title.indexOf(document.getElementById('iptables_rulelist_table').rows[i].cells[6].innerHTML);
 	del_Row(r);
+}
+
+function show_iptables_default_rules(){
+	var iptables_defrulelist_row = decodeURIComponent(iptables_defrulelist_array).split('<');
+	var code = "";
+	var overlib_str = "";
+
+	code +='<table width="100%" border="1" cellspacing="0" cellpadding="4" align="center" class="list_table" style="background-color: rgb(204, 204, 204);" id="iptables_defrulelist_table">';
+	if(iptables_defrulelist_row.length == 1)
+		code +='<tr><td style="color:#FFCC00;" colspan="8">No default rules defined</td></tr>';
+	else{
+		for(var i = 1; i < iptables_defrulelist_row.length; i++){
+			code +='<tr id="row'+i+'">';
+			var iptables_defrulelist_col = iptables_defrulelist_row[i].split('>');
+			var wid=[19, 19, 9, 9, 9, 9, 20];
+				for(var j = 0; j < iptables_defrulelist_col.length; j++){
+						if(j==2){
+							code +='<td width="'+wid[j]+'%">'+ iptables_defrulelist_col[j].toUpperCase(); +'</td>';
+						}else if(j==6){
+							code +='<td width="'+wid[j]+'%">'+ class_title[iptables_defrulelist_col[j]] +'</td>';
+						}else if(j==3 || j==4){
+							if(iptables_defrulelist_col[j].length > 5) {
+								overlib_str = iptables_defrulelist_col[j];
+								iptables_defrulelist_col[j] = iptables_defrulelist_col[j].substring(0,5)+"&#8230;";
+								code +='<td width="'+wid[j]+'%" title="' + overlib_str + '">'+ iptables_defrulelist_col[j] +'</td>';
+							}
+							else {
+						  	code +='<td width="'+wid[j]+'%">'+ iptables_defrulelist_col[j] +'</td>';
+							}
+						}
+						else {
+							code +='<td width="'+wid[j]+'%">'+ iptables_defrulelist_col[j] +'</td>';
+						}
+				}
+				code +='<td width="6%"><input class="remove_btn" onclick="del_defRow(this);" value=""/></td></tr>';
+		}
+	}
+	code +='</table>';
+	document.getElementById("iptables_defaultrules_block").innerHTML = code;
 }
 
 function show_iptables_rules(){
@@ -1318,8 +1398,13 @@ function set_FreshJR_mod_vars()
 		else // rules are converted to API format
 			var FreshJR_nvram2 = custom_settings.freshjr_nvram2.split(">");
 
+		if ( custom_settings.freshjr_defiptables == undefined ) // rules not yet migrated to new API variables
+			iptables_defrulelist_array = "<>>both>>!80,443>000000>1<>>udp>>500,4500>>3<>>udp>16384:16415>>>3<>>tcp>>119,563>>5<>>tcp>>80,443>08****>7";
+		else // rules are migrated to new API variables
+			iptables_defrulelist_array = custom_settings.freshjr_defiptables;
+
 		if ( custom_settings.freshjr_iptables == undefined ) // rules not yet migrated to new API variables
-			iptables_rulelist_array = "<>>both>>!80,443>000000>1<>>udp>>500,4500>>3<>>udp>16384:16415>>>3<>>tcp>>119,563>>5<>>tcp>>80,443>08****>7";
+			iptables_rulelist_array = "";
 		else // rules are migrated to new API variables
 			iptables_rulelist_array = custom_settings.freshjr_iptables;
 
@@ -1772,6 +1857,7 @@ function SetCurrentPage() {
 	</tr>
 </tbody>
 </table>
+<div id="iptables_defaultrules_block" style=""></div>
 <div id="iptables_rules_block" style=""></div>
 <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" class="FormTable" style="display:none">
 <thead><td colspan="7">Iptable Rules (ipv4) </td></thead>
