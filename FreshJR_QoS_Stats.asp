@@ -1173,7 +1173,7 @@ function validAppDBForm(){
 				return false;
 	}
 
-	if( document.form.appdb_mark_x.value == "" )
+	if( document.form.appdb_appname_x.value == "" || document.form.appdb_mark_x.value == "" )
 		return false;
 
 	return true;
@@ -1201,7 +1201,8 @@ function addRow_AppDB(upper){
 			alert("This table only allows " + upper + " items!");
 			return;
 		}
-		addAppDBRow(document.form.appdb_mark_x, 1);
+		addAppDBRow(document.form.appdb_appname_x, 1);
+		addAppDBRow(document.form.appdb_mark_x, 0);
 		addAppDBRow(document.form.appdb_class_x, 0);
 		document.form.appdb_class_x.value="0";
 		show_appdb_rules();
@@ -1436,12 +1437,13 @@ function show_appdb_rules() {
 	else{
 		for(var i = 1; i < appdb_rulelist_row.length; i++){
 			code +='<tr id="row'+i+'">';
-			code +='<td width="auto">Application Name placeholder</td>'
 			var appdb_rulelist_col = appdb_rulelist_row[i].split('>');
 				for(var j = 0; j < appdb_rulelist_col.length; j++){
-						if (j==1){
+						if (j==2){
 							code +='<td width="20%">'+ class_title[appdb_rulelist_col[j]] +'</td>';
-						}else {
+						}else if (j==0){
+							code +='<td width="auto">'+ appdb_rulelist_col[j] +'</td>'
+						} else {
 							code +='<td width="9%">'+ appdb_rulelist_col[j] +'</td>';
 						}
 				}
@@ -1975,7 +1977,9 @@ function SetCurrentPage() {
 		<th width="12%">Add / Del</th>
 	</tr>
 	<tr>
-		<td width="auto"></td>
+		<td width="auto">
+			<input type="text" maxlength="32" class="input_32_table" name="appdb_appname_x">
+		</td>
 		<td width="9%">
 			<input type="text" maxlength="6" class="input_6_table" name="appdb_mark_x" onfocusout='validate_mark(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' autocomplete="off" autocorrect="off" autocapitalize="off">
 		</td>
