@@ -1323,7 +1323,7 @@ function show_iptables_default_rules(){
 	var code = "";
 	var overlib_str = "";
 
-	code +='<table width="100%" border="1" cellspacing="0" cellpadding="4" align="center" class="list_table" style="background-color: rgb(204, 204, 204);" id="iptables_defrulelist_table">';
+	code +='<table width="100%" border="1" cellspacing="0" cellpadding="4" align="center" class="list_table" id="iptables_defrulelist_table">';
 	if(iptables_defrulelist_row.length == 1)
 		code +='<tr><td style="color:#FFCC00;" colspan="8">No default rules defined</td></tr>';
 	else{
@@ -1403,7 +1403,7 @@ function show_appdb_default_rules() {
 	var code = "";
 	var overlib_str = "";
 
-	code +='<table width="100%" border="1" cellspacing="0" cellpadding="4" align="center" class="list_table" style="background-color: rgb(204, 204, 204);" id="appdb_defrulelist_table">';
+	code +='<table width="100%" border="1" cellspacing="0" cellpadding="4" align="center" class="list_table" id="appdb_defrulelist_table">';
 	if(appdb_defrulelist_row.length == 1)
 		code +='<tr><td style="color:#FFCC00;" colspan="4">No default rules defined</td></tr>';
 	else{
