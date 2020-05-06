@@ -663,6 +663,7 @@ function populate_classmenu(){
 	  code += '<option value="' + i + '">' + class_title[i] + "</option>\n";
 	}
 	document.getElementById('ipt_class_x').innerHTML=code;
+	document.getElementById('appdb_class_x').innerHTML=code;
 }
 
 // <select name="ipt_class_x" class="input_option">
@@ -692,11 +693,12 @@ function populate_devicefilter(){
 	document.getElementById('devicefilter').innerHTML=code;
 }
 
-
 function initial() {
 	SetCurrentPage();
 	set_FreshJR_mod_vars();
 	show_iptables_default_rules();
+	show_appdb_default_rules();
+	show_appdb_rules();
 	show_iptables_rules();
 	get_devicenames();						//used for printing name next to IP
 	populate_devicefilter();				//used to populate drop down filter
@@ -1156,6 +1158,27 @@ function addRow(obj, head){
 	obj.value = "";
 }
 
+function addAppDBRow(obj, head){
+	if(head == 1)
+		appdb_rulelist_array += "<"
+	else
+		appdb_rulelist_array += ">"
+
+	appdb_rulelist_array += obj.value;
+	obj.value = "";
+}
+
+function validAppDBForm(){
+	if(!Block_chars(document.form.appdb_mark_x, ["<" ,">"])){
+				return false;
+	}
+
+	if( document.form.appdb_mark_x.value == "" )
+		return false;
+
+	return true;
+}
+
 function validForm(){
 	if(!Block_chars(document.form.ipt_local_port_x, ["<" ,">"])){
 				return false;
@@ -1169,6 +1192,20 @@ function validForm(){
 		return false;
 
 	return true;
+}
+
+function addRow_AppDB(upper){
+	if(validAppDBForm()){
+		var rule_num = document.getElementById('appdb_rulelist_table').rows.length;
+		if(rule_num >= upper){
+			alert("This table only allows " + upper + " items!");
+			return;
+		}
+		addAppDBRow(document.form.appdb_mark_x, 1);
+		addAppDBRow(document.form.appdb_class_x, 0);
+		document.form.appdb_class_x.value="0";
+		show_appdb_rules();
+	}
 }
 
 function addRow_Group(upper){
@@ -1191,6 +1228,10 @@ function addRow_Group(upper){
 		document.form.ipt_class_x.value="0";
 		show_iptables_rules();
 	}
+}
+
+function del_defRow2(r) {
+
 }
 
 function del_defRow(r){
@@ -1355,6 +1396,63 @@ function show_iptables_rules(){
 	document.getElementById("iptables_rules_block").innerHTML = code;
 }
 
+
+function show_appdb_default_rules() {
+	var appdb_defrulelist_row = decodeURIComponent(appdb_defrulelist_array).split('<');
+	var code = "";
+	var overlib_str = "";
+
+	code +='<table width="100%" border="1" cellspacing="0" cellpadding="4" align="center" class="list_table" style="background-color: rgb(204, 204, 204);" id="appdb_defrulelist_table">';
+	if(appdb_defrulelist_row.length == 1)
+		code +='<tr><td style="color:#FFCC00;" colspan="4">No default rules defined</td></tr>';
+	else{
+		for(var i = 1; i < appdb_defrulelist_row.length; i++){
+			code +='<tr id="row'+i+'">';
+			var appdb_defrulelist_col = appdb_defrulelist_row[i].split('>');
+				for(var j = 0; j < appdb_defrulelist_col.length; j++){
+						if (j==2){
+							code +='<td width="20%">'+ class_title[appdb_defrulelist_col[j]] +'</td>';
+						} else if (j==0){
+							code +='<td width="auto">'+ appdb_defrulelist_col[j] +'</td>';
+						} else {
+							code +='<td width="9%">'+ appdb_defrulelist_col[j] +'</td>';
+						}
+				}
+				code +='<td width="12%"><input class="remove_btn" onclick="del_defRow2(this);" value=""/></td></tr>';
+		}
+	}
+	code +='</table>';
+	document.getElementById("appdb_defaultrules_block").innerHTML = code;
+}
+
+function show_appdb_rules() {
+	var appdb_rulelist_row = decodeURIComponent(appdb_rulelist_array).split('<');
+	var code = "";
+	var overlib_str = "";
+
+	code +='<table width="100%" border="1" cellspacing="0" cellpadding="4" align="center" class="list_table" id="appdb_rulelist_table">';
+	if(appdb_rulelist_row.length == 1)
+		code +='<tr><td style="color:#FFCC00;" colspan="4">No rules defined</td></tr>';
+	else{
+		for(var i = 1; i < appdb_rulelist_row.length; i++){
+			code +='<tr id="row'+i+'">';
+			code +='<td width="auto">Application Name placeholder</td>'
+			var appdb_rulelist_col = appdb_rulelist_row[i].split('>');
+				for(var j = 0; j < appdb_rulelist_col.length; j++){
+						if (j==1){
+							code +='<td width="20%">'+ class_title[appdb_rulelist_col[j]] +'</td>';
+						}else {
+							code +='<td width="9%">'+ appdb_rulelist_col[j] +'</td>';
+						}
+				}
+				code +='<td width="12%"><input class="edit_btn" onclick="edit_Row2(this);" value=""/>';
+				code +='<input class="remove_btn" onclick="del_Row2(this);" value=""/></td></tr>';
+		}
+	}
+	code +='</table>';
+	document.getElementById("appdb_rules_block").innerHTML = code;
+}
+
 function FreshJR_mod_toggle()
 {
 	var FreshJR_div = document.getElementById('FreshJR_mod');
@@ -1407,6 +1505,16 @@ function set_FreshJR_mod_vars()
 			iptables_rulelist_array = "";
 		else // rules are migrated to new API variables
 			iptables_rulelist_array = custom_settings.freshjr_iptables;
+
+		if ( custom_settings.freshjr_defappdb == undefined )
+			appdb_defrulelist_array = "<Untracked>000000>6<Snapchat>00006B>6<Speedtest.net>0D0007>5<Google Play>0D0086>5<Apple AppStore>0D00A0>5<World Wide Web HTTP>12003F>4<HTTP Protocol over TLS SSL + Misc>13****>4<TLS SSL Connections + Misc>14****>4<Advertisement>1A****>5";
+		else
+			appdb_defrulelist_array = custom_settings.freshjr_defappdb;
+
+		if ( custom_settings.freshjr_appdb == undefined )
+			appdb_rulelist_array = "";
+		else
+			appdb_rulelist_array = custom_settings.freshjr_appdb;
 
 		if (FreshJR_nvram1.length == 21)
 		{
@@ -1666,21 +1774,14 @@ function FreshJR_mod_apply()
 		var ucp6=document.getElementById('ucp6').value;			if (!(validate_percent(ucp6)))  ucp0="100";
 		var ucp7=document.getElementById('ucp7').value;			if (!(validate_percent(ucp7)))  ucp0="100";
 
-	if (custom_settings.freshjr_nvram1.length > 255){
-		custom_settings.freshjr_nvram2 = ";;;;;;>;;;;;;>;;;;;;";
-	}
-
-	if (custom_settings.freshjr_nvram2.length > 255){
-		custom_settings.freshjr_nvram2 = ";;;;;;>;>;>;>;>>>5;20;15;10;10;30;5;5>100;100;100;100;100;100;100;100>5;20;15;30;10;10;5;5>100;100;100;100;100;100;100;100";
-	}
-
+	custom_settings.freshjr_defiptables = iptables_defrulelist_array;
 	custom_settings.freshjr_iptables = iptables_rulelist_array;
+	custom_settings.freshjr_defappdb = appdb_defrulelist_array;
+	custom_settings.freshjr_appdb = appdb_rulelist_array;
 
 	/* Store object as a string in the amng_custom hidden input field */
 	document.getElementById('amng_custom').value = JSON.stringify(custom_settings);
 
-	document.form.fb_comment.value = custom_settings.freshjr_nvram1;
-	document.form.fb_email_dbg.value = custom_settings.freshjr_nvram2;
 	//document.form.action_script.value = "restart_qos;restart_firewall";
 	document.form.submit();
 }
@@ -1810,7 +1911,7 @@ function SetCurrentPage() {
 <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" class="FormTable_table">
 	<thead>
 		<tr>
-			<td colspan="8">iptables Rules&nbsp;(Max Limit : 12)</td>
+			<td colspan="8">iptables Rules&nbsp;(Max Limit : 99)</td>
 		</tr>
 	</thead>
 	<tbody>
@@ -1852,284 +1953,44 @@ function SetCurrentPage() {
 			</select>
 		</td>
 		<td width="6%">
-			<div><input type="button" class="add_btn" onClick="addRow_Group(12);" value=""></div>
+			<div><input type="button" class="add_btn" onClick="addRow_Group(99);" value=""></div>
 		</td>
 	</tr>
 </tbody>
 </table>
 <div id="iptables_defaultrules_block" style=""></div>
 <div id="iptables_rules_block" style=""></div>
-<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" class="FormTable" style="display:none">
-<thead><td colspan="7">Iptable Rules (ipv4) </td></thead>
+
+<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" class="FormTable_table">
+	<thead>
+		<tr>
+			<td colspan="4">AppDB Redirection Rules&nbsp;(Max Limit : 99)</td>
+		</tr>
+	</thead>
 	<tbody>
-		<tr>
-			<th><a class="hintstyle" href="javascript:void(0);" onclick="overlib(ipsyntaxL, 500, 500);" onmouseout="nd();">Local  IP/CIDR</a></th>
-			<th><a class="hintstyle" href="javascript:void(0);" onclick="overlib(ipsyntaxR, 500, 500);" onmouseout="nd();">Remote IP/CIDR</a></th>
-			<th><a class="hintstyle" href="javascript:void(0);" onclick="overlib(protosyntax, 300, 500);" onmouseout="nd();">Protocol</a></th>
-			<th><a class="hintstyle" href="javascript:void(0);" onclick="overlib(portsyntax, 300, 500);" onmouseout="nd();">Local  Port</a></th>
-			<th><a class="hintstyle" href="javascript:void(0);" onclick="overlib(portsyntax, 300, 500);" onmouseout="nd();">Remote Port</a></th>
-			<th><a class="hintstyle" href="javascript:void(0);" onclick="overlib(marksyntax, 500, 500);" onmouseout="nd();">Mark</a></th>
-			<th><a class="hintstyle" href="javascript:void(0);" onclick="overlib(classsyntax, 300, 500);" onmouseout="nd();">Class</a></th>
-		</tr>
-
-		<tr>
-			<td><input id="gameCIDR" onfocusout='validate_ipv4(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_15_table" maxlength="18" autocomplete="off" autocorrect="off" autocapitalize="off"></td>
-			<td><input type="text" class="input_15_table" maxlength="18" style="background-color: rgb(204, 204, 204); cursor:default" readonly></td>
-			<td><select class="input_option" style="width:55px;margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly><option>BOTH</option></select></td>
-			<td><input type="text" class="input_12_table" maxlength="12" style="background-color: rgb(204, 204, 204); cursor:default" readonly></td>
-			<td><input type="text" class="input_12_table" maxlength="12" style="background-color: rgb(204, 204, 204); cursor:default" value="!80,443" readonly></td>
-			<td><input type="text" class="input_6_table" maxlength="6"   style="background-color: rgb(204, 204, 204); cursor:default" value="000000" readonly></td>
-			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option value="UDP">Gaming</option></select></td>
-		</tr>
-
-		<tr>
-			<td><input type="text" class="input_15_table" maxlength="18" style="background-color: rgb(204, 204, 204); cursor:default" readonly></td>
-			<td><input type="text" class="input_15_table" maxlength="18" style="background-color: rgb(204, 204, 204); cursor:default" readonly></td>
-			<td><select class="input_option" style="width:55px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly><option>UDP</option></select></td>
-			<td><input type="text" class="input_12_table" maxlength="12" style="background-color: rgb(204, 204, 204); cursor:default" readonly></td>
-			<td><input type="text" class="input_12_table" maxlength="12" style="background-color: rgb(204, 204, 204); cursor:default" value="500,4500" readonly></td>
-			<td><input type="text" class="input_6_table" maxlength="6"   style="background-color: rgb(204, 204, 204); cursor:default" readonly></td>
-			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option value="UDP">VoIP</option></select></td>
-		</tr>
-
-		<tr>
-			<td><input type="text" class="input_15_table" maxlength="18" style="background-color: rgb(204, 204, 204); cursor:default" readonly></td>
-			<td><input type="text" class="input_15_table" maxlength="18" style="background-color: rgb(204, 204, 204); cursor:default" readonly></td>
-			<td><select class="input_option" style="width:55px;margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly><option>UDP</option></select></td>
-			<td><input type="text" class="input_12_table" maxlength="12" style="background-color: rgb(204, 204, 204); cursor:default" value="16384:16415" readonly></td>
-			<td><input type="text" class="input_12_table" maxlength="12" style="background-color: rgb(204, 204, 204); cursor:default" readonly></td>
-			<td><input type="text" class="input_6_table" maxlength="6"   style="background-color: rgb(204, 204, 204); cursor:default" readonly></td>
-			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option value="UDP">VoIP</option></select></td>
-		</tr>
-
-		<tr>
-			<td><input type="text" class="input_15_table" maxlength="18" style="background-color: rgb(204, 204, 204); cursor:default" readonly></td>
-			<td><input type="text" class="input_15_table" maxlength="18" style="background-color: rgb(204, 204, 204); cursor:default" readonly></td>
-			<td><select class="input_option" style="width:55px;margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly><option>TCP</option></select></td>
-			<td><input type="text" class="input_12_table" maxlength="12" style="background-color: rgb(204, 204, 204); cursor:default" readonly></td>
-			<td><input type="text" class="input_12_table" maxlength="12" style="background-color: rgb(204, 204, 204); cursor:default" value="119,563" readonly></td>
-			<td><input type="text" class="input_6_table" maxlength="6"   style="background-color: rgb(204, 204, 204); cursor:default" readonly></td>
-			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option value="UDP">File Downloads</option></select></td>
-		</tr>
-
-		<tr>
-			<td><input type="text" class="input_15_table" maxlength="18" style="background-color: rgb(204, 204, 204); cursor:default" readonly></td>
-			<td><input type="text" class="input_15_table" maxlength="18" style="background-color: rgb(204, 204, 204); cursor:default" readonly></td>
-			<td><select class="input_option" style="width:55px;margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly><option>TCP</option></select></td>
-			<td><input type="text" class="input_12_table" maxlength="12" style="background-color: rgb(204, 204, 204); cursor:default" readonly></td>
-			<td><input type="text" class="input_12_table" maxlength="12" style="background-color: rgb(204, 204, 204); cursor:default" value="80,443" readonly></td>
-			<td><input type="text" class="input_6_table" maxlength="6"   style="background-color: rgb(204, 204, 204); cursor:default" value="08****" readonly></td>
-			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option value="UDP">Game Downloads</option></select></td>
-		</tr>
-
-		<tr>
-			<td><input id="e1" onfocusout='validate_ipv4(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_15_table" maxlength="18" autocomplete="off" autocorrect="off" autocapitalize="off"></td>
-			<td><input id="e2" onfocusout='validate_ipv4(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_15_table" maxlength="18" autocomplete="off" autocorrect="off" autocapitalize="off"></td>
-			<td><select id="e3" class="input_option" style="width:55px;margin-left:-5px">
-				<option value="both">BOTH</option>
-				<option value="tcp">TCP</option>
-				<option value="udp">UDP</option>
-				</select></td>
-			<td><input id="e4" onfocusout='validate_port(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_12_table" maxlength="36" autocomplete="off" autocorrect="off" autocapitalize="off"></td>
-			<td><input id="e5" onfocusout='validate_port(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_12_table" maxlength="36" autocomplete="off" autocorrect="off" autocapitalize="off"></td>
-			<td><input id="e6" onfocusout='validate_mark(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_6_table" maxlength="6"   autocomplete="off" autocorrect="off" autocapitalize="off"></td>
-			<td><select id="e7" class="input_option" style="width:55px;width:125px; font-size:11.5px; margin-left:-5px">
-					<option value="0">Net Control</option>
-					<option value="3">VoIP</option>
-					<option value="1">Gaming</option>
-					<option value="6">Others</option>
-					<option value="4">Web Surfing</option>
-					<option value="2">Streaming</option>
-					<option value="7">Game Downloads</option>
-					<option value="5">File Downloads</option></select></td>
-		</tr>
-
-		<tr>
-			<td><input id="f1" onfocusout='validate_ipv4(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_15_table" maxlength="18" autocomplete="off" autocorrect="off" autocapitalize="off"></td>
-			<td><input id="f2" onfocusout='validate_ipv4(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_15_table" maxlength="18" autocomplete="off" autocorrect="off" autocapitalize="off"></td>
-			<td><select id="f3" class="input_option" style="width:55px;margin-left:-5px">
-				<option value="both">BOTH</option>
-				<option value="tcp">TCP</option>
-				<option value="udp">UDP</option>
-				</select></td>
-			<td><input id="f4" onfocusout='validate_port(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_12_table" maxlength="36" autocomplete="off" autocorrect="off" autocapitalize="off"></td>
-			<td><input id="f5" onfocusout='validate_port(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_12_table" maxlength="36" autocomplete="off" autocorrect="off" autocapitalize="off"></td>
-			<td><input id="f6" onfocusout='validate_mark(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_6_table" maxlength="6"   autocomplete="off" autocorrect="off" autocapitalize="off"></td>
-			<td><select id="f7" class="input_option" style="width:55px;width:125px; font-size:11.5px; margin-left:-5px">
-					<option value="0">Net Control</option>
-					<option value="3">VoIP</option>
-					<option value="1">Gaming</option>
-					<option value="6">Others</option>
-					<option value="4">Web Surfing</option>
-					<option value="2">Streaming</option>
-					<option value="7">Game Downloads</option>
-					<option value="5">File Downloads</option></select></td>
-		</tr>
-
-		<tr>
-			<td><input id="g1" onfocusout='validate_ipv4(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_15_table" maxlength="18" autocomplete="off" autocorrect="off" autocapitalize="off"></td>
-			<td><input id="g2" onfocusout='validate_ipv4(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_15_table" maxlength="18" autocomplete="off" autocorrect="off" autocapitalize="off"></td>
-			<td><select id="g3" class="input_option" style="width:55px;margin-left:-5px">
-				<option value="both">BOTH</option>
-				<option value="tcp">TCP</option>
-				<option value="udp">UDP</option>
-				</select></td>
-			<td><input id="g4" onfocusout='validate_port(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_12_table" maxlength="36" autocomplete="off" autocorrect="off" autocapitalize="off"></td>
-			<td><input id="g5" onfocusout='validate_port(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_12_table" maxlength="36" autocomplete="off" autocorrect="off" autocapitalize="off"></td>
-			<td><input id="g6" onfocusout='validate_mark(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_6_table" maxlength="6"   autocomplete="off" autocorrect="off" autocapitalize="off"></td>
-			<td><select id="g7" class="input_option" style="width:55px;width:125px; font-size:11.5px; margin-left:-5px">
-					<option value="0">Net Control</option>
-					<option value="3">VoIP</option>
-					<option value="1">Gaming</option>
-					<option value="6">Others</option>
-					<option value="4">Web Surfing</option>
-					<option value="2">Streaming</option>
-					<option value="7">Game Downloads</option>
-					<option value="5">File Downloads</option></select></td>
-		</tr>
-
-		<tr>
-			<td><input id="h1" onfocusout='validate_ipv4(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_15_table" maxlength="18" autocomplete="off" autocorrect="off" autocapitalize="off"></td>
-			<td><input id="h2" onfocusout='validate_ipv4(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_15_table" maxlength="18" autocomplete="off" autocorrect="off" autocapitalize="off"></td>
-			<td><select id="h3" class="input_option" style="width:55px;margin-left:-5px">
-				<option value="both">BOTH</option>
-				<option value="tcp">TCP</option>
-				<option value="udp">UDP</option>
-				</select></td>
-			<td><input id="h4" onfocusout='validate_port(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_12_table" maxlength="36" autocomplete="off" autocorrect="off" autocapitalize="off"></td>
-			<td><input id="h5" onfocusout='validate_port(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_12_table" maxlength="36" autocomplete="off" autocorrect="off" autocapitalize="off"></td>
-			<td><input id="h6" onfocusout='validate_mark(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_6_table" maxlength="6"   autocomplete="off" autocorrect="off" autocapitalize="off"></td>
-			<td><select id="h7" class="input_option" style="width:55px;width:125px; font-size:11.5px; margin-left:-5px">
-					<option value="0">Net Control</option>
-					<option value="3">VoIP</option>
-					<option value="1">Gaming</option>
-					<option value="6">Others</option>
-					<option value="4">Web Surfing</option>
-					<option value="2">Streaming</option>
-					<option value="7">Game Downloads</option>
-					<option value="5">File Downloads</option></select></td>
-		</tr>
-	</tbody>
+	<tr>
+		<th width="auto"><a href="javascript:void(0);" onClick="openHint(7,25);"><div class="table_text">Application</div></a></th>
+		<th width="9%"><a href="javascript:void(0);" onClick="openHint(7,24);"><div class="table_text">Mark</div></a></th>
+		<th width="20%"><a href="javascript:void(0);" onClick="openHint(7,24);"><div class="table_text">Class</div></a></th>
+		<th width="12%">Add / Del</th>
+	</tr>
+	<tr>
+		<td width="auto"></td>
+		<td width="9%">
+			<input type="text" maxlength="6" class="input_6_table" name="appdb_mark_x" onfocusout='validate_mark(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' autocomplete="off" autocorrect="off" autocapitalize="off">
+		</td>
+		<td width="20%">
+			<select name="appdb_class_x" id="appdb_class_x" class="input_option">
+			</select>
+		</td>
+		<td width="12%">
+			<div><input type="button" class="add_btn" onClick="addRow_AppDB(99);" value=""></div>
+		</td>
+	</tr>
+</tbody>
 </table>
-
-<table border="0" cellpadding="4" cellspacing="0" class="FormTable" style="width:100%; margin:10px auto 10px auto">
-<thead><td colspan="3">AppDB Redirection (traffic control)</td></thead>
-	<tbody>
-		<tr>
-			<th style="width:auto">AppDB</th>
-			<th style="width:10px">Mark</th>
-			<th style="width:10px">Class</th>
-		</tr>
-
-		</tr>
-			<td>Untracked </td>
-			<td><input type="text" class="input_6_table" maxlength="6"  style="background-color: rgb(204, 204, 204); cursor:default"  value="000000"></td>
-			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option>Others</option></select></td>
-		</tr>
-
-		</tr>
-			<td>Snapchat </td>
-			<td><input type="text" class="input_6_table" maxlength="6"  style="background-color: rgb(204, 204, 204); cursor:default"  value="00006B"></td>
-			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option>Others</option></select></td>
-		</tr>
-
-		</tr>
-			<td>Speedtest.net</td>
-			<td><input type="text" class="input_6_table" maxlength="6"  style="background-color: rgb(204, 204, 204); cursor:default"  value="0D0007"></td>
-			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option>File Downloads</option></select></td>
-		</tr>
-
-		</tr>
-			<td>Google Play</td>
-			<td><input type="text" class="input_6_table" maxlength="6"  style="background-color: rgb(204, 204, 204); cursor:default"  value="0D0086"></td>
-			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option>File Downloads</option></select></td>
-		</tr>
-
-		</tr>
-			<td>Apple AppStore </td>
-			<td><input type="text" class="input_6_table" maxlength="6"  style="background-color: rgb(204, 204, 204); cursor:default"  value="0D00A0"></td>
-			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option>File Downloads</option></select></td>
-		</tr>
-
-
-		</tr>
-			<td>World Wide Web HTTP</td>
-			<td><input type="text" class="input_6_table" maxlength="6"  style="background-color: rgb(204, 204, 204); cursor:default"  value="12003F"></td>
-			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option>Web Surfing</option></select></td>
-		</tr>
-
-		</tr>
-			<td>HTTP Protocol over TLS SSL + Misc</td>
-			<td><input type="text" class="input_6_table" maxlength="6"  style="background-color: rgb(204, 204, 204); cursor:default"  value="13****"></td>
-			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option>Web Surfing</option></select></td>
-		</tr>
-
-		</tr>
-			<td>TLS SSL Connections + Misc </td>
-			<td><input type="text" class="input_6_table" maxlength="6"  style="background-color: rgb(204, 204, 204); cursor:default"  value="14****"></td>
-			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option>Web Surfing</option></select></td>
-		</tr>
-
-		</tr>
-			<td>Advertisement </td>
-			<td><input type="text" class="input_6_table" maxlength="6"  style="background-color: rgb(204, 204, 204); cursor:default"  value="1A****"></td>
-			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option>File Downloads</option></select></td>
-		</tr>
-
-		</tr>
-			<td></td>
-			<td><input  id="r1" onfocusout='validate_mark(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_6_table" maxlength="6" autocomplete="off" autocorrect="off" autocapitalize="off"></td>
-			<td><select id="d1" class="input_option" style="width:55px;width:125px; font-size:11.5px; margin-left:-5px">
-					<option value="0">Net Control</option>
-					<option value="3">VoIP</option>
-					<option value="1">Gaming</option>
-					<option value="6">Others</option>
-					<option value="4">Web Surfing</option>
-					<option value="2">Streaming</option>
-					<option value="7">Game Downloads</option>
-					<option value="5">File Downloads</option></select></td>
-		</tr>
-		</tr>
-			<td></td>
-			<td><input  id="r2" onfocusout='validate_mark(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_6_table" maxlength="6" autocomplete="off" autocorrect="off" autocapitalize="off"></td>
-			<td><select id="d2" class="input_option" style="width:55px;width:125px; font-size:11.5px; margin-left:-5px">
-					<option value="0">Net Control</option>
-					<option value="3">VoIP</option>
-					<option value="1">Gaming</option>
-					<option value="6">Others</option>
-					<option value="4">Web Surfing</option>
-					<option value="2">Streaming</option>
-					<option value="7">Game Downloads</option>
-					<option value="5">File Downloads</option></select></td>
-		</tr>
-		</tr>
-			<td></td>
-			<td><input  id="r3" onfocusout='validate_mark(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_6_table" maxlength="6"  autocomplete="off" autocorrect="off" autocapitalize="off"></td>
-			<td><select id="d3" class="input_option" style="width:55px;width:125px; font-size:11.5px; margin-left:-5px">
-					<option value="0">Net Control</option>
-					<option value="3">VoIP</option>
-					<option value="1">Gaming</option>
-					<option value="6">Others</option>
-					<option value="4">Web Surfing</option>
-					<option value="2">Streaming</option>
-					<option value="7">Game Downloads</option>
-					<option value="5">File Downloads</option></select></td>
-		</tr>
-		</tr>
-			<td></td>
-			<td><input  id="r4" onfocusout='validate_mark(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_6_table" maxlength="6"  autocomplete="off" autocorrect="off" autocapitalize="off"></td>
-			<td><select id="d4" class="input_option" style="width:55px;width:125px; font-size:11.5px; margin-left:-5px">
-					<option value="0">Net Control</option>
-					<option value="3">VoIP</option>
-					<option value="1">Gaming</option>
-					<option value="6">Others</option>
-					<option value="4">Web Surfing</option>
-					<option value="2">Streaming</option>
-					<option value="7">Game Downloads</option>
-					<option value="5">File Downloads</option></select></td>
-		</tr>
-	</tbody>
-</table>
+<div id="appdb_defaultrules_block" style=""></div>
+<div id="appdb_rules_block" style=""></div>
 
 <table border="0" cellpadding="0" cellspacing="0" class="FormTable" style="float:left; width:350px; display:inline-table; margin: 10px auto 10px auto">
 <thead><td colspan="3">Download Bandwidth<small style="float:right; font-weight:normal; margin-right:10px; cursor:pointer;" onclick='FreshJR_mod_reset_down()'>Reset</small></td></thead>
