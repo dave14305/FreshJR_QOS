@@ -2137,7 +2137,7 @@ case "$arg1" in
 	cru a FreshJR_QOS "30 3 * * * /jffs/scripts/FreshJR_QOS -check"			#makes sure daily check if active
 	cru d FreshJR_QOS_run_once												#(used for stock firmware to trigger script and have it run after terminal is closed when making changes)
 
-	if [ "$(nvram get qos_enable)" == "1" ] ; then
+	if [ "$(nvram get qos_enable)" == "1" ] && [ "$(nvram get qos_type)" == "1" ]; then
 		for pid in $(pidof FreshJR_QOS); do
 			if [ $pid != $$ ]; then
 				if ! [ "$(ps -w | grep "${pid}.*\(install\|menu\|rules\|rates\)" | grep -v "grep")" ] ; then		#kill all previous instances of FreshJR_QOS (-install, -menu, -rules, -rates instances are whitelisted)
