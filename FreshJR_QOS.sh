@@ -56,92 +56,92 @@ release=03/07/2019
 		echo "Applying - Iptable Down Rules"
 		##DOWNLOAD (INCOMMING TRAFFIC) CUSTOM RULES START HERE  -- legacy method
 
-			iptables -D POSTROUTING -t mangle -o br0 -p udp -m multiport --sports 500,4500 -j MARK --set-mark ${VOIP_mark_down} &> /dev/null				#Wifi Calling - (All incoming traffic from WAN source ports 500 & 4500 --> VOIP )
+			iptables -D POSTROUTING -t mangle -o br0 -p udp -m multiport --sports 500,4500 -j MARK --set-mark ${VOIP_mark_down} > /dev/null 2>&1				#Wifi Calling - (All incoming traffic from WAN source ports 500 & 4500 --> VOIP )
 			iptables -A POSTROUTING -t mangle -o br0 -p udp -m multiport --sports 500,4500 -j MARK --set-mark ${VOIP_mark_down}
 
-			iptables -D POSTROUTING -t mangle -o br0 -p udp --dport 16384:16415 -j MARK --set-mark ${VOIP_mark_down} &> /dev/null							#Facetime - 	(All incoming traffic to LAN destination ports 16384-16415 --> VOIP )
+			iptables -D POSTROUTING -t mangle -o br0 -p udp --dport 16384:16415 -j MARK --set-mark ${VOIP_mark_down} > /dev/null 2>&1							#Facetime - 	(All incoming traffic to LAN destination ports 16384-16415 --> VOIP )
 			iptables -A POSTROUTING -t mangle -o br0 -p udp --dport 16384:16415 -j MARK --set-mark ${VOIP_mark_down}
 
-			iptables -D POSTROUTING -t mangle -o br0 -p tcp -m multiport --sports 119,563 -j MARK --set-mark ${Downloads_mark_down} &> /dev/null			#Usenet - 		(All incoming traffic from WAN source ports 119 & 563 --> Downloads )
+			iptables -D POSTROUTING -t mangle -o br0 -p tcp -m multiport --sports 119,563 -j MARK --set-mark ${Downloads_mark_down} > /dev/null 2>&1			#Usenet - 		(All incoming traffic from WAN source ports 119 & 563 --> Downloads )
 			iptables -A POSTROUTING -t mangle -o br0 -p tcp -m multiport --sports 119,563 -j MARK --set-mark ${Downloads_mark_down}
 
-			iptables -D POSTROUTING -t mangle -o br0 -m mark --mark 0x40000000/0xc0000000 -j MARK --set-xmark 0x80000000/0xC0000000 &> /dev/null			#VPN Fix -		(Fixes download traffic showing up in upload section when router is acting as a VPN Client)
+			iptables -D POSTROUTING -t mangle -o br0 -m mark --mark 0x40000000/0xc0000000 -j MARK --set-xmark 0x80000000/0xC0000000 > /dev/null 2>&1			#VPN Fix -		(Fixes download traffic showing up in upload section when router is acting as a VPN Client)
 			iptables -A POSTROUTING -t mangle -o br0 -m mark --mark 0x40000000/0xc0000000 -j MARK --set-xmark 0x80000000/0xC0000000
 
-			iptables -D POSTROUTING -t mangle -o br0 -m mark --mark 0x80080000/0xc03f0000 -p tcp -m multiport --sports 80,443 -j MARK --set-mark ${Default_mark_down} &> /dev/null		#Gaming - (Incoming "Gaming" traffic from WAN source ports 80 & 443 -->  Defaults//GameDownloads)
+			iptables -D POSTROUTING -t mangle -o br0 -m mark --mark 0x80080000/0xc03f0000 -p tcp -m multiport --sports 80,443 -j MARK --set-mark ${Default_mark_down} > /dev/null 2>&1		#Gaming - (Incoming "Gaming" traffic from WAN source ports 80 & 443 -->  Defaults//GameDownloads)
 			iptables -A POSTROUTING -t mangle -o br0 -m mark --mark 0x80080000/0xc03f0000 -p tcp -m multiport --sports 80,443 -j MARK --set-mark ${Default_mark_down}
 
 			if [ "$(nvram get ipv6_service)" != "disabled" ] ; then
-				ip6tables -D POSTROUTING -t mangle -o br0 -p udp -m multiport --sports 500,4500 -j MARK --set-mark ${VOIP_mark_down} &> /dev/null				#Wifi Calling - (All incoming traffic from WAN source ports 500 & 4500 --> VOIP )
+				ip6tables -D POSTROUTING -t mangle -o br0 -p udp -m multiport --sports 500,4500 -j MARK --set-mark ${VOIP_mark_down} > /dev/null 2>&1				#Wifi Calling - (All incoming traffic from WAN source ports 500 & 4500 --> VOIP )
 				ip6tables -A POSTROUTING -t mangle -o br0 -p udp -m multiport --sports 500,4500 -j MARK --set-mark ${VOIP_mark_down}
 
-				ip6tables -D POSTROUTING -t mangle -o br0 -p udp --dport 16384:16415 -j MARK --set-mark ${VOIP_mark_down} &> /dev/null							#Facetime - 	(All incoming traffic to LAN destination ports 16384-16415 --> VOIP )
+				ip6tables -D POSTROUTING -t mangle -o br0 -p udp --dport 16384:16415 -j MARK --set-mark ${VOIP_mark_down} > /dev/null 2>&1							#Facetime - 	(All incoming traffic to LAN destination ports 16384-16415 --> VOIP )
 				ip6tables -A POSTROUTING -t mangle -o br0 -p udp --dport 16384:16415 -j MARK --set-mark ${VOIP_mark_down}
 
-				ip6tables -D POSTROUTING -t mangle -o br0 -p tcp -m multiport --sports 119,563 -j MARK --set-mark ${Downloads_mark_down} &> /dev/null			#Usenet - 		(All incoming traffic from WAN source ports 119 & 563 --> Downloads )
+				ip6tables -D POSTROUTING -t mangle -o br0 -p tcp -m multiport --sports 119,563 -j MARK --set-mark ${Downloads_mark_down} > /dev/null 2>&1			#Usenet - 		(All incoming traffic from WAN source ports 119 & 563 --> Downloads )
 				ip6tables -A POSTROUTING -t mangle -o br0 -p tcp -m multiport --sports 119,563 -j MARK --set-mark ${Downloads_mark_down}
 
-				ip6tables -D POSTROUTING -t mangle -o br0 -m mark --mark 0x40000000/0xc0000000 -j MARK --set-xmark 0x80000000/0xC0000000 &> /dev/null			#VPN Fix -		(Fixes download traffic showing up in upload section when router is acting as a VPN Client)
+				ip6tables -D POSTROUTING -t mangle -o br0 -m mark --mark 0x40000000/0xc0000000 -j MARK --set-xmark 0x80000000/0xC0000000 > /dev/null 2>&1			#VPN Fix -		(Fixes download traffic showing up in upload section when router is acting as a VPN Client)
 				ip6tables -A POSTROUTING -t mangle -o br0 -m mark --mark 0x40000000/0xc0000000 -j MARK --set-xmark 0x80000000/0xC0000000
 
-				ip6tables -D POSTROUTING -t mangle -o br0 -m mark --mark 0x80080000/0xc03f0000 -p tcp -m multiport --sports 80,443 -j MARK --set-mark ${Default_mark_down} &> /dev/null		#Gaming - (Incoming "Gaming" traffic from WAN source ports 80 & 443 -->  Defaults//GameDownloads)
+				ip6tables -D POSTROUTING -t mangle -o br0 -m mark --mark 0x80080000/0xc03f0000 -p tcp -m multiport --sports 80,443 -j MARK --set-mark ${Default_mark_down} > /dev/null 2>&1		#Gaming - (Incoming "Gaming" traffic from WAN source ports 80 & 443 -->  Defaults//GameDownloads)
 				ip6tables -A POSTROUTING -t mangle -o br0 -m mark --mark 0x80080000/0xc03f0000 -p tcp -m multiport --sports 80,443 -j MARK --set-mark ${Default_mark_down}
 			fi
 
 		##DOWNLOAD (INCOMMING TRAFFIC) CUSTOM RULES END HERE  -- legacy method
 
 		if [ "$( echo $gameCIDR | tr -cd '.' | wc -c )" -eq "3" ] ; then
-			iptables -D POSTROUTING -t mangle -o br0 -d $gameCIDR -m mark --mark 0x80000000/0x8000ffff -p tcp -m multiport ! --sports 80,443  -j MARK --set-mark ${Gaming_mark_down} &> /dev/null    	#Gaming - (Incoming "Unidentified" TCP traffic, for devices specified, not from WAN source ports 80 & 443 -->  Gaming)
+			iptables -D POSTROUTING -t mangle -o br0 -d $gameCIDR -m mark --mark 0x80000000/0x8000ffff -p tcp -m multiport ! --sports 80,443  -j MARK --set-mark ${Gaming_mark_down} > /dev/null 2>&1    	#Gaming - (Incoming "Unidentified" TCP traffic, for devices specified, not from WAN source ports 80 & 443 -->  Gaming)
 			iptables -A POSTROUTING -t mangle -o br0 -d $gameCIDR -m mark --mark 0x80000000/0x8000ffff -p tcp -m multiport ! --sports 80,433  -j MARK --set-mark ${Gaming_mark_down}
 
-			iptables -D POSTROUTING -t mangle -o br0 -d $gameCIDR -m mark --mark 0x80000000/0x8000ffff -p udp -m multiport ! --sports 80,443  -j MARK --set-mark ${Gaming_mark_down} &> /dev/null    	#Gaming - (Incoming "Unidentified" UDP traffic, for devices specified, not from WAN source ports 80 & 443 -->  Gaming)
+			iptables -D POSTROUTING -t mangle -o br0 -d $gameCIDR -m mark --mark 0x80000000/0x8000ffff -p udp -m multiport ! --sports 80,443  -j MARK --set-mark ${Gaming_mark_down} > /dev/null 2>&1    	#Gaming - (Incoming "Unidentified" UDP traffic, for devices specified, not from WAN source ports 80 & 443 -->  Gaming)
 			iptables -A POSTROUTING -t mangle -o br0 -d $gameCIDR -m mark --mark 0x80000000/0x8000ffff -p udp -m multiport ! --sports 80,443  -j MARK --set-mark ${Gaming_mark_down}
 		fi
 
 		if ! [ -z "$ip1_down" ] ; then													#Script Interactively Defined Rule 1
 			if [ "$(echo ${ip1_down} | grep -c "both")" -ge "1" ] ; then
-				iptables -D POSTROUTING -t mangle -o br0 ${ip1_down//both/tcp} &> /dev/null
+				iptables -D POSTROUTING -t mangle -o br0 ${ip1_down//both/tcp} > /dev/null 2>&1
 				iptables -A POSTROUTING -t mangle -o br0 ${ip1_down//both/tcp}
-				iptables -D POSTROUTING -t mangle -o br0 ${ip1_down//both/udp} &> /dev/null
+				iptables -D POSTROUTING -t mangle -o br0 ${ip1_down//both/udp} > /dev/null 2>&1
 				iptables -A POSTROUTING -t mangle -o br0 ${ip1_down//both/udp}
 			else
-				iptables -D POSTROUTING -t mangle -o br0 ${ip1_down} &> /dev/null
+				iptables -D POSTROUTING -t mangle -o br0 ${ip1_down} > /dev/null 2>&1
 				iptables -A POSTROUTING -t mangle -o br0 ${ip1_down}
 			fi
 		fi
 
 		if ! [ -z "$ip2_down" ] ; then													#Script Interactively Defined Rule 2
 			if [ "$(echo ${ip2_down} | grep -c "both")" -ge "1" ] ; then
-				iptables -D POSTROUTING -t mangle -o br0 ${ip2_down//both/tcp} &> /dev/null
+				iptables -D POSTROUTING -t mangle -o br0 ${ip2_down//both/tcp} > /dev/null 2>&1
 				iptables -A POSTROUTING -t mangle -o br0 ${ip2_down//both/tcp}
-				iptables -D POSTROUTING -t mangle -o br0 ${ip2_down//both/udp} &> /dev/null
+				iptables -D POSTROUTING -t mangle -o br0 ${ip2_down//both/udp} > /dev/null 2>&1
 				iptables -A POSTROUTING -t mangle -o br0 ${ip2_down//both/udp}
 			else
-				iptables -D POSTROUTING -t mangle -o br0 ${ip2_down} &> /dev/null
+				iptables -D POSTROUTING -t mangle -o br0 ${ip2_down} > /dev/null 2>&1
 				iptables -A POSTROUTING -t mangle -o br0 ${ip2_down}
 			fi
 		fi
 
 		if ! [ -z "$ip3_down" ] ; then													#Script Interactively Defined Rule 3
 			if [ "$(echo ${ip3_down} | grep -c "both")" -ge "1" ] ; then
-				iptables -D POSTROUTING -t mangle -o br0 ${ip3_down//both/tcp} &> /dev/null
+				iptables -D POSTROUTING -t mangle -o br0 ${ip3_down//both/tcp} > /dev/null 2>&1
 				iptables -A POSTROUTING -t mangle -o br0 ${ip3_down//both/tcp}
-				iptables -D POSTROUTING -t mangle -o br0 ${ip3_down//both/udp} &> /dev/null
+				iptables -D POSTROUTING -t mangle -o br0 ${ip3_down//both/udp} > /dev/null 2>&1
 				iptables -A POSTROUTING -t mangle -o br0 ${ip3_down//both/udp}
 			else
-				iptables -D POSTROUTING -t mangle -o br0 ${ip3_down} &> /dev/null
+				iptables -D POSTROUTING -t mangle -o br0 ${ip3_down} > /dev/null 2>&1
 				iptables -A POSTROUTING -t mangle -o br0 ${ip3_down}
 			fi
 		fi
 
 		if ! [ -z "$ip4_down" ] ; then													#Script Interactively Defined Rule 4
 			if [ "$(echo ${ip4_down} | grep -c "both")" -ge "1" ] ; then
-				iptables -D POSTROUTING -t mangle -o br0 ${ip4_down//both/tcp} &> /dev/null
+				iptables -D POSTROUTING -t mangle -o br0 ${ip4_down//both/tcp} > /dev/null 2>&1
 				iptables -A POSTROUTING -t mangle -o br0 ${ip4_down//both/tcp}
-				iptables -D POSTROUTING -t mangle -o br0 ${ip4_down//both/udp} &> /dev/null
+				iptables -D POSTROUTING -t mangle -o br0 ${ip4_down//both/udp} > /dev/null 2>&1
 				iptables -A POSTROUTING -t mangle -o br0 ${ip4_down//both/udp}
 			else
-				iptables -D POSTROUTING -t mangle -o br0 ${ip4_down} &> /dev/null
+				iptables -D POSTROUTING -t mangle -o br0 ${ip4_down} > /dev/null 2>&1
 				iptables -A POSTROUTING -t mangle -o br0 ${ip4_down}
 			fi
 		fi
@@ -155,97 +155,97 @@ release=03/07/2019
 
 		##UPLOAD (OUTGOING TRAFFIC) CUSTOM RULES START HERE  -- legacy method
 
-			iptables -D POSTROUTING -t mangle -o $wan -p udp -m multiport --dports 500,4500 -j MARK --set-mark ${VOIP_mark_up} &> /dev/null					#Wifi Calling - (All outgoing  traffic to WAN destination ports 500 & 4500 --> VOIP )
+			iptables -D POSTROUTING -t mangle -o $wan -p udp -m multiport --dports 500,4500 -j MARK --set-mark ${VOIP_mark_up} > /dev/null 2>&1					#Wifi Calling - (All outgoing  traffic to WAN destination ports 500 & 4500 --> VOIP )
 			iptables -A POSTROUTING -t mangle -o $wan -p udp -m multiport --dports 500,4500 -j MARK --set-mark ${VOIP_mark_up}
 
-			iptables -D POSTROUTING -t mangle -o $wan -p udp --sport 16384:16415 -j MARK --set-mark ${VOIP_mark_up} &> /dev/null							#Facetime - 	(All outgoing traffic from LAN source ports 16384-16415 --> VOIP )
+			iptables -D POSTROUTING -t mangle -o $wan -p udp --sport 16384:16415 -j MARK --set-mark ${VOIP_mark_up} > /dev/null 2>&1							#Facetime - 	(All outgoing traffic from LAN source ports 16384-16415 --> VOIP )
 			iptables -A POSTROUTING -t mangle -o $wan -p udp --sport 16384:16415 -j MARK --set-mark ${VOIP_mark_up}
 
-			iptables -D POSTROUTING -t mangle -o $wan -p tcp -m multiport --dports 119,563 -j MARK --set-mark ${Downloads_mark_up} &> /dev/null				#Usenet - 		(All outgoing traffic to WAN destination ports 119 & 563 --> Downloads )
+			iptables -D POSTROUTING -t mangle -o $wan -p tcp -m multiport --dports 119,563 -j MARK --set-mark ${Downloads_mark_up} > /dev/null 2>&1				#Usenet - 		(All outgoing traffic to WAN destination ports 119 & 563 --> Downloads )
 			iptables -A POSTROUTING -t mangle -o $wan -p tcp -m multiport --dports 119,563 -j MARK --set-mark ${Downloads_mark_up}
 
-			iptables -D OUTPUT -t mangle -o $wan -p udp -m multiport ! --dports 53,123 -j MARK --set-mark ${Downloads_mark_up} &> /dev/null					#VPN Fix -		(Fixes upload traffic not detected when the router is acting as a VPN Client)
+			iptables -D OUTPUT -t mangle -o $wan -p udp -m multiport ! --dports 53,123 -j MARK --set-mark ${Downloads_mark_up} > /dev/null 2>&1					#VPN Fix -		(Fixes upload traffic not detected when the router is acting as a VPN Client)
 			iptables -A OUTPUT -t mangle -o $wan -p udp -m multiport ! --dports 53,123 -j MARK --set-mark ${Downloads_mark_up}
 
-			iptables -D OUTPUT -t mangle -o $wan -p tcp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up} &> /dev/null					#VPN Fix -		(Fixes upload traffic not detected when the router is acting as a VPN Client)
+			iptables -D OUTPUT -t mangle -o $wan -p tcp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up} > /dev/null 2>&1					#VPN Fix -		(Fixes upload traffic not detected when the router is acting as a VPN Client)
 			iptables -A OUTPUT -t mangle -o $wan -p tcp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up}
 
-			iptables -D POSTROUTING -t mangle -o $wan -m mark --mark 0x40080000/0xc03f0000 -p tcp -m multiport --sports 80,443 -j MARK --set-mark ${Default_mark_up} &> /dev/null   #Gaming - (Outgoing "Gaming" traffic to WAN destinations ports 80 & 443 -->  Defaults//GameDownloads)
+			iptables -D POSTROUTING -t mangle -o $wan -m mark --mark 0x40080000/0xc03f0000 -p tcp -m multiport --sports 80,443 -j MARK --set-mark ${Default_mark_up} > /dev/null 2>&1   #Gaming - (Outgoing "Gaming" traffic to WAN destinations ports 80 & 443 -->  Defaults//GameDownloads)
 			iptables -A POSTROUTING -t mangle -o $wan -m mark --mark 0x40080000/0xc03f0000 -p tcp -m multiport --sports 80,443 -j MARK --set-mark ${Default_mark_up}
 
 			if [ "$(nvram get ipv6_service)" != "disabled" ]; then
-				ip6tables -D POSTROUTING -t mangle -o $wan -p udp -m multiport --dports 500,4500 -j MARK --set-mark ${VOIP_mark_up} &> /dev/null					#Wifi Calling - (All outgoing  traffic to WAN destination ports 500 & 4500 --> VOIP )
+				ip6tables -D POSTROUTING -t mangle -o $wan -p udp -m multiport --dports 500,4500 -j MARK --set-mark ${VOIP_mark_up} > /dev/null 2>&1					#Wifi Calling - (All outgoing  traffic to WAN destination ports 500 & 4500 --> VOIP )
 				ip6tables -A POSTROUTING -t mangle -o $wan -p udp -m multiport --dports 500,4500 -j MARK --set-mark ${VOIP_mark_up}
 
-				ip6tables -D POSTROUTING -t mangle -o $wan -p udp --sport 16384:16415 -j MARK --set-mark ${VOIP_mark_up} &> /dev/null							#Facetime - 	(All outgoing traffic from LAN source ports 16384-16415 --> VOIP )
+				ip6tables -D POSTROUTING -t mangle -o $wan -p udp --sport 16384:16415 -j MARK --set-mark ${VOIP_mark_up} > /dev/null 2>&1							#Facetime - 	(All outgoing traffic from LAN source ports 16384-16415 --> VOIP )
 				ip6tables -A POSTROUTING -t mangle -o $wan -p udp --sport 16384:16415 -j MARK --set-mark ${VOIP_mark_up}
 
-				ip6tables -D POSTROUTING -t mangle -o $wan -p tcp -m multiport --dports 119,563 -j MARK --set-mark ${Downloads_mark_up} &> /dev/null				#Usenet - 		(All outgoing traffic to WAN destination ports 119 & 563 --> Downloads )
+				ip6tables -D POSTROUTING -t mangle -o $wan -p tcp -m multiport --dports 119,563 -j MARK --set-mark ${Downloads_mark_up} > /dev/null 2>&1				#Usenet - 		(All outgoing traffic to WAN destination ports 119 & 563 --> Downloads )
 				ip6tables -A POSTROUTING -t mangle -o $wan -p tcp -m multiport --dports 119,563 -j MARK --set-mark ${Downloads_mark_up}
 
-				ip6tables -D OUTPUT -t mangle -o $wan -p udp -m multiport ! --dports 53,123 -j MARK --set-mark ${Downloads_mark_up} &> /dev/null					#VPN Fix -		(Fixes upload traffic not detected when the router is acting as a VPN Client)
+				ip6tables -D OUTPUT -t mangle -o $wan -p udp -m multiport ! --dports 53,123 -j MARK --set-mark ${Downloads_mark_up} > /dev/null 2>&1					#VPN Fix -		(Fixes upload traffic not detected when the router is acting as a VPN Client)
 				ip6tables -A OUTPUT -t mangle -o $wan -p udp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up}
 
-				ip6tables -D OUTPUT -t mangle -o $wan -p tcp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up} &> /dev/null					#VPN Fix -		(Fixes upload traffic not detected when the router is acting as a VPN Client)
+				ip6tables -D OUTPUT -t mangle -o $wan -p tcp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up} > /dev/null 2>&1					#VPN Fix -		(Fixes upload traffic not detected when the router is acting as a VPN Client)
 				ip6tables -A OUTPUT -t mangle -o $wan -p tcp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up}
 
-				ip6tables -D POSTROUTING -t mangle -o $wan -m mark --mark 0x40080000/0xc03f0000 -p tcp -m multiport --sports 80,443 -j MARK --set-mark ${Default_mark_up} &> /dev/null   #Gaming - (Outgoing "Gaming" traffic to WAN destinations ports 80 & 443 -->  Defaults//GameDownloads)
+				ip6tables -D POSTROUTING -t mangle -o $wan -m mark --mark 0x40080000/0xc03f0000 -p tcp -m multiport --sports 80,443 -j MARK --set-mark ${Default_mark_up} > /dev/null 2>&1   #Gaming - (Outgoing "Gaming" traffic to WAN destinations ports 80 & 443 -->  Defaults//GameDownloads)
 				ip6tables -A POSTROUTING -t mangle -o $wan -m mark --mark 0x40080000/0xc03f0000 -p tcp -m multiport --sports 80,443 -j MARK --set-mark ${Default_mark_up}
 			fi
 		##UPLOAD (OUTGOING TRAFFIC) CUSTOM RULES END HERE  -- legacy method
 
 		if [ "$( echo $gameCIDR | tr -cd '.' | wc -c )" -eq "3" ] ; then
-			iptables -D POSTROUTING -t mangle -o $wan -s $gameCIDR -m mark --mark 0x40000000/0x4000ffff -p tcp -m multiport ! --dports 80,443 -j MARK --set-mark ${Gaming_mark_up} &> /dev/null 	#Gaming - (Outgoing "Unidentified" TCP traffic, for devices specified, not to WAN destination ports 80 & 443 -->  Gaming)
+			iptables -D POSTROUTING -t mangle -o $wan -s $gameCIDR -m mark --mark 0x40000000/0x4000ffff -p tcp -m multiport ! --dports 80,443 -j MARK --set-mark ${Gaming_mark_up} > /dev/null 2>&1 	#Gaming - (Outgoing "Unidentified" TCP traffic, for devices specified, not to WAN destination ports 80 & 443 -->  Gaming)
 			iptables -A POSTROUTING -t mangle -o $wan -s $gameCIDR -m mark --mark 0x40000000/0x4000ffff -p tcp -m multiport ! --dports 80,443 -j MARK --set-mark ${Gaming_mark_up}
 
-			iptables -D POSTROUTING -t mangle -o $wan -s $gameCIDR -m mark --mark 0x40000000/0x4000ffff -p udp -m multiport ! --dports 80,443 -j MARK --set-mark ${Gaming_mark_up} &> /dev/null 	#Gaming - (Outgoing "Unidentified" UDP traffic, for devices specified, not to WAN destination ports 80 & 443 -->  Gaming)
+			iptables -D POSTROUTING -t mangle -o $wan -s $gameCIDR -m mark --mark 0x40000000/0x4000ffff -p udp -m multiport ! --dports 80,443 -j MARK --set-mark ${Gaming_mark_up} > /dev/null 2>&1 	#Gaming - (Outgoing "Unidentified" UDP traffic, for devices specified, not to WAN destination ports 80 & 443 -->  Gaming)
 			iptables -A POSTROUTING -t mangle -o $wan -s $gameCIDR -m mark --mark 0x40000000/0x4000ffff -p udp -m multiport ! --dports 80,443 -j MARK --set-mark ${Gaming_mark_up}
 		fi
 
 		if ! [ -z "$ip1_up" ] ; then													#Script Interactively Defined Rule 1
 			if [ "$(echo ${ip1_up} | grep -c "both")" -ge "1" ] ; then
-				iptables -D POSTROUTING -t mangle -o $wan ${ip1_up//both/tcp} &> /dev/null
+				iptables -D POSTROUTING -t mangle -o $wan ${ip1_up//both/tcp} > /dev/null 2>&1
 				iptables -A POSTROUTING -t mangle -o $wan ${ip1_up//both/tcp}
-				iptables -D POSTROUTING -t mangle -o $wan ${ip1_up//both/udp} &> /dev/null
+				iptables -D POSTROUTING -t mangle -o $wan ${ip1_up//both/udp} > /dev/null 2>&1
 				iptables -A POSTROUTING -t mangle -o $wan ${ip1_up//both/udp}
 			else
-				iptables -D POSTROUTING -t mangle -o $wan ${ip1_up} &> /dev/null
+				iptables -D POSTROUTING -t mangle -o $wan ${ip1_up} > /dev/null 2>&1
 				iptables -A POSTROUTING -t mangle -o $wan ${ip1_up}
 			fi
 		fi
 
 		if ! [ -z "$ip2_up" ] ; then													#Script Interactively Defined Rule 2
 			if [ "$(echo ${ip2_up} | grep -c "both")" -ge "1" ] ; then
-				iptables -D POSTROUTING -t mangle -o $wan ${ip2_up//both/tcp} &> /dev/null
+				iptables -D POSTROUTING -t mangle -o $wan ${ip2_up//both/tcp} > /dev/null 2>&1
 				iptables -A POSTROUTING -t mangle -o $wan ${ip2_up//both/tcp}
-				iptables -D POSTROUTING -t mangle -o $wan ${ip2_up//both/udp} &> /dev/null
+				iptables -D POSTROUTING -t mangle -o $wan ${ip2_up//both/udp} > /dev/null 2>&1
 				iptables -A POSTROUTING -t mangle -o $wan ${ip2_up//both/udp}
 			else
-				iptables -D POSTROUTING -t mangle -o $wan ${ip2_up} &> /dev/null
+				iptables -D POSTROUTING -t mangle -o $wan ${ip2_up} > /dev/null 2>&1
 				iptables -A POSTROUTING -t mangle -o $wan ${ip2_up}
 			fi
 		fi
 
 		if ! [ -z "$ip3_up" ] ; then													#Script Interactively Defined Rule 3
 			if [ "$(echo ${ip3_up} | grep -c "both")" -ge "1" ] ; then
-				iptables -D POSTROUTING -t mangle -o $wan ${ip3_up//both/tcp} &> /dev/null
+				iptables -D POSTROUTING -t mangle -o $wan ${ip3_up//both/tcp} > /dev/null 2>&1
 				iptables -A POSTROUTING -t mangle -o $wan ${ip3_up//both/tcp}
-				iptables -D POSTROUTING -t mangle -o $wan ${ip3_up//both/udp} &> /dev/null
+				iptables -D POSTROUTING -t mangle -o $wan ${ip3_up//both/udp} > /dev/null 2>&1
 				iptables -A POSTROUTING -t mangle -o $wan ${ip3_up//both/udp}
 			else
-				iptables -D POSTROUTING -t mangle -o $wan ${ip3_up} &> /dev/null
+				iptables -D POSTROUTING -t mangle -o $wan ${ip3_up} > /dev/null 2>&1
 				iptables -A POSTROUTING -t mangle -o $wan ${ip3_up}
 			fi
 		fi
 
 		if ! [ -z "$ip4_up" ] ; then													#Script Interactively Defined Rule 4
 			if [ "$(echo ${ip4_up} | grep -c "both")" -ge "1" ] ; then
-				iptables -D POSTROUTING -t mangle -o $wan ${ip4_up//both/tcp} &> /dev/null
+				iptables -D POSTROUTING -t mangle -o $wan ${ip4_up//both/tcp} > /dev/null 2>&1
 				iptables -A POSTROUTING -t mangle -o $wan ${ip4_up//both/tcp}
-				iptables -D POSTROUTING -t mangle -o $wan ${ip4_up//both/udp} &> /dev/null
+				iptables -D POSTROUTING -t mangle -o $wan ${ip4_up//both/udp} > /dev/null 2>&1
 				iptables -A POSTROUTING -t mangle -o $wan ${ip4_up//both/udp}
 			else
-				iptables -D POSTROUTING -t mangle -o $wan ${ip4_up} &> /dev/null
+				iptables -D POSTROUTING -t mangle -o $wan ${ip4_up} > /dev/null 2>&1
 				iptables -A POSTROUTING -t mangle -o $wan ${ip4_up}
 			fi
 		fi
@@ -254,8 +254,8 @@ release=03/07/2019
 	tc_redirection_down_rules() {
 		echo "Applying  TC Down Rules"
 		${tc} filter del dev br0 parent 1: prio $1																					#remove original unidentified traffic rule
-		${tc} filter del dev br0 parent 1: prio 22 &> /dev/null																		#remove original HTTPS rule
-		${tc} filter del dev br0 parent 1: prio 23 &> /dev/null																		#remove original HTTPS rule
+		${tc} filter del dev br0 parent 1: prio 22 > /dev/null 2>&1																		#remove original HTTPS rule
+		${tc} filter del dev br0 parent 1: prio 23 > /dev/null 2>&1																		#remove original HTTPS rule
 		! [ -z "$tc4_down" ] && ${tc} filter add dev br0 protocol all ${tc4_down}													#Script Interactively Defined Rule 4
 		! [ -z "$tc3_down" ] && ${tc} filter add dev br0 protocol all ${tc3_down}													#Script Interactively Defined Rule 3
 		! [ -z "$tc2_down" ] && ${tc} filter add dev br0 protocol all ${tc2_down}													#Script Interactively Defined Rule 2
@@ -280,8 +280,8 @@ release=03/07/2019
 	tc_redirection_up_rules() {
 		echo "Applying  TC Up   Rules"
 		${tc} filter del dev eth0 parent 1: prio $1																					#remove original unidentified traffic rule
-		${tc} filter del dev eth0 parent 1: prio 22 &> /dev/null																	#remove original HTTPS rule
-		${tc} filter del dev eth0 parent 1: prio 23 &> /dev/null																	#remove original HTTPS rule
+		${tc} filter del dev eth0 parent 1: prio 22 > /dev/null 2>&1																	#remove original HTTPS rule
+		${tc} filter del dev eth0 parent 1: prio 23 > /dev/null 2>&1																	#remove original HTTPS rule
 		! [ -z "$tc4_up" ] && ${tc} filter add dev eth0 protocol all ${tc4_up}														#Script Interactively Defined Rule 4
 		! [ -z "$tc3_up" ] && ${tc} filter add dev eth0 protocol all ${tc3_up}														#Script Interactively Defined Rule 3
 		! [ -z "$tc2_up" ] && ${tc} filter add dev eth0 protocol all ${tc2_up}														#Script Interactively Defined Rule 2
@@ -2244,10 +2244,10 @@ case "$arg1" in
 		echo "Old version of FreshJR_QOS_fast(fakeTC) has been Detected"
 
 		if [ -e "/bin/tc" ] ; then
-			umount /bin/tc &> /dev/null 			#suppresses error if present
+			umount /bin/tc > /dev/null 2>&1 			#suppresses error if present
 			mount -o bind /usr/sbin/faketc /bin/tc
 		elif [ -e "/usr/sbin/tc" ] ; then
-			umount /usr/sbin/tc &> /dev/null 		#suppresses error if present
+			umount /usr/sbin/tc > /dev/null 2>&1 		#suppresses error if present
 			mount -o bind /usr/sbin/faketc /usr/sbin/tc
 		fi
 
@@ -2281,7 +2281,6 @@ case "$arg1" in
 				sed -i '/FreshJR_QOS/d' /jffs/scripts/script_usbmount 2>/dev/null
 				echo -e "\033[1;32m Installing RMerlin version of the script \033[0m"   # Display prompt in red
 				echo ""
-				break
 				;;
 			*)
 				echo "Invalid Option"
