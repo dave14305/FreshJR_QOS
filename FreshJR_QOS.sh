@@ -421,7 +421,7 @@ set_tc_variables(){
 		esac
 
 		firstchar="${line%%[0-9]*}"
-		if [ "${firstchar}" == "[" ] ; then
+		if [ "${firstchar}" = "[" ] ; then
 			flowid=$((flowid + 1))
 			#logger -s "flowid = ${flowid} ==========="
 		fi
@@ -566,7 +566,7 @@ set_tc_variables(){
 	OVERHEAD=$(nvram get qos_overhead)
 	if [ ! -z "$OVERHEAD" ] && [ "$OVERHEAD" -gt "0" ] ; then
 		ATM=$(nvram get qos_atm)
-		if [ "$ATM" == "1" ] ; then
+		if [ "$ATM" = "1" ] ; then
 			PARMS="overhead $OVERHEAD linklayer atm "
 		else
 			PARMS="overhead $OVERHEAD linklayer ethernet "
@@ -1049,7 +1049,7 @@ rates(){
 		's'|'S')
 			save_nvram
 			echo " Saving Changes"
-			[ "$(nvram get qos_enable)" == "1" ] && prompt_restart
+			[ "$(nvram get qos_enable)" = "1" ] && prompt_restart
 			return 1
 			;;
 		'e'|'E')
@@ -1100,7 +1100,7 @@ rules(){
 		    echo ""
 			echo "Saving Changes"
 		    save_nvram
-			[ "$(nvram get qos_enable)" == "1" ] && prompt_restart
+			[ "$(nvram get qos_enable)" = "1" ] && prompt_restart
 			return 1
 			;;
 		'e'|'E')
@@ -1631,7 +1631,7 @@ parse_tcrule() {
 
 	#filter field
 	if [ "$( echo ${1} | wc -c )" -eq "7" ] ; then
-		if [ "${id}" == "****" ] ; then
+		if [ "${id}" = "****" ] ; then
 			DOWN_mark="0x80${1//!/} 0xc03ff0000"
 			UP_mark="0x40${1//!/} 0xc03ff0000"
 		else
@@ -1752,7 +1752,7 @@ parse_iptablerule() {
 
 	#match mark
 	if [ "$( echo ${6} | wc -c )" -eq "7" ] ; then
-		if [ "$( echo ${6} | tail -c -5 )" == "****" ] ; then
+		if [ "$( echo ${6} | tail -c -5 )" = "****" ] ; then
 			DOWN_mark="-m mark --mark 0x80${6//!/}/0xc03f0000"
 			UP_mark="-m mark --mark 0x40${6//!/}/0xc03f0000"
 		else
@@ -1889,7 +1889,7 @@ update(){
 		echo -n " Would you like to update now? [1=Yes 2=No] : "
 		read yn
 		echo ""
-		if ! [ "${yn}" == "1" ] ; then
+		if ! [ "${yn}" = "1" ] ; then
 			echo -e "\033[1;31;7m  No Changes have been made \033[0m"
 			echo ""
 			return 0
@@ -1899,7 +1899,7 @@ update(){
 		echo -n " Would you like to overwrite your existing installation anyway? [1=Yes 2=No] : "
 		read yn
 		echo ""
-		if ! [ "${yn}" == "1"  ] ; then
+		if ! [ "${yn}" = "1"  ] ; then
 			echo -e "\033[1;31;7m  No Changes have been made \033[0m"
 			echo ""
 			return 0
@@ -1917,7 +1917,7 @@ prompt_restart(){
 	echo ""
 	echo -en " Would you like to \033[1;32m[Restart QoS]\033[0m for modifications to take effect? [1=Yes 2=No] : "
 	read yn
-	if [ "${yn}" == "1" ] ; then
+	if [ "${yn}" = "1" ] ; then
 		if grep -q -x '/jffs/scripts/FreshJR_QOS -start $1 & ' /jffs/scripts/firewall-start ; then			#RMerlin install
 			service "restart_qos;restart_firewall"
 		else																								#Stock Install
@@ -2010,7 +2010,7 @@ menu(){
 				echo ""
 				echo -en " Confirm you want to \033[1;32m[uninstall]\033[0m FreshJR_QOS [1=Yes 2=No] : "
 				read yn
-				if [ "${yn}" == "1" ] ; then
+				if [ "${yn}" = "1" ] ; then
 					echo ""
 					sh /jffs/scripts/FreshJR_QOS -uninstall
 					echo ""
@@ -2137,7 +2137,7 @@ case "$arg1" in
 	cru a FreshJR_QOS "30 3 * * * /jffs/scripts/FreshJR_QOS -check"			#makes sure daily check if active
 	cru d FreshJR_QOS_run_once												#(used for stock firmware to trigger script and have it run after terminal is closed when making changes)
 
-	if [ "$(nvram get qos_enable)" == "1" ] && [ "$(nvram get qos_type)" == "1" ]; then
+	if [ "$(nvram get qos_enable)" = "1" ] && [ "$(nvram get qos_type)" = "1" ]; then
 		for pid in $(pidof FreshJR_QOS); do
 			if [ $pid != $$ ]; then
 				if ! [ "$(ps -w | grep "^\s${pid}\s.*\(install\|menu\|rules\|rates\)" | grep -v "grep")" ] ; then		#kill all previous instances of FreshJR_QOS (-install, -menu, -rules, -rates instances are whitelisted)
@@ -2151,7 +2151,7 @@ case "$arg1" in
 		install_webui
 		read_nvram	#needs to be set before parse_iptablerule or custom rates
 
-		if [ "$arg1" == "start" ] ; then
+		if [ "$arg1" = "start" ] ; then
 			##iptables rules will only be reapplied on firewall "start" due to receiving interface name
 
 			parse_iptablerule "${e1}" "${e2}" "${e3}" "${e4}" "${e5}" "${e6}" "${e7}" ip1_down ip1_up		##last two arguments are variables that get set "ByRef"
@@ -2174,7 +2174,7 @@ case "$arg1" in
 		fi
 
 
-		if [ "$arg1" == "mount" ] ; then
+		if [ "$arg1" = "mount" ] ; then
 			logger -t "adaptive QOS" -s -- "--Post USB Mount-- Delayed Start (10min)"
 			sleep 600s
 
@@ -2185,13 +2185,13 @@ case "$arg1" in
 		undf_prio=$(echo $current_undf_rule | grep -o "pref.*" | cut -d" " -f2 | head -1)
 		#if TC modifcations have no been applied then run modification script
 		#eg (if rule setting unidentified traffic to 1:17 exists) --> run modification script
-		if [ "${undf_flowid}" == "1:17" ] ; then
-			if [ "$arg1" == "check" ] ; then
+		if [ "${undf_flowid}" = "1:17" ] ; then
+			if [ "$arg1" = "check" ] ; then
 				logger -t "adaptive QOS" -s "Scheduled Persistence Check -> Reapplying Changes"
 			fi
 
 			#this section is only used stock ASUS firmware.  It will will evaluate on (-mount && -check) parameters only on STOCK firmware
-			if [ "$(nvram get script_usbmount)" == "/jffs/scripts/script_usbmount" ] && [ "$arg1" != "start" ] ; then
+			if [ "$(nvram get script_usbmount)" = "/jffs/scripts/script_usbmount" ] && [ "$arg1" != "start" ] ; then
 				wan="$(iptables -vL -t mangle | grep -m 1 "BWDPI_FILTER" | tr -s ' ' | cut -d ' ' -f 7)"		#try to detect upload interface automatically
 				if [ -z "$wan" ] ; then
 					wan="$(nvram get wan0_ifname)"
@@ -2224,7 +2224,7 @@ case "$arg1" in
 			fi
 
 		else
-			if [ "$arg1" == "check" ] ; then
+			if [ "$arg1" = "check" ] ; then
 				logger -t "adaptive QOS" -s "Scheduled Persistence Check -> No modifications necessary"
 			else
 				logger -t "adaptive QOS" -s "No modifications necessary"
@@ -2333,7 +2333,7 @@ case "$arg1" in
 	echo -e  "\033[1;32mFreshJR QOS v${version} has been installed \033[0m"
 	echo ""
 	echo -n " Advanced configuration available via: "
-	if [ "$(uname -o)" == "ASUSWRT-Merlin" ] ; then
+	if [ "$(uname -o)" = "ASUSWRT-Merlin" ] ; then
 		if [ -e "/jffs/scripts/amtm" ] ; then
 			echo -e  "\033[1;32m[ WebUI ]\033[0m or \033[1;32m[ /jffs/scripts/FreshJR_QOS -menu ]\033[0m or \033[1;32m[ amtm ]\033[0m "
 		else
@@ -2343,7 +2343,7 @@ case "$arg1" in
 		echo -e  "\033[1;32m[ /jffs/scripts/FreshJR_QOS -menu ]\033[0m "
 	fi
 
-	[ "$(nvram get qos_enable)" == "1" ] && prompt_restart
+	[ "$(nvram get qos_enable)" = "1" ] && prompt_restart
 	;;
  'uninstall')																		## UNINSTALLS SCRIPT AND DELETES FILES
 	sed -i '/FreshJR_QOS/d' /jffs/scripts/firewall-start 2>/dev/null						#remove FreshJR_QOS from firewall start
@@ -2356,7 +2356,7 @@ case "$arg1" in
 	remove_webui
 	rm -f "${webpath}"
 
-	if [ "$(nvram get script_usbmount)" == "/jffs/scripts/script_usbmount" ] ; then												   #only used on stock ASUS firmware installs
+	if [ "$(nvram get script_usbmount)" = "/jffs/scripts/script_usbmount" ] ; then												   #only used on stock ASUS firmware installs
 		nvram unset script_usbmount
 	fi
 	sed -i '/^freshjr_/d' /jffs/addons/custom_settings.txt
@@ -2411,7 +2411,7 @@ case "$arg1" in
   'isuptodate')
 		url="https://raw.githubusercontent.com/dave14305/FreshJR_QOS/master/FreshJR_QOS.sh"
 		remotever=$(curl -fsN --retry 3 ${url} | grep "^version=" | sed -e s/version=//)
-		if [ "$version" == "$remotever" ]; then
+		if [ "$version" = "$remotever" ]; then
 			exit 0 		#script IS current
 		else
 			exit 1		#script is NOT up to date
