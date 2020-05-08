@@ -2140,9 +2140,9 @@ case "$arg1" in
 	if [ "$(nvram get qos_enable)" == "1" ] && [ "$(nvram get qos_type)" == "1" ]; then
 		for pid in $(pidof FreshJR_QOS); do
 			if [ $pid != $$ ]; then
-				if ! [ "$(ps -w | grep "${pid}.*\(install\|menu\|rules\|rates\)" | grep -v "grep")" ] ; then		#kill all previous instances of FreshJR_QOS (-install, -menu, -rules, -rates instances are whitelisted)
+				if ! [ "$(ps -w | grep "^\s${pid}\s.*\(install\|menu\|rules\|rates\)" | grep -v "grep")" ] ; then		#kill all previous instances of FreshJR_QOS (-install, -menu, -rules, -rates instances are whitelisted)
 					kill $pid
-					logger -t "adaptive QOS" -s "Delayed Start Canceled"
+					logger -t "adaptive QOS" -s "Delayed Start Canceled (${pid})"
 				fi
 			fi
 		done
