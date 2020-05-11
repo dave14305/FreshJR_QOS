@@ -1481,42 +1481,65 @@ function set_FreshJR_mod_vars()
 	}
 	else
 	{
-		if ( custom_settings.freshjr_nvram1 == undefined )  // rules not yet converted to API format
+		if ( custom_settings.freshjr_iptables == undefined )  // rules not yet converted to API format
 			{
-				var FreshJR_nvram1 = decodeURIComponent('<% nvram_char_to_ascii("",fb_comment); %>').split(">");			// nvram variables from feedbackpage repurposed for use with FreshJR_QOS
-				custom_settings.freshjr_nvram1 = decodeURIComponent('<% nvram_char_to_ascii("",fb_comment); %>');   // assign custom settings from old nvram
-				// document.form.fb_comment.value = "";  // uncomment once script ready
+				var FreshJR_nvram = decodeURIComponent('<% nvram_char_to_ascii("",fb_comment); %>').split(">");
+				FreshJR_nvram += decodeURIComponent('<% nvram_char_to_ascii("",fb_email_dbg); %>').split(">");
+				for (var j=0;j<FreshJR_nvram.length;j++) {
+					var iptables_temp_rule = "";
+					FreshJR_nvram[j] = FreshJR_nvram[j].split(";");
+					if (FreshJR_nvram[j].length == 7) {
+						for (var k=0;k<FreshJR_nvram[j].length;k++) {
+							if (k==0)
+								iptables_temp_rule += "<";
+							else
+								iptables_temp_rule += ">";
+							iptables_temp_rule += FreshJR_nvram[j][k];
+						} // for inner loop
+					} // an iptables rule
+				if (iptables_temp_rule != "<>>both>>>>0")
+					iptables_rulelist_array += iptables_temp_rule;
+				}
+				FreshJR_nvram = "";
+			// document.form.fb_comment.value = "";  // uncomment once script ready
 			}
-		else // rules are converted to API format
-			var FreshJR_nvram1 = custom_settings.freshjr_nvram1.split(">");
-		if ( custom_settings.freshjr_nvram2 == undefined )  // rules not yet converted to API format
-		{
-			var FreshJR_nvram2 = decodeURIComponent('<% nvram_char_to_ascii("",fb_email_dbg); %>').split(">");		// nvram variables from feedbackpage repurposed for use with FreshJR_QOS
-			custom_settings.freshjr_nvram2 = decodeURIComponent('<% nvram_char_to_ascii("",fb_email_dbg); %>');
-			// document.form.fb_email_dbg.value = "";  // uncomment once script ready
-		}
-		else // rules are converted to API format
-			var FreshJR_nvram2 = custom_settings.freshjr_nvram2.split(">");
+		else // rules are migrated to new API variables
+			iptables_rulelist_array = custom_settings.freshjr_iptables;
 
 		if ( custom_settings.freshjr_defiptables == undefined ) // rules not yet migrated to new API variables
 			iptables_defrulelist_array = "<>>both>>!80,443>000000>1<>>udp>>500,4500>>3<>>udp>16384:16415>>>3<>>tcp>>119,563>>5<>>tcp>>80,443>08****>7";
 		else // rules are migrated to new API variables
 			iptables_defrulelist_array = custom_settings.freshjr_defiptables;
 
-		if ( custom_settings.freshjr_iptables == undefined ) // rules not yet migrated to new API variables
-			iptables_rulelist_array = "";
-		else // rules are migrated to new API variables
-			iptables_rulelist_array = custom_settings.freshjr_iptables;
+		if ( custom_settings.freshjr_appdb == undefined )
+		{
+			var FreshJR_nvram = decodeURIComponent('<% nvram_char_to_ascii("",fb_email_dbg); %>').split(">");
+			for (var j=1;j<5;j++) {
+				var appdb_temp_rule = "";
+				FreshJR_nvram[j] = FreshJR_nvram[j].split(";");
+				for (var k=0;k<FreshJR_nvram[j].length;k++) {
+					if (k==0)
+						appdb_temp_rule += "<";
+					else
+						appdb_temp_rule += ">";
+					appdb_temp_rule += FreshJR_nvram[j][k];
+				} // for inner loop
+			if (appdb_temp_rule != "<>0")
+				appdb_rulelist_array += appdb_temp_rule;
+			}
+			FreshJR_nvram = "";
+		// document.form.fb_email_dbg.value = "";  // uncomment once script ready
+		}
+		else
+			appdb_rulelist_array = custom_settings.freshjr_appdb;
 
 		if ( custom_settings.freshjr_defappdb == undefined )
 			appdb_defrulelist_array = "<Untracked>000000>6<Snapchat>00006B>6<Speedtest.net>0D0007>5<Google Play>0D0086>5<Apple AppStore>0D00A0>5<World Wide Web HTTP>12003F>4<HTTP Protocol over TLS SSL + Misc>13****>4<TLS SSL Connections + Misc>14****>4<Advertisement>1A****>5";
 		else
 			appdb_defrulelist_array = custom_settings.freshjr_defappdb;
 
-		if ( custom_settings.freshjr_appdb == undefined )
-			appdb_rulelist_array = "";
-		else
-			appdb_rulelist_array = custom_settings.freshjr_appdb;
+		var iptables_combined_rules = iptables_defrulelist_array + iptables_rulelist_array;
+		iptables_combined_rules = iptables_combined_rules.split("<").split(">");
 
 		if (FreshJR_nvram1.length == 21)
 		{
@@ -1620,21 +1643,6 @@ function set_FreshJR_mod_vars()
 			ucp7=parseInt(FreshJR_nvram2[48]);		if (ucp7 >= 5 && ucp7 <= 100) document.getElementById('ucp7').value=ucp7;
 		}
 
-		// Append old rules to built-in rules in new format
-		//iptables_rulelist_array += "<"+e1+">"+e2+">"+e3+">"+e4+">"+e5+">"+e6+">"+e7;
-		for (var j=0;j<FreshJR_nvram1.length;j++) {
-			var iptable_temp_rule = "";
-			FreshJR_nvram1[j] = FreshJR_nvram1[j].split(";");
-			for (var k=0;k<FreshJR_nvram1[j].length;k++) {
-				if (k==0)
-					iptable_temp_rule += "<";
-				else
-					iptable_temp_rule += ">";
-				iptable_temp_rule += FreshJR_nvram1[j][k];
-			}
-			if (iptable_temp_rule != "<>>both>>>>0")
-				iptables_rulelist_array += iptable_temp_rule;
-		} // for nvram1
 		for (var j=0;j<1;j++) {
 			var iptable_temp_rule = "";
 			FreshJR_nvram2[j] = FreshJR_nvram2[j].split(";");
