@@ -2,6 +2,7 @@
 ##FreshJR_QOS
 version=8.8
 release=03/07/2019
+# shellcheck disable=SC2039
 #Copyright (C) 2017-2019 FreshJR - All Rights Reserved
 #Tested with ASUS AC-68U, FW384.9, using Adaptive QOS with Manual Bandwidth Settings
 # Script Changes Unidentified traffic destination away from "Defaults" into "Others"
@@ -426,12 +427,12 @@ set_tc_variables(){
 			#logger -s "flowid = ${flowid} ==========="
 		fi
 
-	done < $(cat /tmp/bwdpi/qosd.conf | sed 's/rule=//g' | sed '/na/q')
+	done < "$(cat /tmp/bwdpi/qosd.conf | sed 's/rule=//g' | sed '/na/q')"
 
 
 	#calculate up/down rates
-	DownCeil="$(printf "%.0f" $(nvram get qos_ibw))"
-	UpCeil="$(printf "%.0f" $(nvram get qos_obw))"
+	DownCeil="$(printf "%.0f" "$(nvram get qos_ibw)")"
+	UpCeil="$(printf "%.0f" "$(nvram get qos_obw)")"
 
 	DownRate0="$(expr ${DownCeil} \* ${drp0} / 100)"					#Minimum guaranteed Up/Down rates per QOS category corresponding to user defined percentages
 	DownRate1="$(expr ${DownCeil} \* ${Cat1DownBandPercent} / 100)"
