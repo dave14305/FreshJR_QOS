@@ -1542,31 +1542,21 @@ function set_FreshJR_mod_vars()
 			appdb_defrulelist_array = decodeURIComponent(custom_settings.freshjr_defappdb);
 
 		var iptables_combined_rules = iptables_defrulelist_array + iptables_rulelist_array;
-		// var r=0;
-		// iptables_combined_rules.split("<").foreach( element => {
-		// 	if ( element.split(">")[6] ) {
-		// 		rule[r]=create_rule(element[0], element[1], element[2], element[3], element[4], element[5], element[6]);
-		// 		r++;
-		// 	}
-		// });
-		//
-		// var appdb_combined_rules = appdb_defrulelist_array + appdb_rulelist_array;
-		// r=0;
-		// appdb_combined_rules.split("<").forEach( element => {
-		// 	if ( element.split(">")[1] ) {
-		// 		rule[r]=create_rule("", "", "", "", "", element[0], element[1]);
-		// 		r++;
-		// 	}
-		// });
+		var r=0;
+		var iptables_combined_array = iptables_combined_rules.split("<");
+		for (r=0;r<iptables_combined_array.length;r++){
+			var iptables_combined_row = iptables_combined_array[r].split(">");
+			if (iptables_combined_row.length > 1)
+				rule.push(create_rule(iptables_combined_row[0], iptables_combined_row[1], iptables_combined_row[2], iptables_combined_row[3], iptables_combined_row[4], iptables_combined_row[5], iptables_combined_row[6]));
+		}
 
-
-		// for (var r=0;r<iptables_combined_rules.length;r++) {
-		// 	rule[r]=create_rule(iptables_combined_rules[r][0], iptables_combined_rules[r][1], iptables_combined_rules[r][2], iptables_combined_rules[r][3], iptables_combined_rules[r][4], iptables_combined_rules[r][5], iptables_combined_rules[r][6]);
-		// }
-
-		// for (r=0; r<appdb_combined_rules.length;r++) {
-		// 	appdb[r]=create_rule("", "", "", "", "", appdb_combined_rules[r][0], appdb_combined_rules[r][1]);
-		// }
+		var appdb_combined_rules = appdb_defrulelist_array + appdb_rulelist_array;
+		var appdb_combined_array = appdb_combined_rules.split("<");
+		for (a=0; a<appdb_combined_array.length;a++) {
+			var appdb_combined_row = appdb_combined_array[a].split(">");
+			if (appdb_combined_row.length > 1)
+				rule.push(create_rule("", "", "", "", "", appdb_combined_row[1], appdb_combined_row[2]));
+		}
 
 		// get gameCIDR
 		if ( custom_settings.freshjr_gamecidr == undefined )
