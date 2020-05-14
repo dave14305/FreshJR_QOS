@@ -118,15 +118,18 @@ var tabledata;								//tabled of tracked connections after device-filtered
 var sortmode=6;								//current sort mode of tracked connections table (default =6)
 var dhcp_start = "<% nvram_get("dhcp_start"); %>"
 var dhcp_start = dhcp_start.substr(0, dhcp_start.lastIndexOf("."));
-var iptables_rulelist_array;
+var iptables_rulelist_array="";
+var appdb_rulelist_array="";
 var rulename1="Rule1";
 var rulename2="Rule2";
 var rulename3="Rule3";
 var rulename4="Rule4";
+var appdb = [];	// AppDB array
 var appdb1;				// AppDB rules
 var appdb2;
 var appdb3;
 var appdb4;
+var rule = [];	// array for iptables rules
 var rule1;				// IPv4 rules
 var rule2;
 var rule3;
@@ -752,7 +755,7 @@ function compIPV6(input) {
     return input.replace(/(^|:)0{1,4}/g, ':');
 }
 
-function create_rule(Proto, Lport, Rport, Lip, Rip, Mark, Dst){
+function create_rule(Lip, Rip, Proto, Lport, Rport, Mark, Dst){
 	var rule =[];		//user rule in specific format later used for quick evaluation
 	//rule[0]=enabled filters flag (8bit)
 	//rule[1]=protocol
@@ -878,7 +881,7 @@ function create_rule(Proto, Lport, Rport, Lip, Rip, Mark, Dst){
 	return rule;
 };
 
-function eval_rule(rule, CProto, CLport, CRport, CLip, CRip, CCat, CId){
+function eval_rule(rule, CLip, CRip, CProto, CLport, CRport, CCat, CId){
 
 	//eval false if rule has no filters or destination specified
 	if (!rule || !rule[0] || (rule[18]==undefined) )
@@ -1504,12 +1507,12 @@ function set_FreshJR_mod_vars()
 			// document.form.fb_comment.value = "";  // uncomment once script ready
 			}
 		else // rules are migrated to new API variables
-			iptables_rulelist_array = custom_settings.freshjr_iptables;
+			iptables_rulelist_array = decodeURIComponent(custom_settings.freshjr_iptables);
 
 		if ( custom_settings.freshjr_defiptables == undefined ) // rules not yet migrated to new API variables
 			iptables_defrulelist_array = "<>>both>>!80,443>000000>1<>>udp>>500,4500>>3<>>udp>16384:16415>>>3<>>tcp>>119,563>>5<>>tcp>>80,443>08****>7";
 		else // rules are migrated to new API variables
-			iptables_defrulelist_array = custom_settings.freshjr_defiptables;
+			iptables_defrulelist_array = decodeURIComponent(custom_settings.freshjr_defiptables);
 
 		if ( custom_settings.freshjr_appdb == undefined )
 		{
@@ -1519,144 +1522,100 @@ function set_FreshJR_mod_vars()
 				FreshJR_nvram[j] = FreshJR_nvram[j].split(";");
 				for (var k=0;k<FreshJR_nvram[j].length;k++) {
 					if (k==0)
-						appdb_temp_rule += "<";
+						appdb_temp_rule += "<>";
 					else
 						appdb_temp_rule += ">";
 					appdb_temp_rule += FreshJR_nvram[j][k];
 				} // for inner loop
-			if (appdb_temp_rule != "<>0")
+			if (appdb_temp_rule != "<>>0")
 				appdb_rulelist_array += appdb_temp_rule;
 			}
 			FreshJR_nvram = "";
 		// document.form.fb_email_dbg.value = "";  // uncomment once script ready
 		}
 		else
-			appdb_rulelist_array = custom_settings.freshjr_appdb;
+			appdb_rulelist_array = decodeURIComponent(custom_settings.freshjr_appdb);
 
 		if ( custom_settings.freshjr_defappdb == undefined )
 			appdb_defrulelist_array = "<Untracked>000000>6<Snapchat>00006B>6<Speedtest.net>0D0007>5<Google Play>0D0086>5<Apple AppStore>0D00A0>5<World Wide Web HTTP>12003F>4<HTTP Protocol over TLS SSL + Misc>13****>4<TLS SSL Connections + Misc>14****>4<Advertisement>1A****>5";
 		else
-			appdb_defrulelist_array = custom_settings.freshjr_defappdb;
+			appdb_defrulelist_array = decodeURIComponent(custom_settings.freshjr_defappdb);
 
 		var iptables_combined_rules = iptables_defrulelist_array + iptables_rulelist_array;
-		iptables_combined_rules = iptables_combined_rules.split("<").split(">");
+		// var r=0;
+		// iptables_combined_rules.split("<").foreach( element => {
+		// 	if ( element.split(">")[6] ) {
+		// 		rule[r]=create_rule(element[0], element[1], element[2], element[3], element[4], element[5], element[6]);
+		// 		r++;
+		// 	}
+		// });
+		//
+		// var appdb_combined_rules = appdb_defrulelist_array + appdb_rulelist_array;
+		// r=0;
+		// appdb_combined_rules.split("<").forEach( element => {
+		// 	if ( element.split(">")[1] ) {
+		// 		rule[r]=create_rule("", "", "", "", "", element[0], element[1]);
+		// 		r++;
+		// 	}
+		// });
 
-		if (FreshJR_nvram1.length == 21)
+
+		// for (var r=0;r<iptables_combined_rules.length;r++) {
+		// 	rule[r]=create_rule(iptables_combined_rules[r][0], iptables_combined_rules[r][1], iptables_combined_rules[r][2], iptables_combined_rules[r][3], iptables_combined_rules[r][4], iptables_combined_rules[r][5], iptables_combined_rules[r][6]);
+		// }
+
+		// for (r=0; r<appdb_combined_rules.length;r++) {
+		// 	appdb[r]=create_rule("", "", "", "", "", appdb_combined_rules[r][0], appdb_combined_rules[r][1]);
+		// }
+
+		// get gameCIDR
+		if ( custom_settings.freshjr_gamecidr == undefined )
 		{
-			e1=FreshJR_nvram1[0];				document.getElementById('e1').value=e1;
-			e2=FreshJR_nvram1[1];				document.getElementById('e2').value=e2;
-			e3=FreshJR_nvram1[2].toLowerCase();	document.getElementById('e3').value=e3;
-			e4=FreshJR_nvram1[3];				document.getElementById('e4').value=e4;
-			e5=FreshJR_nvram1[4];				document.getElementById('e5').value=e5;
-			e6=FreshJR_nvram1[5];				document.getElementById('e6').value=e6;
-			e7=FreshJR_nvram1[6];				document.getElementById('e7').value=e7;
-			rule1=create_rule(e3, e4, e5, e1, e2, e6, e7);
-
-			f1=FreshJR_nvram1[7];				document.getElementById('f1').value=f1;
-			f2=FreshJR_nvram1[8];				document.getElementById('f2').value=f2;
-			f3=FreshJR_nvram1[9].toLowerCase();	document.getElementById('f3').value=f3;
-			f4=FreshJR_nvram1[10];				document.getElementById('f4').value=f4;
-			f5=FreshJR_nvram1[11];				document.getElementById('f5').value=f5;
-			f6=FreshJR_nvram1[12];				document.getElementById('f6').value=f6;
-			f7=FreshJR_nvram1[13];				document.getElementById('f7').value=f7;
-			rule2=create_rule(f3, f4, f5, f1, f2, f6, f7);
-
-			g1=FreshJR_nvram1[14];				document.getElementById('g1').value=g1;
-			g2=FreshJR_nvram1[15];				document.getElementById('g2').value=g2;
-			g3=FreshJR_nvram1[16].toLowerCase();document.getElementById('g3').value=g3;
-			g4=FreshJR_nvram1[17];				document.getElementById('g4').value=g4;
-			g5=FreshJR_nvram1[18];				document.getElementById('g5').value=g5;
-			g6=FreshJR_nvram1[19];				document.getElementById('g6').value=g6;
-			g7=FreshJR_nvram1[20];				document.getElementById('g7').value=g7;
-			rule3=create_rule(g3, g4, g5, g1, g2, g6, g7);
+			var FreshJR_nvram = decodeURIComponent('<% nvram_char_to_ascii("",fb_email_dbg); %>').split(">");
+			gameCIDR=FreshJR_nvram[5];
+			FreshJR_nvram = "";
 		}
-		if (FreshJR_nvram2.length == 49)
+		else
+			gameCIDR = custom_settings.freshjr_gamecidr;
+
+		if (gameCIDR)
+			gamerule=create_rule(gameCIDR, "", "both", "!80,443", "", "000000", "1");
+
+		// get Bandwidth
+		if ( custom_settings.freshjr_bandwidth == undefined )
 		{
-			h1=FreshJR_nvram2[0];				document.getElementById('h1').value=h1;
-			h2=FreshJR_nvram2[1].toLowerCase(); document.getElementById('h2').value=h2;
-			h3=FreshJR_nvram2[2];				document.getElementById('h3').value=h3;
-			h4=FreshJR_nvram2[3];				document.getElementById('h4').value=h4;
-			h5=FreshJR_nvram2[4];				document.getElementById('h5').value=h5;
-			h6=FreshJR_nvram2[5];				document.getElementById('h6').value=h6;
-			h7=FreshJR_nvram2[6];				document.getElementById('h7').value=h7;
-			rule4=create_rule(h3, h4, h5, h1, h2, h6, h7);
-
-			r1=FreshJR_nvram2[7];				document.getElementById('r1').value=r1;
-			d1=FreshJR_nvram2[8];				document.getElementById('d1').value=d1;
-			appdb1=create_rule("", "", "", "", "", r1, d1);
-
-			r2=FreshJR_nvram2[9]; 				document.getElementById('r2').value=r2;
-			d2=FreshJR_nvram2[10];				document.getElementById('d2').value=d2;
-			appdb2=create_rule("", "", "", "", "", r2, d2);
-
-			r3=FreshJR_nvram2[11];				document.getElementById('r3').value=r3;
-			d3=FreshJR_nvram2[12];				document.getElementById('d3').value=d3;
-			appdb3=create_rule("", "", "", "", "", r3, d3);
-
-			r4=FreshJR_nvram2[13];				document.getElementById('r4').value=r4;
-			d4=FreshJR_nvram2[14];				document.getElementById('d4').value=d4;
-			appdb4=create_rule("", "", "", "", "", r4, d4);
-
-
-			gameCIDR=FreshJR_nvram2[15];		document.getElementById('gameCIDR').value=gameCIDR;
-			if (gameCIDR)
-				gamerule=create_rule("both", "", "!80,443", gameCIDR, "", "000000", "1");
-			else
-				gamerule=create_rule("", "", "", "", "", "", "");
-			ruleFLAG=FreshJR_nvram2[16];
-
-
-			drp0=parseInt(FreshJR_nvram2[17]);		if (drp0 >= 5 && drp0 < 100) document.getElementById('drp0').value=drp0;
-			drp1=parseInt(FreshJR_nvram2[18]);		if (drp1 >= 5 && drp1 < 100) document.getElementById('drp1').value=drp1;
-			drp2=parseInt(FreshJR_nvram2[19]);		if (drp2 >= 5 && drp2 < 100) document.getElementById('drp2').value=drp2;
-			drp3=parseInt(FreshJR_nvram2[20]);		if (drp3 >= 5 && drp3 < 100) document.getElementById('drp3').value=drp3;
-			drp4=parseInt(FreshJR_nvram2[21]);		if (drp4 >= 5 && drp4 < 100) document.getElementById('drp4').value=drp4;
-			drp5=parseInt(FreshJR_nvram2[22]);		if (drp5 >= 5 && drp5 < 100) document.getElementById('drp5').value=drp5;
-			drp6=parseInt(FreshJR_nvram2[23]);		if (drp6 >= 5 && drp6 < 100) document.getElementById('drp6').value=drp6;
-			drp7=parseInt(FreshJR_nvram2[24]);		if (drp7 >= 5 && drp7 < 100) document.getElementById('drp7').value=drp7;
-
-			dcp0=parseInt(FreshJR_nvram2[25]);		if (dcp0 >= 5 && dcp0 <= 100) document.getElementById('dcp0').value=dcp0;
-			dcp1=parseInt(FreshJR_nvram2[26]);		if (dcp0 >= 5 && dcp0 <= 100) document.getElementById('dcp1').value=dcp1;
-			dcp2=parseInt(FreshJR_nvram2[27]);		if (dcp0 >= 5 && dcp0 <= 100) document.getElementById('dcp2').value=dcp2;
-			dcp3=parseInt(FreshJR_nvram2[28]);		if (dcp0 >= 5 && dcp0 <= 100) document.getElementById('dcp3').value=dcp3;
-			dcp4=parseInt(FreshJR_nvram2[29]);		if (dcp0 >= 5 && dcp0 <= 100) document.getElementById('dcp4').value=dcp4;
-			dcp5=parseInt(FreshJR_nvram2[30]);		if (dcp0 >= 5 && dcp0 <= 100) document.getElementById('dcp5').value=dcp5;
-			dcp6=parseInt(FreshJR_nvram2[31]);		if (dcp0 >= 5 && dcp0 <= 100) document.getElementById('dcp6').value=dcp6;
-			dcp7=parseInt(FreshJR_nvram2[32]);		if (dcp0 >= 5 && dcp0 <= 100) document.getElementById('dcp7').value=dcp7;
-
-			urp0=parseInt(FreshJR_nvram2[33]);		if (urp0 >= 5 && urp0 < 100) document.getElementById('urp0').value=urp0;
-			urp1=parseInt(FreshJR_nvram2[34]);		if (urp1 >= 5 && urp1 < 100) document.getElementById('urp1').value=urp1;
-			urp2=parseInt(FreshJR_nvram2[35]);		if (urp2 >= 5 && urp2 < 100) document.getElementById('urp2').value=urp2;
-			urp3=parseInt(FreshJR_nvram2[36]);		if (urp3 >= 5 && urp3 < 100) document.getElementById('urp3').value=urp3;
-			urp4=parseInt(FreshJR_nvram2[37]);		if (urp4 >= 5 && urp4 < 100) document.getElementById('urp4').value=urp4;
-			urp5=parseInt(FreshJR_nvram2[38]);		if (urp5 >= 5 && urp5 < 100) document.getElementById('urp5').value=urp5;
-			urp6=parseInt(FreshJR_nvram2[39]);		if (urp6 >= 5 && urp6 < 100) document.getElementById('urp6').value=urp6;
-			urp7=parseInt(FreshJR_nvram2[40]);		if (urp7 >= 5 && urp7 < 100) document.getElementById('urp7').value=urp7;
-
-			ucp0=parseInt(FreshJR_nvram2[41]);		if (ucp0 >= 5 && ucp0 <= 100) document.getElementById('ucp0').value=ucp0;
-			ucp1=parseInt(FreshJR_nvram2[42]);		if (ucp1 >= 5 && ucp1 <= 100) document.getElementById('ucp1').value=ucp1;
-			ucp2=parseInt(FreshJR_nvram2[43]);		if (ucp2 >= 5 && ucp2 <= 100) document.getElementById('ucp2').value=ucp2;
-			ucp3=parseInt(FreshJR_nvram2[44]);		if (ucp3 >= 5 && ucp3 <= 100) document.getElementById('ucp3').value=ucp3;
-			ucp4=parseInt(FreshJR_nvram2[45]);		if (ucp4 >= 5 && ucp4 <= 100) document.getElementById('ucp4').value=ucp4;
-			ucp5=parseInt(FreshJR_nvram2[46]);		if (ucp5 >= 5 && ucp5 <= 100) document.getElementById('ucp5').value=ucp5;
-			ucp6=parseInt(FreshJR_nvram2[47]);		if (ucp6 >= 5 && ucp6 <= 100) document.getElementById('ucp6').value=ucp6;
-			ucp7=parseInt(FreshJR_nvram2[48]);		if (ucp7 >= 5 && ucp7 <= 100) document.getElementById('ucp7').value=ucp7;
+			var FreshJR_nvram = decodeURIComponent('<% nvram_char_to_ascii("",fb_email_dbg); %>').split(">");
+			bandwidth = "<" + FreshJR_nvram[7].replace(/\;/g,">") + "<" + FreshJR_nvram[8].replace(/\;/g,">") + "<" + FreshJR_nvram[9].replace(/\;/g,">") + "<" + FreshJR_nvram[10].replace(/\;/g,">");
+			FreshJR_nvram = "";
 		}
+		else
+			bandwidth = decodeURIComponent(custom_settings.freshjr_bandwidth);
 
-		for (var j=0;j<1;j++) {
-			var iptable_temp_rule = "";
-			FreshJR_nvram2[j] = FreshJR_nvram2[j].split(";");
-			for (var k=0;k<FreshJR_nvram2[j].length;k++) {
-				if (k==0)
-					iptable_temp_rule += "<";
-				else
-					iptable_temp_rule += ">";
-				iptable_temp_rule += FreshJR_nvram2[j][k];
+			var bandwidth_array = bandwidth.split("<");
+			bandwidth_array.shift();
+			for (var b=0;b<bandwidth_array.length;b++) {
+				bandwidth_array[b] = bandwidth_array[b].split(">");
+				var temp_elemid;
+				var maxpct;
+				switch (b) {
+					case 0:
+						temp_elemid="drp"; maxpct=99;
+						break;
+					case 1:
+						temp_elemid="dcp"; maxpct=100;
+						break;
+					case 2:
+						temp_elemid="urp"; maxpct=99;
+						break;
+					case 3:
+						temp_elemid="ucp"; maxpct=100;
+						break;
+				}
+				for (var c=0;c<bandwidth_array[b].length;c++) {
+					if (bandwidth_array[b][c] >=5 && bandwidth_array[b][c]<=maxpct)
+						document.getElementById(temp_elemid + c).value=bandwidth_array[b][c];
+				}
 			}
-			if (iptable_temp_rule != "<>>both>>>>0")
-				iptables_rulelist_array += iptable_temp_rule;
-		} // for nvram2
-
 	}
 }
 
@@ -1704,94 +1663,79 @@ function FreshJR_mod_reset_up()
 
 function FreshJR_mod_apply()
 {
-		var e1=document.getElementById('e1').value;			if (!(validate_ipv4(e1)))  e1="";
-		var e2=document.getElementById('e2').value;			if (!(validate_ipv4(e2)))  e2="";
-		var e4=document.getElementById('e4').value;			if (!(validate_port(e4)))  e4="";
-		var e3=document.getElementById('e3').value;
-		var e5=document.getElementById('e5').value;			if (!(validate_port(e5)))  e5="";
-		var e6=document.getElementById('e6').value;			if (!(validate_mark(e6)))  e6="";
-		var e7=document.getElementById('e7').value;
+		bandwidth="";
 
-		var f1=document.getElementById('f1').value;			if (!(validate_ipv4(f1)))  f1="";
-		var f2=document.getElementById('f2').value;			if (!(validate_ipv4(f2)))  f2="";
-		var f3=document.getElementById('f3').value;
-		var f4=document.getElementById('f4').value;			if (!(validate_port(f4)))  f4="";
-		var f5=document.getElementById('f5').value;			if (!(validate_port(f5)))  f5="";
-		var f6=document.getElementById('f6').value;			if (!(validate_mark(f6)))  f6="";
-		var f7=document.getElementById('f7').value;
+		for (var b=0;b<4;b++) {
+			var temp_elemid;
+			switch (b) {
+				case 0:
+					temp_elemid="drp";
+					break;
+				case 1:
+					temp_elemid="dcp";
+					break;
+				case 2:
+					temp_elemid="urp";
+					break;
+				case 3:
+					temp_elemid="ucp";
+					break;
+			}
+			for (var c=0;c<8;c++) {
+				if (c==0)
+					bandwidth += "<";
+				else
+					bandwidth += ">";
+				bandwidth += document.getElementById(temp_elemid + c).value;
+			}
+		}
 
-		var g1=document.getElementById('g1').value;			if (!(validate_ipv4(g1)))  g1="";
-		var g2=document.getElementById('g2').value;			if (!(validate_ipv4(g2)))  g2="";
-		var g3=document.getElementById('g3').value;
-		var g4=document.getElementById('g4').value;			if (!(validate_port(g4)))  g4="";
-		var g5=document.getElementById('g5').value;			if (!(validate_port(g5)))  g5="";
-		var g6=document.getElementById('g6').value;			if (!(validate_mark(g6)))  g6="";
-		var g7=document.getElementById('g7').value;
+		// var drp0=document.getElementById('drp0').value;			if (!(validate_percent(drp0)))  drp0="5";
+		// var drp1=document.getElementById('drp1').value;			if (!(validate_percent(drp1)))  drp1="20";
+		// var drp2=document.getElementById('drp2').value;			if (!(validate_percent(drp2)))  drp2="15";
+		// var drp3=document.getElementById('drp3').value;			if (!(validate_percent(drp3)))  drp3="10";
+		// var drp4=document.getElementById('drp4').value;			if (!(validate_percent(drp4)))  drp4="10";
+		// var drp5=document.getElementById('drp5').value;			if (!(validate_percent(drp5)))  drp5="30";
+		// var drp6=document.getElementById('drp6').value;			if (!(validate_percent(drp6)))  drp6="5";
+		// var drp7=document.getElementById('drp7').value;			if (!(validate_percent(drp7)))  drp7="5";
+		// var dcp0=document.getElementById('dcp0').value;			if (!(validate_percent(dcp0)))  dcp0="5";
+		// var dcp1=document.getElementById('dcp1').value;			if (!(validate_percent(dcp1)))  dcp1="20";
+		// var dcp2=document.getElementById('dcp2').value;			if (!(validate_percent(dcp2)))  dcp2="15";
+		// var dcp3=document.getElementById('dcp3').value;			if (!(validate_percent(dcp3)))  dcp3="30";
+		// var dcp4=document.getElementById('dcp4').value;			if (!(validate_percent(dcp4)))  dcp4="10";
+		// var dcp5=document.getElementById('dcp5').value;			if (!(validate_percent(dcp5)))  dcp5="10";
+		// var dcp6=document.getElementById('dcp6').value;			if (!(validate_percent(dcp6)))  dcp6="5";
+		// var dcp7=document.getElementById('dcp7').value;			if (!(validate_percent(dcp7)))  dcp7="5";
+		// var urp0=document.getElementById('urp0').value;			if (!(validate_percent(urp0)))  urp0="100";
+		// var urp1=document.getElementById('urp1').value;			if (!(validate_percent(urp1)))  urp1="100";
+		// var urp2=document.getElementById('urp2').value;			if (!(validate_percent(urp2)))  urp2="100";
+		// var urp3=document.getElementById('urp3').value;			if (!(validate_percent(urp3)))  urp3="100";
+		// var urp4=document.getElementById('urp4').value;			if (!(validate_percent(urp4)))  urp4="100";
+		// var urp5=document.getElementById('urp5').value;			if (!(validate_percent(urp5)))  urp5="100";
+		// var urp6=document.getElementById('urp6').value;			if (!(validate_percent(urp6)))  urp6="100";
+		// var urp7=document.getElementById('urp7').value;			if (!(validate_percent(urp7)))  urp7="100";
+		// var ucp0=document.getElementById('ucp0').value;			if (!(validate_percent(ucp0)))  ucp0="100";
+		// var ucp1=document.getElementById('ucp1').value;			if (!(validate_percent(ucp1)))  ucp0="100";
+		// var ucp2=document.getElementById('ucp2').value;			if (!(validate_percent(ucp2)))  ucp0="100";
+		// var ucp3=document.getElementById('ucp3').value;			if (!(validate_percent(ucp3)))  ucp0="100";
+		// var ucp4=document.getElementById('ucp4').value;			if (!(validate_percent(ucp4)))  ucp0="100";
+		// var ucp5=document.getElementById('ucp5').value;			if (!(validate_percent(ucp5)))  ucp0="100";
+		// var ucp6=document.getElementById('ucp6').value;			if (!(validate_percent(ucp6)))  ucp0="100";
+		// var ucp7=document.getElementById('ucp7').value;			if (!(validate_percent(ucp7)))  ucp0="100";
 
-		var h1=document.getElementById('h1').value;			if (!(validate_ipv4(h1)))  h1="";
-		var h2=document.getElementById('h2').value;			if (!(validate_ipv4(h2)))  h2="";
-		var h3=document.getElementById('h3').value;
-		var h4=document.getElementById('h4').value;			if (!(validate_port(h4)))  h4="";
-		var h5=document.getElementById('h5').value;			if (!(validate_port(h5)))  h5="";
-		var h6=document.getElementById('h6').value;			if (!(validate_mark(h6)))  h6="";
-		var h7=document.getElementById('h7').value;
-
-		var r1=document.getElementById('r1').value;			if (!(validate_mark(r1)))  r1="";
-		var d1=document.getElementById('d1').value;
-
-		var r2=document.getElementById('r2').value;			if (!(validate_mark(r2)))  r2="";
-		var d2=document.getElementById('d2').value;
-
-		var r3=document.getElementById('r3').value;			if (!(validate_mark(r3)))  r3="";
-		var d3=document.getElementById('d3').value;
-
-		var r4=document.getElementById('r4').value;			if (!(validate_mark(r4)))  r4="";
-		var d4=document.getElementById('d4').value;
-
-		var gameCIDR=document.getElementById('gameCIDR').value;		if (!(validate_ipv4(gameCIDR)))  gameCIDR="";
-		var ruleFLAG="FF"
-
-		var drp0=document.getElementById('drp0').value;			if (!(validate_percent(drp0)))  drp0="5";
-		var drp1=document.getElementById('drp1').value;			if (!(validate_percent(drp1)))  drp1="20";
-		var drp2=document.getElementById('drp2').value;			if (!(validate_percent(drp2)))  drp2="15";
-		var drp3=document.getElementById('drp3').value;			if (!(validate_percent(drp3)))  drp3="10";
-		var drp4=document.getElementById('drp4').value;			if (!(validate_percent(drp4)))  drp4="10";
-		var drp5=document.getElementById('drp5').value;			if (!(validate_percent(drp5)))  drp5="30";
-		var drp6=document.getElementById('drp6').value;			if (!(validate_percent(drp6)))  drp6="5";
-		var drp7=document.getElementById('drp7').value;			if (!(validate_percent(drp7)))  drp7="5";
-		var dcp0=document.getElementById('dcp0').value;			if (!(validate_percent(dcp0)))  dcp0="5";
-		var dcp1=document.getElementById('dcp1').value;			if (!(validate_percent(dcp1)))  dcp1="20";
-		var dcp2=document.getElementById('dcp2').value;			if (!(validate_percent(dcp2)))  dcp2="15";
-		var dcp3=document.getElementById('dcp3').value;			if (!(validate_percent(dcp3)))  dcp3="30";
-		var dcp4=document.getElementById('dcp4').value;			if (!(validate_percent(dcp4)))  dcp4="10";
-		var dcp5=document.getElementById('dcp5').value;			if (!(validate_percent(dcp5)))  dcp5="10";
-		var dcp6=document.getElementById('dcp6').value;			if (!(validate_percent(dcp6)))  dcp6="5";
-		var dcp7=document.getElementById('dcp7').value;			if (!(validate_percent(dcp7)))  dcp7="5";
-		var urp0=document.getElementById('urp0').value;			if (!(validate_percent(urp0)))  urp0="100";
-		var urp1=document.getElementById('urp1').value;			if (!(validate_percent(urp1)))  urp1="100";
-		var urp2=document.getElementById('urp2').value;			if (!(validate_percent(urp2)))  urp2="100";
-		var urp3=document.getElementById('urp3').value;			if (!(validate_percent(urp3)))  urp3="100";
-		var urp4=document.getElementById('urp4').value;			if (!(validate_percent(urp4)))  urp4="100";
-		var urp5=document.getElementById('urp5').value;			if (!(validate_percent(urp5)))  urp5="100";
-		var urp6=document.getElementById('urp6').value;			if (!(validate_percent(urp6)))  urp6="100";
-		var urp7=document.getElementById('urp7').value;			if (!(validate_percent(urp7)))  urp7="100";
-		var ucp0=document.getElementById('ucp0').value;			if (!(validate_percent(ucp0)))  ucp0="100";
-		var ucp1=document.getElementById('ucp1').value;			if (!(validate_percent(ucp1)))  ucp0="100";
-		var ucp2=document.getElementById('ucp2').value;			if (!(validate_percent(ucp2)))  ucp0="100";
-		var ucp3=document.getElementById('ucp3').value;			if (!(validate_percent(ucp3)))  ucp0="100";
-		var ucp4=document.getElementById('ucp4').value;			if (!(validate_percent(ucp4)))  ucp0="100";
-		var ucp5=document.getElementById('ucp5').value;			if (!(validate_percent(ucp5)))  ucp0="100";
-		var ucp6=document.getElementById('ucp6').value;			if (!(validate_percent(ucp6)))  ucp0="100";
-		var ucp7=document.getElementById('ucp7').value;			if (!(validate_percent(ucp7)))  ucp0="100";
-
-	custom_settings.freshjr_defiptables = iptables_defrulelist_array;
-	custom_settings.freshjr_iptables = iptables_rulelist_array;
-	custom_settings.freshjr_defappdb = appdb_defrulelist_array;
-	custom_settings.freshjr_appdb = appdb_rulelist_array;
+	custom_settings.freshjr_defiptables = encodeURIComponent(iptables_defrulelist_array);
+	custom_settings.freshjr_iptables = encodeURIComponent(iptables_rulelist_array);
+	custom_settings.freshjr_defappdb = encodeURIComponent(appdb_defrulelist_array);
+	custom_settings.freshjr_appdb = encodeURIComponent(appdb_rulelist_array);
+	custom_settings.freshjr_bandwidth = encodeURIComponent(bandwidth);
+	//custom_settings.freshjr_gamecidr = document.getElementById('gameCIDR').value;
+	custom_settings.freshjr_ruleflag = "FF";
 
 	/* Store object as a string in the amng_custom hidden input field */
 	document.getElementById('amng_custom').value = JSON.stringify(custom_settings);
 
+	document.form.fb_comment.value = decodeURIComponent('<% nvram_char_to_ascii("",fb_comment); %>');
+	document.form.fb_email_dbg.value = decodeURIComponent('<% nvram_char_to_ascii("",fb_email_dbg); %>');
 	//document.form.action_script.value = "restart_qos;restart_firewall";
 	document.form.submit();
 }
