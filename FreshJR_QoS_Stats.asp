@@ -368,8 +368,8 @@ function draw_conntrack_table() {
 			
 			if (eval_rule(appdb4, bwdpi_conntrack[i][0], bwdpi_conntrack[i][2], bwdpi_conntrack[i][4], bwdpi_conntrack[i][1], bwdpi_conntrack[i][3], bwdpi_conntrack[i][7], bwdpi_conntrack[i][6]))
 				bwdpi_conntrack[i][5] =	'<div  class="t_item">' +
-						'<span class="t_label catrow cat' + appdb3[18] + '"' + size  + '>' + label + ' ~</span>' +						
-						'<span class="t_mark  catrow cat' + appdb3[18] + '"' + size + '>MARK:' + mark + '</span>' +
+						'<span class="t_label catrow cat' + appdb4[18] + '"' + size  + '>' + label + ' ~</span>' +						
+						'<span class="t_mark  catrow cat' + appdb4[18] + '"' + size + '>MARK:' + mark + '</span>' +
 						'<div>';	
 
 			
