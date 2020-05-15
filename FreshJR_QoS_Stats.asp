@@ -842,8 +842,8 @@ function eval_rule(CLip, CRip, CProto, CLport, CRport, CCat, CId){
 		// if rule has local IP specified
 		if ((rules[i][0] & 16) )
 		{
-		  CLip=ip2dec(CLip);
-		  if ( !((CLip >= rules[i][11] && CLip <= rules[i][12])^(rules[i][10])) )
+		  var tmpCLip=ip2dec(CLip);
+		  if ( !((tmpCLip >= rules[i][11] && tmpCLip <= rules[i][12])^(rules[i][10])) )
 		    {
 		      // console.log("local ip mismatch");
 			  continue;
@@ -853,8 +853,8 @@ function eval_rule(CLip, CRip, CProto, CLport, CRport, CCat, CId){
 		// if rule has remote IP specified
 		if (rules[i][0] & 32)
 		{
-		  CRip=ip2dec(CRip);
-		  if ( !((CRip >= rules[i][14] && CRip <= rules[i][15])^(rules[i][13])) )
+		  var tmpCRip=ip2dec(CRip);
+		  if ( !((tmpCRip >= rules[i][14] && tmpCRip <= rules[i][15])^(rules[i][13])) )
 		  {
 		    //console.log("remote ip mismatch");
 			continue;
