@@ -117,7 +117,7 @@ var tablesize = 500;						//max size of tracked connections table
 var tabledata;								//tabled of tracked connections after device-filtered
 var sortmode=6;								//current sort mode of tracked connections table (default =6)
 var dhcp_start = "<% nvram_get("dhcp_start"); %>"
-var dhcp_start = dhcp_start.substr(0, dhcp_start.lastIndexOf("."));
+var dhcp_start = dhcp_start.substr(0, dhcp_start.lastIndexOf(".")) + ".";
 var iptables_rulelist_array="";
 var appdb_rulelist_array="";
 var rulename1="Rule1";
@@ -129,7 +129,7 @@ var appdb1;				// AppDB rules
 var appdb2;
 var appdb3;
 var appdb4;
-var rule = [];	// array for iptables rules
+var rules = [];	// array for iptables rules
 var rule1;				// IPv4 rules
 var rule2;
 var rule3;
@@ -279,7 +279,10 @@ function draw_conntrack_table() {
 		{
 			//format app name label into html
 			var label = bwdpi_conntrack[i][5];			(label.length > 27) ? size='style="font-size: 75%;"' : size = "" ;
-			var qos_class = get_qos_class(bwdpi_conntrack[i][7], bwdpi_conntrack[i][6]);
+			//function eval_rule(CLip, CRip, CProto, CLport, CRport, CCat, CId)
+			var qos_class = eval_rule(bwdpi_conntrack[i][1], bwdpi_conntrack[i][3], bwdpi_conntrack[i][0], bwdpi_conntrack[i][2], bwdpi_conntrack[i][4], bwdpi_conntrack[i][7], bwdpi_conntrack[i][6]);
+			if (qos_class == 99)
+				qos_class = get_qos_class(bwdpi_conntrack[i][7], bwdpi_conntrack[i][6]);
 			var mark = (parseInt(bwdpi_conntrack[i][7]).toString(16).padStart(2,'0') + parseInt(bwdpi_conntrack[i][6]).toString(16).padStart(4,'0')).toUpperCase();
 			//bwdpi_conntrack[i][5] =  '<span title="' + label + '" class="catrow cat' + qos_class + '"' + size + '>' + label + '</span>';			//sort by AppID name
 			bwdpi_conntrack[i][5] =	'<div  class="t_item">' +
@@ -294,135 +297,25 @@ function draw_conntrack_table() {
 				bwdpi_conntrack[i][3] = compIPV6(bwdpi_conntrack[i][3]);
 			}
 
-			//OVERRIDE LABEL - TC RULES
-			if (bwdpi_conntrack[i][7] == 0 && bwdpi_conntrack[i][6] == 0 )																			//unidentified
-				bwdpi_conntrack[i][5] =	'<div  class="t_item">' +
-						'<span class="t_label catrow cat' + c_others + '"' + size + '>' + label + '</span>' +
-						'<span class="t_mark  catrow cat' + c_others + '"' + size + '>MARK:' + mark + '</span>' +
-						'<div>';
-
-			if (bwdpi_conntrack[i][7] == 13 && (bwdpi_conntrack[i][6] == 7 || bwdpi_conntrack[i][6] == 134 || bwdpi_conntrack[i][6] == 160) )		//speedtest + playstore + appstore
-				bwdpi_conntrack[i][5] =	'<div  class="t_item">' +
-						'<span class="t_label catrow cat' + c_downloads + '"' + size + '>' + label + '</span>' +
-						'<span class="t_mark  catrow cat' + c_downloads + '"' + size + '>MARK:' + mark + '</span>' +
-						'<div>';
-
-			if (bwdpi_conntrack[i][7] == 0 && bwdpi_conntrack[i][6] == 107) 																		//snapchat
-				bwdpi_conntrack[i][5] =	'<div  class="t_item">' +
-						'<span class="t_label catrow cat' + c_others + '"' + size + '>' + label + '</span>' +
-						'<span class="t_mark  catrow cat' + c_others + '"' + size + '>MARK:' + mark + '</span>' +
-						'<div>';
-
-			if (bwdpi_conntrack[i][7] == 26) 																										//advertisement
-				bwdpi_conntrack[i][5] =	'<div  class="t_item">' +
-						'<span class="t_label catrow cat' + c_downloads + '"' + size + '>' + label + '</span>' +
-						'<span class="t_mark  catrow cat' + c_downloads + '"' + size + '>MARK:' + mark + '</span>' +
-						'<div>';
-
-			if (bwdpi_conntrack[i][7] == 19 || bwdpi_conntrack[i][7] == 20 || (  bwdpi_conntrack[i][7] == 18 && bwdpi_conntrack[i][6]==63) )		//https + TSL/SSL + http
-				bwdpi_conntrack[i][5] =	'<div  class="t_item">' +
-						'<span class="t_label catrow cat' + c_web + '"' + size + '>' + label + '</span>' +
-						'<span class="t_mark  catrow cat' + c_web + '"' + size + '>MARK:' + mark + '</span>' +
-						'<div>';
-
-			if (eval_rule(appdb1, bwdpi_conntrack[i][0], bwdpi_conntrack[i][2], bwdpi_conntrack[i][4], bwdpi_conntrack[i][1], bwdpi_conntrack[i][3], bwdpi_conntrack[i][7], bwdpi_conntrack[i][6]))
-				bwdpi_conntrack[i][5] =	'<div  class="t_item">' +
-						'<span class="t_label catrow cat' + appdb1[18] + '"' + size + '>' + label + ' ~</span>' +
-						'<span class="t_mark  catrow cat' + appdb1[18] + '"' + size + '>MARK:' + mark + '</span>' +
-						'<div>';
-
-			if (eval_rule(appdb2, bwdpi_conntrack[i][0], bwdpi_conntrack[i][2], bwdpi_conntrack[i][4], bwdpi_conntrack[i][1], bwdpi_conntrack[i][3], bwdpi_conntrack[i][7], bwdpi_conntrack[i][6]))
-				bwdpi_conntrack[i][5] =	'<div  class="t_item">' +
-						'<span class="t_label catrow cat' + appdb2[18] + '"' + size + '>' + label + ' ~</span>' +
-						'<span class="t_mark  catrow cat' + appdb2[18] + '"' + size + '>MARK:' + mark + '</span>' +
-						'<div>';
-
-			if (eval_rule(appdb3, bwdpi_conntrack[i][0], bwdpi_conntrack[i][2], bwdpi_conntrack[i][4], bwdpi_conntrack[i][1], bwdpi_conntrack[i][3], bwdpi_conntrack[i][7], bwdpi_conntrack[i][6]))
-				bwdpi_conntrack[i][5] =	'<div  class="t_item">' +
-						'<span class="t_label catrow cat' + appdb3[18] + '"' + size + '>' + label + ' ~</span>' +
-						'<span class="t_mark  catrow cat' + appdb3[18] + '"' + size + '>MARK:' + mark + '</span>' +
-						'<div>';
-
-			if (eval_rule(appdb4, bwdpi_conntrack[i][0], bwdpi_conntrack[i][2], bwdpi_conntrack[i][4], bwdpi_conntrack[i][1], bwdpi_conntrack[i][3], bwdpi_conntrack[i][7], bwdpi_conntrack[i][6]))
-				bwdpi_conntrack[i][5] =	'<div  class="t_item">' +
-						'<span class="t_label catrow cat' + appdb3[18] + '"' + size  + '>' + label + ' ~</span>' +
-						'<span class="t_mark  catrow cat' + appdb3[18] + '"' + size + '>MARK:' + mark + '</span>' +
-						'<div>';
-
-
-			if (true)
+			//SHOW LOCAL DEVICES AT LEFT SIDE OF TABLE (FLIP POSITION IF REQUIRED)
+			if (bwdpi_conntrack[i][3].startsWith(dhcp_start))
 			{
-				//SHOW LOCAL DEVICES AT LEFT SIDE OF TABLE (FLIP POSITION IF REQUIRED)
-				if (bwdpi_conntrack[i][3].startsWith(dhcp_start))
-				{
-					var temp = bwdpi_conntrack[i][3];
-					bwdpi_conntrack[i][3] = bwdpi_conntrack[i][1];
-					bwdpi_conntrack[i][1] = temp;
+				var temp = bwdpi_conntrack[i][3];
+				bwdpi_conntrack[i][3] = bwdpi_conntrack[i][1];
+				bwdpi_conntrack[i][1] = temp;
 
-					temp = bwdpi_conntrack[i][4];
-					bwdpi_conntrack[i][4] = bwdpi_conntrack[i][2];
-					bwdpi_conntrack[i][2] = temp;
+				temp = bwdpi_conntrack[i][4];
+				bwdpi_conntrack[i][4] = bwdpi_conntrack[i][2];
+				bwdpi_conntrack[i][2] = temp;
+			}
 
-				}
-
-
-				//OVERRIDE LABEL - IPTABLE RULES
-				if (bwdpi_conntrack[i][4] == 500 || bwdpi_conntrack[i][4] == 4500)																		//wifi caling
-					bwdpi_conntrack[i][5] =	'<div  class="t_item">' +
-							'<span class="t_label catrow cat' + c_voip + '"' + size + '>Wi-Fi Calling</span>' +
-							'<span class="t_mark  catrow cat' + c_voip + '"' + size + '>MARK:' + mark + '</span>' +
-							'<div>';
-
-				if (bwdpi_conntrack[i][2] >= 16384 && bwdpi_conntrack[i][2] <= 16415)																	//facetime
-					bwdpi_conntrack[i][5] =	'<div  class="t_item">' +
-							'<span class="t_label catrow cat' + c_voip + '"' + size + '>Facetime</span>' +
-							'<span class="t_mark  catrow cat' + c_voip + '"' + size + '>MARK:' + mark + '</span>' +
-							'<div>';
-
-				if (bwdpi_conntrack[i][7] == 8 && (bwdpi_conntrack[i][4] == 80 || bwdpi_conntrack[i][4] == 443) && bwdpi_conntrack[i][0] == "tcp" )	{	//game downloads
-					label = "Game Transfering: " + label;
-					if (label.length > 27)	size='style="font-size: 75%;"';
-					bwdpi_conntrack[i][5] =	'<div  class="t_item">' +
-							'<span class="t_label catrow cat' + c_default + '"' + size + '>' + label + '</span>' +
-							'<span class="t_mark  catrow cat' + c_default + '"' + size + '>MARK:' + mark + '</span>' +
-							'<div>';
-				}
-				if (eval_rule(gamerule, bwdpi_conntrack[i][0], bwdpi_conntrack[i][2], bwdpi_conntrack[i][4], bwdpi_conntrack[i][1], bwdpi_conntrack[i][3], bwdpi_conntrack[i][7], bwdpi_conntrack[i][6]))
-					bwdpi_conntrack[i][5] =	'<div  class="t_item">' +
-							'<span class="t_label catrow cat' + gamerule[18] + '"' + size + '>Game Rule: Untracked</span>' +
-							'<span class="t_mark  catrow cat' + gamerule[18] + '"' + size + '>MARK:' + mark + '</span>' +
-							'<div>';
-
-				if (eval_rule(rule1, bwdpi_conntrack[i][0], bwdpi_conntrack[i][2], bwdpi_conntrack[i][4], bwdpi_conntrack[i][1], bwdpi_conntrack[i][3], bwdpi_conntrack[i][7], bwdpi_conntrack[i][6]))
-					bwdpi_conntrack[i][5] =	'<div  class="t_item">' +
-							'<span class="t_label catrow cat' + rule1[18] + '"' + size + '>'+rulename1+'</span>' +
-							'<span class="t_mark  catrow cat' + rule1[18] + '"' + size + '>MARK:' + mark + '</span>' +
-							'<div>';
-				if (eval_rule(rule2, bwdpi_conntrack[i][0], bwdpi_conntrack[i][2], bwdpi_conntrack[i][4], bwdpi_conntrack[i][1], bwdpi_conntrack[i][3], bwdpi_conntrack[i][7], bwdpi_conntrack[i][6]))
-					bwdpi_conntrack[i][5] =	'<div  class="t_item">' +
-							'<span class="t_label catrow cat' + rule2[18] + '"' + size + '>'+rulename2+'</span>' +
-							'<span class="t_mark  catrow cat' + rule2[18] + '"' + size + '>MARK:' + mark + '</span>' +
-							'<div>';
-				if (eval_rule(rule3, bwdpi_conntrack[i][0], bwdpi_conntrack[i][2], bwdpi_conntrack[i][4], bwdpi_conntrack[i][1], bwdpi_conntrack[i][3], bwdpi_conntrack[i][7], bwdpi_conntrack[i][6]))
-					bwdpi_conntrack[i][5] =	'<div  class="t_item">' +
-							'<span class="t_label catrow cat' + rule3[18] + '"' + size + '>'+rulename3+'</span>' +
-							'<span class="t_mark  catrow cat' + rule3[18] + '"' + size + '>MARK:' + mark + '</span>' +
-							'<div>';
-				if (eval_rule(rule4, bwdpi_conntrack[i][0], bwdpi_conntrack[i][2], bwdpi_conntrack[i][4], bwdpi_conntrack[i][1], bwdpi_conntrack[i][3], bwdpi_conntrack[i][7], bwdpi_conntrack[i][6]))
-					bwdpi_conntrack[i][5] =	'<div  class="t_item">' +
-							'<span class="t_label catrow cat' + rule4[18] + '"' + size + '>'+rulename4+'</span>' +
-							'<span class="t_mark  catrow cat' + rule4[18] + '"' + size + '>MARK:' + mark + '</span>' +
-							'<div>';
-
-				//PRETTY PRINT LOCAL DEVICE NAME NEXT TO IPv4 address
-				//(be placed after evaluation of custom rules due to injecting HTML into LocalIP field and breaking LocalIP data used for rule)
-				if (typeof device[bwdpi_conntrack[i][1]] != "undefined")
-				{
-					bwdpi_conntrack[i][1] =
-					  //'<div  title="' + bwdpi_conntrack[i][1].split('.')[3].padStart(3, '#') + '" class="localdeviceip">' + bwdpi_conntrack[i][1] + '</div>' +
-						'<div  title="' + bwdpi_conntrack[i][1] + '" class="localdeviceip">' + device[bwdpi_conntrack[i][1]].name + '</div>'
-				}
-
+			//PRETTY PRINT LOCAL DEVICE NAME NEXT TO IPv4 address
+			//(be placed after evaluation of custom rules due to injecting HTML into LocalIP field and breaking LocalIP data used for rule)
+			if (typeof device[bwdpi_conntrack[i][1]] != "undefined")
+			{
+				bwdpi_conntrack[i][1] =
+				  //'<div  title="' + bwdpi_conntrack[i][1].split('.')[3].padStart(3, '#') + '" class="localdeviceip">' + bwdpi_conntrack[i][1] + '</div>' +
+					'<div  title="' + bwdpi_conntrack[i][1] + '" class="localdeviceip">' + device[bwdpi_conntrack[i][1]].name + '</div>'
 			}
 
 			tabledata[j] = bwdpi_conntrack[i];
@@ -881,115 +774,112 @@ function create_rule(Lip, Rip, Proto, Lport, Rport, Mark, Dst){
 	return rule;
 };
 
-function eval_rule(rule, CLip, CRip, CProto, CLport, CRport, CCat, CId){
-
-	//eval false if rule has no filters or destination specified
-	if (!rule || !rule[0] || (rule[18]==undefined) )
-	{
-		// console.log("rule is not configured");
-		return 0;
-	}
-
-	if ( rule[1] && CProto != rule[1] && rule[1] != "both" )
-	{
-		// console.log("protocol mismatch");
-		return 0;
-	}
-
-	//if rule has local/remote ports specified
-	if (rule[0] & 15)
-	{
-
-		if ((rule[0] & 15) <= 3 )							//if port rule is NOT a multiport match
+function eval_rule(CLip, CRip, CProto, CLport, CRport, CCat, CId){
+	// return the rules[i][18] when a match
+	for (i=0;i<rules.length;i++) {
+		//eval false if rule has no filters or destination specified
+		if (!rules[i] || !rules[i][0] || (rules[i][18]==undefined) )
 		{
-			if ( (rule[0] & 1) && !((CLport >= rule[3] && CLport <= rule[4])^(rule[2])) )
-			{
-				// console.log("local port mismatch");
-				return 0;
-			}
-			if ( (rule[0] & 2) && !((CRport >= rule[7] && CRport <= rule[8])^(rule[6])) )
-			{
-				// console.log("remote port mismatch");
-				return 0;
-			}
-
+			// console.log("rule is not configured");
+			continue;
 		}
-		else if (( rule[0] & 15) == 4 )						//if port rule is ONLY a local multiport match
-		{
-			var match=false;
-			for (var i = 0; i < rule[5].length; i++) {
-				if(rule[5][i] == CLport) 	match=true;
-			}
-			if (rule[2]) 					match=!(match);
-			if (match == false)
-			{
-			  // console.log("local multiport mismatch");
-			  return 0;
-			}
 
-		}
-		else if (( rule[0] & 15) == 8 )						//if port rule is ONLY a remote multiport match
+		if ( rules[i][1] && CProto != rules[i][1] && rules[i][1] != "both" )
 		{
-		    var match=false;
-		    for (var i = 0; i < rule[9].length; i++) {
-		  	  if(rule[9][i] == CRport) 	match=true;
-		    }
-		    if (rule[6]) 				match=!(match);
-		    if (match == false)
+			// console.log("protocol mismatch");
+			continue;
+		}
+
+		//if rule has local/remote ports specified
+		if (rules[i][0] & 15)
+		{
+			if ((rules[i][0] & 15) <= 3 )							//if port rule is NOT a multiport match
+			{
+				if ( (rules[i][0] & 1) && !((CLport >= rules[i][3] && CLport <= rules[i][4])^(rules[i][2])) )
+				{
+					// console.log("local port mismatch");
+					continue;
+				}
+				if ( (rules[i][0] & 2) && !((CRport >= rules[i][7] && CRport <= rules[i][8])^(rules[i][6])) )
+				{
+					// console.log("remote port mismatch");
+					continue;
+				}
+			}
+			else if (( rules[i][0] & 15) == 4 )						//if port rule is ONLY a local multiport match
+			{
+				var match=false;
+				for (var j = 0; i < rules[i][5].length; i++) {
+					if(rules[i][5][j] == CLport) 	match=true;
+				}
+				if (rules[i][2]) 					match=!(match);
+				if (match == false)
+				{
+				  // console.log("local multiport mismatch");
+				  continue;
+				}
+			}
+			else if (( rules[i][0] & 15) == 8 )						//if port rule is ONLY a remote multiport match
+			{
+			    var match=false;
+			    for (var j = 0; j < rules[i][9].length; j++) {
+			  	  if(rules[i][9][j] == CRport) 	match=true;
+			    }
+			    if (rules[i][6]) 				match=!(match);
+			    if (match == false)
+			    {
+				  // console.log("remote multiport mismatch");
+				  continue;
+			    }
+			}
+			else
+			{
+				//console.log("improper configuration of port rule");
+				continue;									//false since multiport match cannot be simultanously used with other port match
+			}
+		}
+
+		// if rule has local IP specified
+		if ((rules[i][0] & 16) )
+		{
+		  CLip=ip2dec(CLip);
+		  if ( !((CLip >= rules[i][11] && CLip <= rules[i][12])^(rules[i][10])) )
 		    {
-			  // console.log("remote multiport mismatch");
-			  return 0;
-		    }
+		      // console.log("local ip mismatch");
+			  continue;
+			}
+		  }
 
-		}
-		else
+		// if rule has remote IP specified
+		if (rules[i][0] & 32)
 		{
-			//console.log("improper configuration of port rule");
-			return 0;									//false since multiport match cannot be simultanously used with other port match
+		  CRip=ip2dec(CRip);
+		  if ( !((CRip >= rules[i][14] && CRip <= rules[i][15])^(rules[i][13])) )
+		  {
+		    //console.log("remote ip mismatch");
+			continue;
+		  }
 		}
-	}
 
+		// if rule has mark cat specified
+		if ( (rules[i][0] & 64) && (rules[i][16] != CCat) )
+		{
+		  // console.log("category mismatch");
+		  continue;
+	    }
 
-	// if rule has local IP specified
-	if ((rule[0] & 16) )
-	{
-	  CLip=ip2dec(CLip);
-	  if ( !((CLip >= rule[11] && CLip <= rule[12])^(rule[10])) )
-	    {
-	      // console.log("local ip mismatch");
-		  return 0;
+		// if rule has mark id specified
+		if ( (rules[i][0] & 128) && (rules[i][17] != CId) )
+		{
+		  // console.log("traffic ID mismatch");
+		  continue;
 		}
-	  }
 
-	  // if rule has remote IP specified
-	if (rule[0] & 32)
-	{
-	  CRip=ip2dec(CRip);
-	  if ( !((CRip >= rule[14] && CRip <= rule[15])^(rule[13])) )
-	  {
-	    //console.log("remote ip mismatch");
-		return 0;
-	  }
-	}
-
-	// if rule has mark cat specified
-	if ( (rule[0] & 64) && (rule[16] != CCat) )
-	{
-	  // console.log("category mismatch");
-	  return 0;
-    }
-
-	// if rule has mark id specified
-	if ( (rule[0] & 128) && (rule[17] != CId) )
-	{
-	  // console.log("traffic ID mismatch");
-	  return 0;
-	}
-
-	// console.log("rule matches current connection");
-	return 1;
-
-}
+		// console.log("rule matches current connection");
+		return rules[i][18];  // return the rule's target Class
+	} // for each rule in array
+	return 99;  // return 99 to indicate no matches
+}  // eval_rule
 
 function redraw() {
     var code;
@@ -1547,7 +1437,7 @@ function set_FreshJR_mod_vars()
 		for (r=0;r<iptables_combined_array.length;r++){
 			var iptables_combined_row = iptables_combined_array[r].split(">");
 			if (iptables_combined_row.length > 1)
-				rule.push(create_rule(iptables_combined_row[0], iptables_combined_row[1], iptables_combined_row[2], iptables_combined_row[3], iptables_combined_row[4], iptables_combined_row[5], iptables_combined_row[6]));
+				rules.push(create_rule(iptables_combined_row[0], iptables_combined_row[1], iptables_combined_row[2], iptables_combined_row[3], iptables_combined_row[4], iptables_combined_row[5], iptables_combined_row[6]));
 		}
 
 		var appdb_combined_rules = appdb_defrulelist_array + appdb_rulelist_array;
@@ -1555,7 +1445,7 @@ function set_FreshJR_mod_vars()
 		for (a=0; a<appdb_combined_array.length;a++) {
 			var appdb_combined_row = appdb_combined_array[a].split(">");
 			if (appdb_combined_row.length > 1)
-				rule.push(create_rule("", "", "", "", "", appdb_combined_row[1], appdb_combined_row[2]));
+				rules.push(create_rule("", "", "", "", "", appdb_combined_row[1], appdb_combined_row[2]));
 		}
 
 		// get gameCIDR
