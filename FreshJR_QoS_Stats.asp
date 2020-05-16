@@ -839,28 +839,6 @@ function eval_rule(CLip, CRip, CProto, CLport, CRport, CCat, CId){
 			}
 		}
 
-		// if rule has local IP specified
-		if ((rules[i][0] & 16) )
-		{
-		  var tmpCLip=ip2dec(CLip);
-		  if ( !((tmpCLip >= rules[i][11] && tmpCLip <= rules[i][12])^(rules[i][10])) )
-		    {
-		      // console.log("local ip mismatch");
-			  continue;
-			}
-		  }
-
-		// if rule has remote IP specified
-		if (rules[i][0] & 32)
-		{
-		  var tmpCRip=ip2dec(CRip);
-		  if ( !((tmpCRip >= rules[i][14] && tmpCRip <= rules[i][15])^(rules[i][13])) )
-		  {
-		    //console.log("remote ip mismatch");
-			continue;
-		  }
-		}
-
 		// if rule has mark cat specified
 		if ( (rules[i][0] & 64) && (rules[i][16] != CCat) )
 		{
@@ -873,6 +851,38 @@ function eval_rule(CLip, CRip, CProto, CLport, CRport, CCat, CId){
 		{
 		  // console.log("traffic ID mismatch");
 		  continue;
+		}
+
+		// if rule has local IP specified and is not IPv6
+		if (rules[i][0] & 16)
+		{
+			if ( CLip.indexOf(":") < 0 ) {
+			  var tmpCLip=ip2dec(CLip);
+			  if ( !((tmpCLip >= rules[i][11] && tmpCLip <= rules[i][12])^(rules[i][10])) )
+			    {
+			      // console.log("local ip mismatch");
+				  continue;
+					}
+			} // is IPv4
+			else
+				// is IPv6
+				continue;
+		 }
+
+		// if rule has remote IP specified
+		if (rules[i][0] & 32)
+		{
+			if ( CRip.indexOf(":") < 0 ) {
+			  var tmpCRip=ip2dec(CRip);
+			  if ( !((tmpCRip >= rules[i][14] && tmpCRip <= rules[i][15])^(rules[i][13])) )
+			  {
+			    //console.log("remote ip mismatch");
+				continue;
+			  }
+			} // is IPv4
+			else
+				// is IPv6
+				continue;
 		}
 
 		// console.log("rule matches current connection");
