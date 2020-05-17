@@ -2123,6 +2123,25 @@ install_webui() {
 	fi
 }
 
+Auto_ServiceEventEnd() {
+	# Borrowed from Adamm00
+	# https://github.com/Adamm00/IPSet_ASUS/blob/master/firewall.sh
+	if [ ! -f "/jffs/scripts/service-event-end" ]; then
+			echo "#!/bin/sh" > /jffs/scripts/service-event-end
+			echo >> /jffs/scripts/service-event-end
+	elif [ -f "/jffs/scripts/service-event-end" ] && ! head -1 /jffs/scripts/service-event-end | /bin/grep -qE "^#!/bin/sh"; then
+			sed -i '1s~^~#!/bin/sh\n~' /jffs/scripts/service-event-end
+	fi
+	if [ ! -x "/jffs/scripts/service-event-end" ]; then
+		chmod 755 /jffs/scripts/service-event-end
+	fi
+	if ! /bin/grep -vE "^#" /jffs/scripts/service-event-end | /bin/grep -qE "restart.*wrs.*sh /jffs/scripts/FreshJR_QOS.sh"; then
+		cmdline="if [ \"\$1\" = \"restart\" ] && [ \"\$2\" = \"wrs\" ]; then sh /jffs/scripts/FreshJR_QOS.sh -check; fi # FreshJR_QOS Addition"
+		sed -i '\~\"wrs\".*# FreshJR_QOS Addition~d' /jffs/scripts/service-event-end
+		echo "$cmdline" >> /jffs/scripts/service-event-end
+	fi
+}
+
 #Main program here, will execute different things depending on arguments
 
 . /usr/sbin/helper.sh  # initialize Merlin Addon API helper functions
