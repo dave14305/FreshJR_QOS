@@ -602,91 +602,62 @@ read_nvram(){
 	OLDIFS=$IFS
 	IFS=";"
 
-	if [ $(nvram get fb_comment | sed 's/>/;/g' | tr -cd ';' | wc -c) -eq 20 ] ; then
-		am_settings_set freshjr_nvram1 "$(nvram get fb_comment)"
-		nvram set fb_comment=""
-		nvram commit
+	if [ $(nvram get fb_comment | sed 's/>/;/g' | tr -cd ';' | wc -c) -eq 20 ] && [ -z "$(am_settings_get freshjr_iptables)" ]; then
+		read \
+			e1 e2 e3 e4 e5 e6 e7 \
+			f1 f2 f3 f4 f5 f6 f7 \
+			g1 g2 g3 g4 g5 g6 g7
+		<<EOF
+"$(nvram get fb_comment | sed 's/>/;/g' )"
+EOF
 	fi
 	if [ $(nvram get fb_email_dbg | sed 's/>/;/g' | tr -cd ';' | wc -c) -eq 48 ] ; then
-		am_settings_set freshjr_nvram2 "$(nvram get fb_email_dbg)"
-		nvram set fb_email_dbg=""
-		nvram commit
+		read \
+			h1 h2 h3 h4 h5 h6 h7 \
+			r1 d1 \
+			r2 d2 \
+			r3 d3 \
+			r4 d4 \
+			gameCIDR \
+			ruleFLAG \
+			drp0 drp1 drp2 drp3 drp4 drp5 drp6 drp7 \
+			dcp0 dcp1 dcp2 dcp3 dcp4 dcp5 dcp6 dcp7 \
+			urp0 urp1 urp2 urp3 urp4 urp5 urp6 urp7 \
+			ucp0 ucp1 ucp2 ucp3 ucp4 ucp5 ucp6 ucp7
+		<<EOF
+"$(nvram get fb_email_dbg | sed 's/>/;/g' )"
+EOF
 	fi
-
-	if [ $(am_settings_get freshjr_nvram1 | sed 's/>/;/g' | tr -cd ';' | wc -c) -ne 20 ] ; then
-		am_settings_set freshjr_nvram1 ";;;;;;>;;;;;;>;;;;;;"
-	fi
-
-	if [ $(am_settings_get freshjr_nvram2 | sed 's/>/;/g' | tr -cd ';' | wc -c) -ne 48 ] ; then
-		am_settings_set freshjr_nvram2 ";;;;;;>;>;>;>;>>>5;20;15;10;10;30;5;5>100;100;100;100;100;100;100;100>5;20;15;30;10;10;5;5>100;100;100;100;100;100;100;100"
-	fi
-
-	# am_settings_get freshjr_iptables | sed 's/[<]/\n/g; s/[>]/;/g'
-
-	read \
-		e1 e2 e3 e4 e5 e6 e7 \
-		f1 f2 f3 f4 f5 f6 f7 \
-		g1 g2 g3 g4 g5 g6 g7 \
-< $(am_settings_get freshjr_nvram1 | sed 's/>/;/g' )
-
-	read \
-		h1 h2 h3 h4 h5 h6 h7 \
-		r1 d1 \
-		r2 d2 \
-		r3 d3 \
-		r4 d4 \
-		gameCIDR \
-		ruleFLAG \
-		drp0 drp1 drp2 drp3 drp4 drp5 drp6 drp7 \
-		dcp0 dcp1 dcp2 dcp3 dcp4 dcp5 dcp6 dcp7 \
-		urp0 urp1 urp2 urp3 urp4 urp5 urp6 urp7 \
-		ucp0 ucp1 ucp2 ucp3 ucp4 ucp5 ucp6 ucp7 \
-< $(am_settings_get freshjr_nvram2 | sed 's/>/;/g' )
 
 	IFS=$OLDIFS
 
-	#Verify each read nvram rate is between 5-100  (disabled unless needed in future)
-	# [ "${drp0//[^0-9]}" -ge "5" ] && [ "${drp0//[^0-9]}" -le "100" ] && drp0="5"
-	# [ "${drp1//[^0-9]}" -ge "5" ] && [ "${drp1//[^0-9]}" -le "100" ] && drp1="20"
-	# [ "${drp2//[^0-9]}" -ge "5" ] && [ "${drp2//[^0-9]}" -le "100" ] && drp2="15"
-	# [ "${drp3//[^0-9]}" -ge "5" ] && [ "${drp3//[^0-9]}" -le "100" ] && drp3="10"
-	# [ "${drp4//[^0-9]}" -ge "5" ] && [ "${drp4//[^0-9]}" -le "100" ] && drp4="10"
-	# [ "${drp5//[^0-9]}" -ge "5" ] && [ "${drp5//[^0-9]}" -le "100" ] && drp5="30"
-	# [ "${drp6//[^0-9]}" -ge "5" ] && [ "${drp6//[^0-9]}" -le "100" ] && drp6="5"
-	# [ "${drp7//[^0-9]}" -ge "5" ] && [ "${drp7//[^0-9]}" -le "100" ] && drp7="5"
+	if [ -z "$(am_settings_get freshjr_iptables)" ]; then
+		tmp_iptables_rules="<${e1}>${e2}>${e3}>${e4}>${e5}>${e6}>${e7}<${f1}>${f2}>${f3}>${f4}>${f5}>${f6}>${f7}<${g1}>${g2}>${g3}>${g4}>${g5}>${g6}>${g7}<${h1}>${h2}>${h3}>${h4}>${h5}>${h6}>${h7}"
+		tmp_iptables_rules=$(echo "$tmp_iptables_rules" | sed 's/<>>>>>>//g' | openssl enc -a)
+		am_settings_set freshjr_iptables "$tmp_iptables_rules"
+	fi
 
-	# [ "${dcp0//[^0-9]}" -ge "5" ] && [ "${dcp0//[^0-9]}" -le "100" ] && dcp0="100"
-	# [ "${dcp1//[^0-9]}" -ge "5" ] && [ "${dcp1//[^0-9]}" -le "100" ] && dcp1="100"
-	# [ "${dcp2//[^0-9]}" -ge "5" ] && [ "${dcp2//[^0-9]}" -le "100" ] && dcp2="100"
-	# [ "${dcp3//[^0-9]}" -ge "5" ] && [ "${dcp3//[^0-9]}" -le "100" ] && dcp3="100"
-	# [ "${dcp4//[^0-9]}" -ge "5" ] && [ "${dcp4//[^0-9]}" -le "100" ] && dcp4="100"
-	# [ "${dcp5//[^0-9]}" -ge "5" ] && [ "${dcp5//[^0-9]}" -le "100" ] && dcp5="100"
-	# [ "${dcp6//[^0-9]}" -ge "5" ] && [ "${dcp6//[^0-9]}" -le "100" ] && dcp6="100"
-	# [ "${dcp7//[^0-9]}" -ge "5" ] && [ "${dcp7//[^0-9]}" -le "100" ] && dcp7="100"
+	if [ -z "$(am_settings_get freshjr_appdb)" ]; then
+		tmp_appdb_rules="<${r1}>${d1}<${r2}>${d2}<${r3}>${d3}<${r4}>${d4}"
+		tmp_appdb_rules=$(echo "$tmp_appdb_rules" | sed 's/<>//g' | openssl enc -a)
+		am_settings_set freshjr_appdb "$tmp_appdb_rules"
+	fi
 
-	# [ "${urp0//[^0-9]}" -ge "5" ] && [ "${urp0//[^0-9]}" -le "100" ] && urp0="5"
-	# [ "${urp1//[^0-9]}" -ge "5" ] && [ "${urp1//[^0-9]}" -le "100" ] && urp1="20"
-	# [ "${urp2//[^0-9]}" -ge "5" ] && [ "${urp2//[^0-9]}" -le "100" ] && urp2="15"
-	# [ "${urp3//[^0-9]}" -ge "5" ] && [ "${urp3//[^0-9]}" -le "100" ] && urp3="30"
-	# [ "${urp4//[^0-9]}" -ge "5" ] && [ "${urp4//[^0-9]}" -le "100" ] && urp4="10"
-	# [ "${urp5//[^0-9]}" -ge "5" ] && [ "${urp5//[^0-9]}" -le "100" ] && urp5="10"
-	# [ "${urp6//[^0-9]}" -ge "5" ] && [ "${urp6//[^0-9]}" -le "100" ] && urp6="5"
-	# [ "${urp7//[^0-9]}" -ge "5" ] && [ "${urp7//[^0-9]}" -le "100" ] && urp7="5"
+	if [ -z "$(am_settings_get freshjr_gamecidr)" ]; then
+		am_settings_set freshjr_gamecidr "$gameCIDR"
+	fi
 
-	# [ "${ucp0//[^0-9]}" -ge "5" ] && [ "${ucp0//[^0-9]}" -le "100" ] && ucp0="100"
-	# [ "${ucp1//[^0-9]}" -ge "5" ] && [ "${ucp1//[^0-9]}" -le "100" ] && ucp1="100"
-	# [ "${ucp2//[^0-9]}" -ge "5" ] && [ "${ucp2//[^0-9]}" -le "100" ] && ucp2="100"
-	# [ "${ucp3//[^0-9]}" -ge "5" ] && [ "${ucp3//[^0-9]}" -le "100" ] && ucp3="100"
-	# [ "${ucp4//[^0-9]}" -ge "5" ] && [ "${ucp4//[^0-9]}" -le "100" ] && ucp4="100"
-	# [ "${ucp5//[^0-9]}" -ge "5" ] && [ "${ucp5//[^0-9]}" -le "100" ] && ucp5="100"
-	# [ "${ucp6//[^0-9]}" -ge "5" ] && [ "${ucp6//[^0-9]}" -le "100" ] && ucp6="100"
-	# [ "${ucp7//[^0-9]}" -ge "5" ] && [ "${ucp7//[^0-9]}" -le "100" ] && ucp7="100"
+	if [ -z "$(am_settings_get freshjr_ruleflag)" ]; then
+		am_settings_set freshjr_ruleflag "$ruleFLAG"
+	fi
 
-	#takes protocol saved in nvram and makes it lower case
-	e3=$(echo ${e3}  | tr '[A-Z]' '[a-z]')
-	f3=$(echo ${f3}  | tr '[A-Z]' '[a-z]')
-	g3=$(echo ${g3}  | tr '[A-Z]' '[a-z]')
-	h3=$(echo ${h3}  | tr '[A-Z]' '[a-z]')
+	if [ -z "$(am_settings_get freshjr_bandwidth)" ]; then
+		am_settings_set freshjr_bandwidth "<${drp0}>${drp1}>${drp2}>${drp3}>${drp4}>${drp5}>${drp6}>${drp7}<${dcp0}>${dcp1}>${dcp2}>${dcp3}>${dcp4}>${dcp5}>${dcp6}>${dcp7}<${urp0}>${urp1}>${urp2}>${urp3}>${urp4}>${urp5}>${urp6}>${urp7}<${ucp0}>${ucp1}>${ucp2}>${ucp3}>${ucp4}>${ucp5}>${ucp6}>${ucp7}"
+	fi
+
+	nvram set fb_comment=""
+	nvram set fb_email_dbg=""
+	nvram commit
 }
 
 ## helper function to save nvram variables in csv format
@@ -694,8 +665,6 @@ save_nvram(){
 	# nvram set fb_comment="${e1};${e2};${e3};${e4};${e5};${e6};${e7}>${f1};${f2};${f3};${f4};${f5};${f6};${f7}>${g1};${g2};${g3};${g4};${g5};${g6};${g7}"
 	# nvram set fb_email_dbg="${h1};${h2};${h3};${h4};${h5};${h6};${h7}>${r1};${d1}>${r2};${d2}>${r3};${d3}>${r4};${d4}>${gameCIDR}>${ruleFLAG}>${drp0};${drp1};${drp2};${drp3};${drp4};${drp5};${drp6};${drp7}>${dcp0};${dcp1};${dcp2};${dcp3};${dcp4};${dcp5};${dcp6};${dcp7}>${urp0};${urp1};${urp2};${urp3};${urp4};${urp5};${urp6};${urp7}>${ucp0};${ucp1};${ucp2};${ucp3};${ucp4};${ucp5};${ucp6};${ucp7}"
 	# nvram commit
-	am_settings_set freshjr_nvram1 "${e1};${e2};${e3};${e4};${e5};${e6};${e7}>${f1};${f2};${f3};${f4};${f5};${f6};${f7}>${g1};${g2};${g3};${g4};${g5};${g6};${g7}"
-	am_settings_set freshjr_nvram2 "${h1};${h2};${h3};${h4};${h5};${h6};${h7}>${r1};${d1}>${r2};${d2}>${r3};${d3}>${r4};${d4}>${gameCIDR}>${ruleFLAG}>${drp0};${drp1};${drp2};${drp3};${drp4};${drp5};${drp6};${drp7}>${dcp0};${dcp1};${dcp2};${dcp3};${dcp4};${dcp5};${dcp6};${dcp7}>${urp0};${urp1};${urp2};${urp3};${urp4};${urp5};${urp6};${urp7}>${ucp0};${ucp1};${ucp2};${ucp3};${ucp4};${ucp5};${ucp6};${ucp7}"
 }
 
 ## helper function for interactive menu mode
