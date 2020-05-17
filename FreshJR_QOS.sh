@@ -66,7 +66,7 @@ iptable_down_rules() {
 		fi
 	}
 
-	iptable_up_rules(){
+iptable_up_rules(){
 
 		#wan="ppp0"				## WAN interface over-ride for upload traffic if automatic detection is not working properly
 
@@ -98,7 +98,7 @@ iptable_down_rules() {
 		fi
 	}
 
-	tc_redirection_down_rules() {
+tc_redirection_down_rules() {
 		echo "Applying  TC Down Rules"
 		${tc} filter del dev br0 parent 1: prio $1																					#remove original unidentified traffic rule
 		${tc} filter del dev br0 parent 1: prio 22 > /dev/null 2>&1																		#remove original HTTPS rule
@@ -124,7 +124,7 @@ iptable_down_rules() {
 		${tc} filter add dev br0 protocol all prio 10 u32 match mark 0x803f0001 0xc03fffff flowid ${Defaults}						#Used for iptables Default_mark_down functionality
 	}
 
-	tc_redirection_up_rules() {
+tc_redirection_up_rules() {
 		echo "Applying  TC Up   Rules"
 		${tc} filter del dev eth0 parent 1: prio $1																					#remove original unidentified traffic rule
 		${tc} filter del dev eth0 parent 1: prio 22 > /dev/null 2>&1																	#remove original HTTPS rule
@@ -149,7 +149,7 @@ iptable_down_rules() {
 		${tc} filter add dev eth0 protocol all prio 10 u32 match mark 0x403f0001 0xc03fffff flowid ${Defaults}						#Used for iptables Default_mark_up functionality
 	}
 
-	custom_rates() {
+custom_rates() {
 		echo "Modifying TC Class Rates"
 		${tc} class change dev br0 parent 1:1 classid 1:10 htb ${PARMS}prio 0 rate ${DownRate0}Kbit ceil ${DownCeil0}Kbit burst ${DownBurst0} cburst ${DownCburst0}
 		${tc} class change dev br0 parent 1:1 classid 1:11 htb ${PARMS}prio 1 rate ${DownRate1}Kbit ceil ${DownCeil1}Kbit burst ${DownBurst1} cburst ${DownCburst1}
@@ -668,8 +668,7 @@ save_nvram(){
 }
 
 ## helper function for interactive menu mode
-dst_2_name()
-{
+dst_2_name() {
 	case "$1" in
 		0) echo "Net Control" ;;
 		1) echo "Gaming" ;;
@@ -684,8 +683,7 @@ dst_2_name()
 }
 
 ## helper function for interactive menu mode
-mark_2_name()
-{
+mark_2_name() {
 	return  #function disabled since grep is kinda slow
 	[ -z "$1" ] && return
 	cat="$( echo ${1} | head -c2 )"
@@ -696,7 +694,7 @@ mark_2_name()
 }
 
 ## INTERACTIVE mode - rate main page (overview)
-rates(){
+rates() {
 	echo -en "\033c\e[3J"		#clear screen
 	echo -en '\033[?7l'			#disable line wrap
 	printf '\e[8;30;120t'		#set height/width of terminal
@@ -878,7 +876,7 @@ rates(){
 }
 
 ## INTERACTIVE mode - rule main page (overview)
-rules(){
+rules() {
 	echo -en "\033c\e[3J"		#clear screen
 	echo -en '\033[?7l'			#disable line wrap
 	printf '\e[8;30;120t'		#set height/width of terminal
@@ -930,8 +928,7 @@ rules(){
 }
 
 ## INTERACTIVE mode - modify iptable rule
-iprule()
-{
+iprule() {
 	echo -en "\033c\e[3J"
 	echo -en '\033[?7l'			#disable line wrap
 	echo -e  "\033[1;32mFreshJR QOS v${version} \033[0m"
@@ -1260,8 +1257,7 @@ iprule()
 }
 
 ## INTERACTIVE mode - modify gameip range
-gamerule()
-{
+gamerule() {
 	echo -en "\033c\e[3J"
 	echo -en '\033[?7l'			#disable line wrap
 	echo -e  "\033[1;32mFreshJR QOS v${version} \033[0m"
@@ -1283,8 +1279,7 @@ gamerule()
 }
 
 ## INTERACTIVE mode - modify appdb TC rule
-apprule()
-{
+apprule() {
 	echo -en "\033c\e[3J"
 	echo -en '\033[?7l'			#disable line wrap
 	echo -e  "\033[1;32mFreshJR QOS v${version} \033[0m"
@@ -1662,7 +1657,7 @@ parse_iptablerule() {
 	} >> /tmp/freshjr_rules
 }
 
-about(){
+about() {
 	echo -en "\033c\e[3J"		#clear screen
 	echo -en '\033[?7l'			#disable line wrap
 	printf '\e[8;41;160t'		#set height/width of terminal
@@ -1719,8 +1714,7 @@ about(){
 	echo -en '\033[?7h'			#enable line wrap
 }
 
-update(){
-
+update() {
 	echo -en "\033c\e[3J"		#clear screen
 	echo -en '\033[?7l'			#disable line wrap
 	printf '\e[8;30;120t'		#set height/width of terminal
@@ -1760,16 +1754,13 @@ update(){
 	exit
 }
 
-prompt_restart(){
+prompt_restart() {
 	echo ""
 	echo -en " Would you like to \033[1;32m[Restart QoS]\033[0m for modifications to take effect? [1=Yes 2=No] : "
 	read yn
 	if [ "${yn}" = "1" ] ; then
 		if grep -q -x '/jffs/scripts/FreshJR_QOS -start $1 & ' /jffs/scripts/firewall-start ; then			#RMerlin install
 			service "restart_qos;restart_firewall"
-		else																								#Stock Install
-			service "restart_qos;restart_firewall"
-			cru a FreshJR_QOS_run_once "* * * * * /jffs/scripts/FreshJR_QOS -mount &"							#cron task so keeps running after terminal is closed
 		fi
 		echo ""
 	else
@@ -1777,14 +1768,11 @@ prompt_restart(){
 		if grep -q -x '/jffs/scripts/FreshJR_QOS -start $1 & ' /jffs/scripts/firewall-start ; then			#RMerlin install
 			echo -e  "\033[1;31;7m  Remember: [ Restart QOS ] for modifications to take effect \033[0m"
 			echo ""
-		else																								#Stock install
-			echo -e  "\033[1;31;7m  Remember: [ Restart Router ] for modifications to take effect \033[0m"
-			echo ""
 		fi
 	fi
 }
 
-menu(){
+menu() {
   read_nvram
 	echo -en "\033c\e[3J"		#clear screen
 	echo -en '\033[?7l'			#disable line wrap
@@ -1878,41 +1866,6 @@ menu(){
 	menu
 }
 
-##alternative install for (non-RMerlin) firmware
-stock_install(){
-	if [ "$(nvram get script_usbmount)" != "/jffs/scripts/script_usbmount" ] ; then
-		echo ""
-		echo -e  "\033[1;32m Creating environment to trigger scripts post USB Mount \033[0m"
-		nvram set script_usbmount="/jffs/scripts/script_usbmount"
-		nvram commit
-	fi
-
-	 if [ -f /jffs/scripts/script_usbmount ] ; then									   #check if script_usbmount exists
-	   if grep -q "#!/bin/sh" /jffs/scripts/script_usbmount ; then							#check if script_usbmount header is correct
-			:																				  #if header is correct, do nothing
-	   else																					  #if header is incorrect, fix header
-			echo " Detected improper header in script_usbmount, fixing header"
-			sed -i "1i #!/bin/sh" /jffs/scripts/script_usbmount
-			chmod 0755 /jffs/scripts/script_usbmount
-	   fi
-
-		sed -i '/FreshJR_QOS/d' /jffs/scripts/script_usbmount
-		echo '/jffs/scripts/FreshJR_QOS mount &' >> /jffs/scripts/script_usbmount
-
-	else																			   #if script_usbmount did not exist then set it up entirely
-	   echo " Creating script_usbmount in /jffs/scripts/"
-	   echo " Placing FreshJR_QOS into script_usbmount"
-	   echo "#!/bin/sh" > /jffs/scripts/script_usbmount
-	   echo '/jffs/scripts/FreshJR_QOS mount &' >> /jffs/scripts/script_usbmount
-	   chmod 0755 /jffs/scripts/script_usbmount
-	fi
-
-	echo -e  "\033[1;32mFreshJR QOS v${version} has been installed \033[0m"
-	echo -e  "\033[1;32m   make sure a USB storage device is plugged in and \033[0m"
-	echo -e "\033[1;31;7m   [ reboot router ] to finalize installation\033[0m"
-	echo ""
-}
-
 remove_webui() {
 	if nvram get rc_support | /bin/grep -q am_addons; then
 
@@ -1988,6 +1941,85 @@ Auto_ServiceEventEnd() {
 	fi
 }
 
+Auto_FirewallStart() {
+	if [ -f /jffs/scripts/firewall-start ] ; then									   #check if firewall-start exists
+		 if ! grep -q "#!/bin/sh" /jffs/scripts/firewall-start ; then							#check if firewall-start header is correct
+			#if header is incorrect, fix header
+			echo "Detected improper header in firewall-start, fixing header"
+			sed -i "1i #!/bin/sh" /jffs/scripts/firewall-start
+			chmod 0755 /jffs/scripts/firewall-start
+		 fi
+
+		 if ! grep -q -x '/jffs/scripts/FreshJR_QOS -start $1 & ' /jffs/scripts/firewall-start ; then	  #check if FreshJR_QOS is present as item in firewall start
+			#if not, appened it to the last line (also delete any previously formated entry)
+			echo "Placing FreshJR_QOS entry into firewall-start"
+			sed -i '/FreshJR_QOS/d' /jffs/scripts/firewall-start
+			echo '/jffs/scripts/FreshJR_QOS -start $1 & # FreshJR_QOS Addition' >> /jffs/scripts/firewall-start
+		 fi
+	else																			   #if firewall-start does not exist then set it up entirely
+		 echo "Firewall-start not detected, creating firewall-start"
+		 echo "Placing FreshJR_QOS entry into firewall-start"
+		 echo "#!/bin/sh" > /jffs/scripts/firewall-start
+		 echo '/jffs/scripts/FreshJR_QOS -start $1 & # FreshJR_QOS Addition' >> /jffs/scripts/firewall-start
+		 chmod 0755 /jffs/scripts/firewall-start
+	fi
+} # Auto_FirewallStart
+
+Auto_Crontab() {
+	cru a FreshJR_QOS "30 3 * * * /jffs/scripts/FreshJR_QOS -check"
+} # Auto_Crontab
+
+setup_aliases() {
+	#shortcut to launching FreshJR_QOS  (/usr/bin was readonly)
+	alias freshjr="sh /jffs/scripts/FreshJR_QOS -menu"
+	alias freshjrqos="sh /jffs/scripts/FreshJR_QOS -menu"
+	alias freshjr_qos="sh /jffs/scripts/FreshJR_QOS -menu"
+	alias FreshJR_QOS="sh /jffs/scripts/FreshJR_QOS -menu"
+	sed -i '/FreshJR/d' /jffs/configs/profile.add 2>/dev/null
+	echo 'alias freshjr="sh /jffs/scripts/FreshJR_QOS -menu"' >> /jffs/configs/profile.add
+	echo 'alias freshjrqos="sh /jffs/scripts/FreshJR_QOS -menu"' >> /jffs/configs/profile.add
+	echo 'alias freshjr_qos="sh /jffs/scripts/FreshJR_QOS -menu"' >> /jffs/configs/profile.add
+	echo 'alias FreshJR_QOS="sh /jffs/scripts/FreshJR_QOS -menu"' >> /jffs/configs/profile.add
+} # setup_aliases
+
+install() {
+	clear
+	chmod 0755 /jffs/scripts/FreshJR_QOS
+	Auto_Crontab
+	Auto_FirewallStart
+	install_webui
+	setup_aliases
+
+	echo -e  "\033[1;32mFreshJR QOS v${version} has been installed \033[0m"
+	echo ""
+	echo -n " Advanced configuration available via: "
+	if [ -e "/jffs/scripts/amtm" ] || [ -e "/usr/sbin/amtm" ]; then
+		echo -e  "\033[1;32m[ WebUI ]\033[0m or \033[1;32m[ /jffs/scripts/FreshJR_QOS -menu ]\033[0m or \033[1;32m[ amtm ]\033[0m "
+	else
+		echo -e  "\033[1;32m[ WebUI ]\033[0m or \033[1;32m[ /jffs/scripts/FreshJR_QOS -menu ]\033[0m "
+	fi
+
+	[ "$(nvram get qos_enable)" = "1" ] && prompt_restart
+} # install
+
+uninstall() {
+	sed -i '/FreshJR_QOS/d' /jffs/scripts/firewall-start 2>/dev/null						#remove FreshJR_QOS from firewall start
+	sed -i '/FreshJR_QOS/d' /jffs/scripts/script_usbmount 2>/dev/null						#remove FreshJR_QOS from script_usbmount - only used on stock ASUS firmware installs
+	sed -i '/freshjr/d' /jffs/configs/profile.add 2>/dev/null								#remove aliases used to launch interactive mode
+	sed -i '/FreshJR/d' /jffs/configs/profile.add 2>/dev/null
+	cru d FreshJR_QOS
+	rm -f /jffs/scripts/FreshJR_QOS
+
+	remove_webui
+	rm -f "${webpath}"
+
+	if [ "$(nvram get script_usbmount)" = "/jffs/scripts/script_usbmount" ] ; then												   #only used on stock ASUS firmware installs
+		nvram unset script_usbmount
+	fi
+	sed -i '/^freshjr_/d' /jffs/addons/custom_settings.txt
+	echo -e  "\033[1;32m FreshJR QOS has been uninstalled \033[0m"
+} # uninstall
+
 get_config() {
 	iptables_def_rules="$(am_settings_get freshjr_defiptables | openssl enc -a -d)"
 	iptables_rules="$(am_settings_get freshjr_iptables | openssl enc -a -d)"
@@ -2016,18 +2048,7 @@ write_iptables_rules() {
 	IFS="$OLDIFS"
 } # write_iptables_rules
 
-#Main program here, will execute different things depending on arguments
-
-. /usr/sbin/helper.sh  # initialize Merlin Addon API helper functions
-
-arg1="$(echo "$1" | tr -d "-")"
-wan="${2}"
-if [ -z "$wan" ] ; then
-	wan="$(nvram get wan0_ifname)"
-fi
-
-case "$arg1" in
- 'start'|'check'|'mount')																	##RAN ON FIREWALL-START OR CRON TASK, (RAN ONLY POST USB MOUNT IF USING STOCK ASUS FIRMWARE)
+start() {
 	cru a FreshJR_QOS "30 3 * * * /jffs/scripts/FreshJR_QOS -check"			#makes sure daily check if active
 	cru d FreshJR_QOS_run_once												#(used for stock firmware to trigger script and have it run after terminal is closed when making changes)
 
@@ -2046,16 +2067,10 @@ case "$arg1" in
 		read_nvram	#needs to be set before parse_iptablerule or custom rates
 		get_config
 
-		write_iptables_rules
-
-		if [ "$arg1" = "start" ] ; then
+		if [ "$1" = "start" ] ; then
 			##iptables rules will only be reapplied on firewall "start" due to receiving interface name
 
-			parse_iptablerule "${e1}" "${e2}" "${e3}" "${e4}" "${e5}" "${e6}" "${e7}" ip1_down ip1_up		##last two arguments are variables that get set "ByRef"
-			parse_iptablerule "${f1}" "${f2}" "${f3}" "${f4}" "${f5}" "${f6}" "${f7}" ip2_down ip2_up
-			parse_iptablerule "${g1}" "${g2}" "${g3}" "${g4}" "${g5}" "${g6}" "${g7}" ip3_down ip3_up
-			parse_iptablerule "${h1}" "${h2}" "${h3}" "${h4}" "${h5}" "${h6}" "${h7}" ip4_down ip4_up
-
+			write_iptables_rules
 			iptable_down_rules 2>&1 | logger -t "adaptive QOS"
 			iptable_up_rules 2>&1 | logger -t "adaptive QOS"
 
@@ -2070,11 +2085,9 @@ case "$arg1" in
 			logger -t "adaptive QOS" -s -- "TC Modification Delay ended after $sleepdelay seconds"
 		fi
 
-
-		if [ "$arg1" = "mount" ] ; then
+		if [ "$1" = "mount" ] ; then
 			logger -t "adaptive QOS" -s -- "--Post USB Mount-- Delayed Start (10min)"
 			sleep 600s
-
 		fi
 
 		current_undf_rule="$(tc filter show dev br0 | grep -v "/" | grep "000ffff" -B1)"
@@ -2083,24 +2096,9 @@ case "$arg1" in
 		#if TC modifcations have no been applied then run modification script
 		#eg (if rule setting unidentified traffic to 1:17 exists) --> run modification script
 		if [ "${undf_flowid}" = "1:17" ] ; then
-			if [ "$arg1" = "check" ] ; then
+			if [ "$1" = "check" ] ; then
 				logger -t "adaptive QOS" -s "Scheduled Persistence Check -> Reapplying Changes"
-			fi
-
-			#this section is only used stock ASUS firmware.  It will will evaluate on (-mount && -check) parameters only on STOCK firmware
-			if [ "$(nvram get script_usbmount)" = "/jffs/scripts/script_usbmount" ] && [ "$arg1" != "start" ] ; then
-				wan="$(iptables -vL -t mangle | grep -m 1 "BWDPI_FILTER" | tr -s ' ' | cut -d ' ' -f 7)"		#try to detect upload interface automatically
-				if [ -z "$wan" ] ; then
-					wan="$(nvram get wan0_ifname)"
-				fi
-				parse_iptablerule "${e1}" "${e2}" "${e3}" "${e4}" "${e5}" "${e6}" "${e7}" ip1_down ip1_up		##last two arguments are variables that get set "ByRef"
-				parse_iptablerule "${f1}" "${f2}" "${f3}" "${f4}" "${f5}" "${f6}" "${f7}" ip2_down ip2_up
-				parse_iptablerule "${g1}" "${g2}" "${g3}" "${g4}" "${g5}" "${g6}" "${g7}" ip3_down ip3_up
-				parse_iptablerule "${h1}" "${h2}" "${h3}" "${h4}" "${h5}" "${h6}" "${h7}" ip4_down ip4_up
-
-				iptable_down_rules 2>&1 | logger -t "adaptive QOS"
-				iptable_up_rules 2>&1 | logger -t "adaptive QOS"
-			fi
+			fi # check
 
 			set_tc_variables 	#needs to be set before parse_tcrule
 			##last two arguments are variables that get set "ByRef"
@@ -2118,204 +2116,19 @@ case "$arg1" in
 				if [ "$DownCeil" -gt "500" ] && [ "$UpCeil" -gt "500" ] ; then
 					custom_rates 2>&1 | logger -t "adaptive QOS"		#forwards terminal output & errors to logger
 				fi
-			fi
+			fi # Classes less than 8
 
-		else
-			if [ "$arg1" = "check" ] ; then
+		else # 1:17
+			if [ "$1" = "check" ] ; then
 				logger -t "adaptive QOS" -s "Scheduled Persistence Check -> No modifications necessary"
 			else
 				logger -t "adaptive QOS" -s "No modifications necessary"
 			fi
-		fi
-	fi
-	;;
- 'install'|'enable')															## INSTALLS AND TURNS ON SCRIPT
-	printf '\e[8;30;120t'		#set height/width of terminal
-	clear
- 	chmod 0755 /jffs/scripts/FreshJR_QOS
-	if grep -qs "FreshJR_QOS" /jffs/scripts/init-start ; then
-		sed -i '/FreshJR_QOS/d' /jffs/scripts/init-start 2>/dev/null
-	fi
-	if [ "/jffs/scripts/FreshJR_QOS_fakeTC" -ef "/bin/tc" ] || [ "/jffs/scripts/FreshJR_QOS_fakeTC" -ef "/usr/sbin/tc" ] ; then		##uninstall previous version FreshJR_QOS_fakeTC if not already uninstalled
+		fi # 1:17
+	fi # adaptive qos enabled
+} # start
 
-		echo "Old version of FreshJR_QOS_fast(fakeTC) has been Detected"
-
-		if [ -e "/bin/tc" ] ; then
-			umount /bin/tc > /dev/null 2>&1 			#suppresses error if present
-			mount -o bind /usr/sbin/faketc /bin/tc
-		elif [ -e "/usr/sbin/tc" ] ; then
-			umount /usr/sbin/tc > /dev/null 2>&1 		#suppresses error if present
-			mount -o bind /usr/sbin/faketc /usr/sbin/tc
-		fi
-
-		rm -f /jffs/scripts/FreshJR_QOS_fakeTC
-		nvram unset qos_downrates
-		nvram unset qos_uprates
-		nvram commit
-
-		if [ "/usr/sbin/faketc" -ef "/usr/sbin/tc" ] || [ "/usr/sbin/faketc" -ef "/bin/tc" ] ; then
-			echo "Old version of FreshJR_QOS_fast(fakeTC) has been Successfully Uninstalled"
-		else
-			echo "FreshJR_QOS_fast(fakeTC) Uninstall Process has been Initiated "
-			echo  -e "\033[1;31;7m Please [ reboot router ] to finish the uninstall process \033[0m"
-			echo  -e "\033[1;31;7m Rerun this install procedure after system reboot \033[0m"
-			exit 0
-		fi
-	fi
-
-	if [ "$(uname -o)" != "ASUSWRT-Merlin" ] ; then																				##GIVE USER CHOICE TO RUN STOCK INSTALL IF Non-RMerlin FIRMWARE detected
-		echo -e "\033[1;31m Non-RMerlin Firmware Detected \033[0m"
-		echo -e -n "\033[1;31m Is this installation for (Stock / Default / Unmodified) Asus firmware?  [1=Yes 2=No] : \033[0m"   # Display prompt in red
-		read yn
-		echo ""
-		case $yn in
-			'1')
-				sed -i '/FreshJR_QOS/d' /jffs/scripts/firewall-start 2>/dev/null
-				stock_install;
-				exit 0
-				;;
-			'2')
-				sed -i '/FreshJR_QOS/d' /jffs/scripts/script_usbmount 2>/dev/null
-				echo -e "\033[1;32m Installing RMerlin version of the script \033[0m"   # Display prompt in red
-				echo ""
-				;;
-			*)
-				echo "Invalid Option"
-				echo "ABORTING INSTALLATION "
-				exit 0
-				;;
-		esac
-	fi
-
-	if [ -f /jffs/scripts/firewall-start ] ; then									   #check if firewall-start exists
-	   if grep -q "#!/bin/sh" /jffs/scripts/firewall-start ; then							#check if firewall-start header is correct
-			:																				  #if header is correct, do nothing
-	   else																					  #if header is incorrect, fix header
-			echo "Detected improper header in firewall-start, fixing header"
-			sed -i "1i #!/bin/sh" /jffs/scripts/firewall-start
-			chmod 0755 /jffs/scripts/firewall-start
-	   fi
-
-	   if grep -q -x '/jffs/scripts/FreshJR_QOS -start $1 & ' /jffs/scripts/firewall-start ; then	  #check if FreshJR_QOS is present as item in firewall start
-			:																									#if FreshJR_QOS is present do nothing
-		else																									#if not, appened it to the last line (also delete any previously formated entry)
-			echo "Placing FreshJR_QOS entry into firewall-start"
-			sed -i '/FreshJR_QOS/d' /jffs/scripts/firewall-start
-			echo '/jffs/scripts/FreshJR_QOS -start $1 & ' >> /jffs/scripts/firewall-start
-	   fi
-	else																			   #if firewall-start does not exist then set it up entirely
-	   echo "Firewall-start not detected, creating firewall-start"
-	   echo "Placing FreshJR_QOS entry into firewall-start"
-	   echo "#!/bin/sh" > /jffs/scripts/firewall-start
-	   echo '/jffs/scripts/FreshJR_QOS -start $1 & ' >> /jffs/scripts/firewall-start
-	   chmod 0755 /jffs/scripts/firewall-start
-	fi
-	cru a FreshJR_QOS "30 3 * * * /jffs/scripts/FreshJR_QOS -check"
-
-	install_webui
-
-	#shortcut to launching FreshJR_QOS  (/usr/bin was readonly)
-	alias freshjr="sh /jffs/scripts/FreshJR_QOS -menu"
-	alias freshjrqos="sh /jffs/scripts/FreshJR_QOS -menu"
-	alias freshjr_qos="sh /jffs/scripts/FreshJR_QOS -menu"
-	alias FreshJR_QOS="sh /jffs/scripts/FreshJR_QOS -menu"
-	sed -i '/fresh/d' /jffs/configs/profile.add 2>/dev/null
-	echo 'alias freshjr="sh /jffs/scripts/FreshJR_QOS -menu"' >> /jffs/configs/profile.add
-	echo 'alias freshjrqos="sh /jffs/scripts/FreshJR_QOS -menu"' >> /jffs/configs/profile.add
-	echo 'alias freshjr_qos="sh /jffs/scripts/FreshJR_QOS -menu"' >> /jffs/configs/profile.add
-	echo 'alias FreshJR_QOS="sh /jffs/scripts/FreshJR_QOS -menu"' >> /jffs/configs/profile.add
-
-
-	echo -e  "\033[1;32mFreshJR QOS v${version} has been installed \033[0m"
-	echo ""
-	echo -n " Advanced configuration available via: "
-	if [ "$(uname -o)" = "ASUSWRT-Merlin" ] ; then
-		if [ -e "/jffs/scripts/amtm" ] ; then
-			echo -e  "\033[1;32m[ WebUI ]\033[0m or \033[1;32m[ /jffs/scripts/FreshJR_QOS -menu ]\033[0m or \033[1;32m[ amtm ]\033[0m "
-		else
-			echo -e  "\033[1;32m[ WebUI ]\033[0m or \033[1;32m[ /jffs/scripts/FreshJR_QOS -menu ]\033[0m "
-		fi
-	else
-		echo -e  "\033[1;32m[ /jffs/scripts/FreshJR_QOS -menu ]\033[0m "
-	fi
-
-	[ "$(nvram get qos_enable)" = "1" ] && prompt_restart
-	;;
- 'uninstall')																		## UNINSTALLS SCRIPT AND DELETES FILES
-	sed -i '/FreshJR_QOS/d' /jffs/scripts/firewall-start 2>/dev/null						#remove FreshJR_QOS from firewall start
-	sed -i '/FreshJR_QOS/d' /jffs/scripts/script_usbmount 2>/dev/null						#remove FreshJR_QOS from script_usbmount - only used on stock ASUS firmware installs
-	sed -i '/freshjr/d' /jffs/configs/profile.add 2>/dev/null								#remove aliases used to launch interactive mode
-	sed -i '/FreshJR/d' /jffs/configs/profile.add 2>/dev/null
-	cru d FreshJR_QOS
-	rm -f /jffs/scripts/FreshJR_QOS
-
-	remove_webui
-	rm -f "${webpath}"
-
-	if [ "$(nvram get script_usbmount)" = "/jffs/scripts/script_usbmount" ] ; then												   #only used on stock ASUS firmware installs
-		nvram unset script_usbmount
-	fi
-	sed -i '/^freshjr_/d' /jffs/addons/custom_settings.txt
-	echo -e  "\033[1;32m FreshJR QOS has been uninstalled \033[0m"
-	;;
- 'disable')																		## TURNS OFF SCRIPT BUT KEEP FILES
-	sed -i '/FreshJR_QOS/d' /jffs/scripts/firewall-start  2>/dev/null
-	sed -i '/FreshJR_QOS/d' /jffs/scripts/script_usbmount 2>/dev/null
-	cru d FreshJR_QOS
-	remove_webui
-	;;
- 'debug')
-	debug
-	;;
- 'debug2')
-	debug2
-	;;
- 'debug3')
-    debug3
-	;;
- 'appdb')
-	appdb "$2"
-	;;
-  'gameip')
-    read_nvram
-	gameip "$2"
-	;;
-  'rules')
-    read_nvram
-    rules
-	;;
-  'rates')
-    read_nvram
-    rates
-	;;
-  'about')
-    about
-	;;
-  'update')
-    update
-	;;
-  'menu')
-	menu
-	;;
-  'isinstalled')
-		if grep -q -x '/jffs/scripts/FreshJR_QOS -start $1 & ' /jffs/scripts/firewall-start ; then
-			exit 0		#script IS installed
-		else
-			exit 1		#script in NOT installed
-		fi
-    ;;
-  'isuptodate')
-		url="https://raw.githubusercontent.com/dave14305/FreshJR_QOS/master/FreshJR_QOS.sh"
-		remotever=$(curl -fsN --retry 3 ${url} | grep "^version=" | sed -e s/version=//)
-		if [ "$version" = "$remotever" ]; then
-			exit 0 		#script IS current
-		else
-			exit 1		#script is NOT up to date
-		fi
-
-    ;;
- *)
-  read_nvram
+show_help() {
 	echo -en "\033c\e[3J"		#clear screen
 	echo -en '\033[?7l'			#disable line wrap
 	# printf '\e[8;30;120t'		#set height/width of terminal
@@ -2324,7 +2137,7 @@ case "$arg1" in
 	echo ""
 	echo "You have inputted an UNRECOGNIZED COMMAND"
 	echo ""
-    echo "  Available commands:"
+	echo "  Available commands:"
 	echo ""
 	echo "  FreshJR_QOS -about              explains functionality"
 	echo "  FreshJR_QOS -update             checks for updates "
@@ -2345,18 +2158,98 @@ case "$arg1" in
 	echo ""
 	echo '  FreshJR_QOS -menu               interactive main menu'
 	echo ""
-	echo "  Current Setup:"
-	echo "           Local IP            Remote IP           Proto  Local Port     Remote Port    Mark        Dst"
-  printf '  Rule     %-19s %-19s %-6s %-14s %-14s %-7s %-10s\n' "$e1" "$e2" "$e3" "$e4" "$e5" "$e6" "$([ -z $e7 ] || echo "--> $(dst_2_name $e7)")"
-  printf '  Rule     %-19s %-19s %-6s %-14s %-14s %-7s %-10s\n' "$f1" "$f2" "$f3" "$f4" "$f5" "$f6" "$([ -z $f7 ] || echo "--> $(dst_2_name $f7)")"
-  printf '  Rule     %-19s %-19s %-6s %-14s %-14s %-7s %-10s\n' "$g1" "$g2" "$g3" "$g4" "$g5" "$g6" "$([ -z $g7 ] || echo "--> $(dst_2_name $g7)")"
-  printf '  Rule     %-19s %-19s %-6s %-14s %-14s %-7s %-10s\n' "$h1" "$h2" "$h3" "$h4" "$h5" "$h6" "$([ -z $h7 ] || echo "--> $(dst_2_name $h7)")"
-  printf '  Gameip   %-19s %-19s %-6s %-14s %-14s %-7s %-10s\n'  "${gameCIDR}" "" "$([ -z $gameCIDR ] || echo "both")" "" "$([ -z $gameCIDR ] || echo "!80:443")" "$([ -z $gameCIDR ] || echo "000000")" "--> Gaming"
-  printf '  Appdb    %-44s                                 %-7s %-10s\n' "$(mark_2_name $r1)" "$r1" "$([ -z $d1 ] || echo "--> $(dst_2_name $d1)")"
-  printf '  Appdb    %-44s                                 %-7s %-10s\n' "$(mark_2_name $r2)" "$r2" "$([ -z $d2 ] || echo "--> $(dst_2_name $d2)")"
-  printf '  Appdb    %-44s                                 %-7s %-10s\n' "$(mark_2_name $r3)" "$r3" "$([ -z $d3 ] || echo "--> $(dst_2_name $d3)")"
-  printf '  Appdb    %-44s                                 %-7s %-10s\n' "$(mark_2_name $r4)" "$r4" "$([ -z $d4 ] || echo "--> $(dst_2_name $d4)")"
+	# echo "  Current Setup:"
+	# echo "           Local IP            Remote IP           Proto  Local Port     Remote Port    Mark        Dst"
+	# printf '  Rule     %-19s %-19s %-6s %-14s %-14s %-7s %-10s\n' "$e1" "$e2" "$e3" "$e4" "$e5" "$e6" "$([ -z $e7 ] || echo "--> $(dst_2_name $e7)")"
+	# printf '  Rule     %-19s %-19s %-6s %-14s %-14s %-7s %-10s\n' "$f1" "$f2" "$f3" "$f4" "$f5" "$f6" "$([ -z $f7 ] || echo "--> $(dst_2_name $f7)")"
+	# printf '  Rule     %-19s %-19s %-6s %-14s %-14s %-7s %-10s\n' "$g1" "$g2" "$g3" "$g4" "$g5" "$g6" "$([ -z $g7 ] || echo "--> $(dst_2_name $g7)")"
+	# printf '  Rule     %-19s %-19s %-6s %-14s %-14s %-7s %-10s\n' "$h1" "$h2" "$h3" "$h4" "$h5" "$h6" "$([ -z $h7 ] || echo "--> $(dst_2_name $h7)")"
+	# printf '  Gameip   %-19s %-19s %-6s %-14s %-14s %-7s %-10s\n'  "${gameCIDR}" "" "$([ -z $gameCIDR ] || echo "both")" "" "$([ -z $gameCIDR ] || echo "!80:443")" "$([ -z $gameCIDR ] || echo "000000")" "--> Gaming"
+	# printf '  Appdb    %-44s                                 %-7s %-10s\n' "$(mark_2_name $r1)" "$r1" "$([ -z $d1 ] || echo "--> $(dst_2_name $d1)")"
+	# printf '  Appdb    %-44s                                 %-7s %-10s\n' "$(mark_2_name $r2)" "$r2" "$([ -z $d2 ] || echo "--> $(dst_2_name $d2)")"
+	# printf '  Appdb    %-44s                                 %-7s %-10s\n' "$(mark_2_name $r3)" "$r3" "$([ -z $d3 ] || echo "--> $(dst_2_name $d3)")"
+	# printf '  Appdb    %-44s                                 %-7s %-10s\n' "$(mark_2_name $r4)" "$r4" "$([ -z $d4 ] || echo "--> $(dst_2_name $d4)")"
 	echo ""
 	echo -en '\033[?7h'			#enable line wrap
-	;;
+} # show_help
+
+#Main program here, will execute different things depending on arguments
+
+. /usr/sbin/helper.sh  # initialize Merlin Addon API helper functions
+
+arg1="$(echo "$1" | tr -d "-")"
+wan="${2}"
+if [ -z "$wan" ] ; then
+	wan="$(nvram get wan0_ifname)"
+fi
+
+case "$arg1" in
+ 'start'|'check'|'mount')																	##RAN ON FIREWALL-START OR CRON TASK, (RAN ONLY POST USB MOUNT IF USING STOCK ASUS FIRMWARE)
+		start "$arg1"
+		;;
+ 'install'|'enable')															## INSTALLS AND TURNS ON SCRIPT
+ 		install
+		;;
+ 'uninstall')																		## UNINSTALLS SCRIPT AND DELETES FILES
+ 		uninstall
+		;;
+ 'disable')																		## TURNS OFF SCRIPT BUT KEEP FILES
+		sed -i '/FreshJR_QOS/d' /jffs/scripts/firewall-start  2>/dev/null
+		sed -i '/FreshJR_QOS/d' /jffs/scripts/script_usbmount 2>/dev/null
+		cru d FreshJR_QOS
+		remove_webui
+		;;
+ 'debug')
+		debug
+		;;
+ 'debug2')
+		debug2
+		;;
+ 'debug3')
+    debug3
+		;;
+ 'appdb')
+		appdb "$2"
+		;;
+  'gameip')
+    read_nvram
+		gameip "$2"
+		;;
+  'rules')
+    read_nvram
+    rules
+		;;
+  'rates')
+    read_nvram
+    rates
+		;;
+  'about')
+    about
+		;;
+  'update')
+    update
+		;;
+  'menu')
+		menu
+		;;
+  'isinstalled')
+		if grep -q -x '/jffs/scripts/FreshJR_QOS -start $1 & ' /jffs/scripts/firewall-start ; then
+			exit 0		#script IS installed
+		else
+			exit 1		#script in NOT installed
+		fi
+    ;;
+  'isuptodate')
+		url="https://raw.githubusercontent.com/dave14305/FreshJR_QOS/master/FreshJR_QOS.sh"
+		remotever=$(curl -fsN --retry 3 ${url} | grep "^version=" | sed -e s/version=//)
+		if [ "$version" = "$remotever" ]; then
+			exit 0 		#script IS current
+		else
+			exit 1		#script is NOT up to date
+		fi
+
+    ;;
+	*)
+		show_help
+		;;
 esac
