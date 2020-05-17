@@ -25,6 +25,7 @@ Modification on-top of RMerlins QoS_Stats page taken from 384.9
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/js/table/table.js"></script>
 <script type="text/javascript" src="/js/httpApi.js"></script>
+<script type="text/javascript" src="/base64.js"></script>
 <style>
 
 .tableApi_table th {
@@ -1407,12 +1408,12 @@ function set_FreshJR_mod_vars()
 			// document.form.fb_comment.value = "";  // uncomment once script ready
 			}
 		else // rules are migrated to new API variables
-			iptables_rulelist_array = decodeURIComponent(custom_settings.freshjr_iptables);
+			iptables_rulelist_array = Base64.decode(custom_settings.freshjr_iptables);
 
 		if ( custom_settings.freshjr_defiptables == undefined ) // rules not yet migrated to new API variables
 			iptables_defrulelist_array = "<>>both>>!80,443>000000>1<>>udp>>500,4500>>3<>>udp>16384:16415>>>3<>>tcp>>119,563>>5<>>tcp>>80,443>08****>7";
 		else // rules are migrated to new API variables
-			iptables_defrulelist_array = decodeURIComponent(custom_settings.freshjr_defiptables);
+			iptables_defrulelist_array = Base64.decode(custom_settings.freshjr_defiptables);
 
 		if ( custom_settings.freshjr_appdb == undefined )
 		{
@@ -1434,12 +1435,12 @@ function set_FreshJR_mod_vars()
 		// document.form.fb_email_dbg.value = "";  // uncomment once script ready
 		}
 		else
-			appdb_rulelist_array = decodeURIComponent(custom_settings.freshjr_appdb);
+			appdb_rulelist_array = Base64.decode(custom_settings.freshjr_appdb);
 
 		if ( custom_settings.freshjr_defappdb == undefined )
 			appdb_defrulelist_array = "<Untracked>000000>6<Snapchat>00006B>6<Speedtest.net>0D0007>5<Google Play>0D0086>5<Apple AppStore>0D00A0>5<World Wide Web HTTP>12003F>4<HTTP Protocol over TLS SSL + Misc>13****>4<TLS SSL Connections + Misc>14****>4<Advertisement>1A****>5";
 		else
-			appdb_defrulelist_array = decodeURIComponent(custom_settings.freshjr_defappdb);
+			appdb_defrulelist_array = Base64.decode(custom_settings.freshjr_defappdb);
 
 		var iptables_combined_rules = iptables_defrulelist_array + iptables_rulelist_array;
 		var r=0;
@@ -1613,10 +1614,10 @@ function FreshJR_mod_apply()
 		// var ucp6=document.getElementById('ucp6').value;			if (!(validate_percent(ucp6)))  ucp0="100";
 		// var ucp7=document.getElementById('ucp7').value;			if (!(validate_percent(ucp7)))  ucp0="100";
 
-	custom_settings.freshjr_defiptables = encodeURIComponent(iptables_defrulelist_array);
-	custom_settings.freshjr_iptables = encodeURIComponent(iptables_rulelist_array);
-	custom_settings.freshjr_defappdb = encodeURIComponent(appdb_defrulelist_array);
-	custom_settings.freshjr_appdb = encodeURIComponent(appdb_rulelist_array);
+	custom_settings.freshjr_defiptables = Base64.encode(iptables_defrulelist_array);
+	custom_settings.freshjr_iptables = Base64.encode(iptables_rulelist_array);
+	custom_settings.freshjr_defappdb = Base64.encode(appdb_defrulelist_array);
+	custom_settings.freshjr_appdb = Base64.encode(appdb_rulelist_array);
 	custom_settings.freshjr_bandwidth = encodeURIComponent(bandwidth);
 	//custom_settings.freshjr_gamecidr = document.getElementById('gameCIDR').value;
 	custom_settings.freshjr_ruleflag = "FF";
