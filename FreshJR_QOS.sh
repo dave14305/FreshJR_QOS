@@ -2173,6 +2173,10 @@ show_help() {
 	echo -en '\033[?7h'			#enable line wrap
 } # show_help
 
+generate_bwdpi_arrays() {
+	awk -F, 'BEGIN { print "var catdb_array = \[ "} { print "\[\""$1"\",\""$2"\"\]," } END { print "\[\]\]\;" }' /tmp/bwdpi/bwdpi.cat.db | tr '\n' ' ' > /www/user/ext/freshjr_arrays.js
+	awk -F, 'BEGIN { print "var appname_array = \[ "} { print "\[\""$1"\",\""$2"\",\""$4"\"\]," } END { print "\[\]\]\;" }' /tmp/bwdpi/bwdpi.app.db | tr '\n' ' ' >> /www/user/ext/freshjr_arrays.js
+}
 #Main program here, will execute different things depending on arguments
 
 . /usr/sbin/helper.sh  # initialize Merlin Addon API helper functions
