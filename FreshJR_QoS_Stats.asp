@@ -1821,9 +1821,7 @@ function SetCurrentPage() {
 		<th width="12%">Add / Del</th>
 	</tr>
 	<tr>
-		<td width="auto">
-			<input type="text" maxlength="32" class="input_32_table" name="appdb_appname_x">
-		</td>
+		<td width="auto"></td>
 		<td width="9%">
 			<input type="text" maxlength="6" class="input_6_table" name="appdb_mark_x" onfocusout='validate_mark(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' autocomplete="off" autocorrect="off" autocapitalize="off">
 		</td>
