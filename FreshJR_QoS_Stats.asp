@@ -26,6 +26,7 @@ Modification on-top of RMerlins QoS_Stats page taken from 384.9
 <script type="text/javascript" src="/js/table/table.js"></script>
 <script type="text/javascript" src="/js/httpApi.js"></script>
 <script type="text/javascript" src="/base64.js"></script>
+<script type="text/javascript" src="/ext/freshjr_arrays.js"></script>
 <style>
 
 .tableApi_table th {
