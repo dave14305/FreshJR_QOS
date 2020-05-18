@@ -423,21 +423,22 @@ function updateTable()
     for(var i = 0; i < tabledata.length; i++){
 		if(tabledata[i])
 		{
-			code += '<tr class="row_tr data_tr" row_tr_idx="' + i +' ">';
-				code += '<td>' + tabledata[i][0] +'</td>';
-				code += '<td>' + tabledata[i][1] +'</td>';
-				code += '<td>' + tabledata[i][2] +'</td>';
-				code += '<td>' + tabledata[i][3] +'</td>';
-				code += '<td>' + tabledata[i][4] +'</td>';
-				code += '<td>' + tabledata[i][5] +'</td></tr>';
-		}else
+			code += '<tr class="row_tr data_tr">'
+					  + '<td>' + tabledata[i][0] +'</td>'
+				    + '<td>' + tabledata[i][1] +'</td>'
+						+ '<td>' + tabledata[i][2] +'</td>'
+						+ '<td>' + tabledata[i][3] +'</td>'
+						+ '<td>' + tabledata[i][4] +'</td>'
+					  + '<td>' + tabledata[i][5] +'</td></tr>';
+		}
+		else
 		{
-			code += '<tr class="row_tr data_tr" row_tr_idx="' + i +' "></tr>';
+			code += '<tr class="row_tr data_tr"></tr>';
 		}
     }
 	if (tabledata[tablesize - 1] )
 	{
-		code += '<tr class="row_tr data_tr" row_tr_idx="' + tablesize +' "><td style="text-align:center; font-weight:bold;" colspan="7">Reached table limit.  Please use device filter.</td>'
+		code += '<tr class="row_tr data_tr"><td style="text-align:center; font-weight:bold;" colspan="7">Reached table limit.  Please use device filter.</td>'
 	}
 	tbl.innerHTML = code;
 }
