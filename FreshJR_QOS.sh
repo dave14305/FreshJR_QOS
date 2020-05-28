@@ -1,7 +1,7 @@
 #!/bin/sh
 ##FreshJR_QOS
-version=8.8
-release=03/07/2019
+version=8.9
+release=05/28/2020
 #Copyright (C) 2017-2019 FreshJR - All Rights Reserved
 #Tested with ASUS AC-68U, FW384.9, using Adaptive QOS with Manual Bandwidth Settings
 # Script Changes Unidentified traffic destination away from "Defaults" into "Others"
@@ -1590,8 +1590,8 @@ parse_tcrule() {
 	#filter field
 	if [ "$( echo ${1} | wc -c )" -eq "7" ] ; then
 		if [ "${id}" == "****" ] ; then
-			DOWN_mark="0x80${1//!/} 0xc03ff0000"
-			UP_mark="0x40${1//!/} 0xc03ff0000"
+			DOWN_mark="0x80${1//\*/0} 0xc03f0000"
+			UP_mark="0x40${1//\*/0} 0xc03f0000"
 		else
 			DOWN_mark="0x80${1//!/} 0xc03fffff"
 			UP_mark="0x40${1//!/} 0xc03fffff"
@@ -1711,8 +1711,8 @@ parse_iptablerule() {
 	#match mark
 	if [ "$( echo ${6} | wc -c )" -eq "7" ] ; then
 		if [ "$( echo ${6} | tail -c -5 )" == "****" ] ; then
-			DOWN_mark="-m mark --mark 0x80${6//!/}/0xc03f0000"
-			UP_mark="-m mark --mark 0x40${6//!/}/0xc03f0000"
+			DOWN_mark="-m mark --mark 0x80${6//\*/0}/0xc03f0000"
+			UP_mark="-m mark --mark 0x40${6//\*/0}/0xc03f0000"
 		else
 			DOWN_mark="-m mark --mark 0x80${6//!/}/0xc03fffff"
 			UP_mark="-m mark --mark 0x40${6//!/}/0xc03fffff"
