@@ -20,7 +20,7 @@ See <a href="https://www.snbforums.com/threads/release-freshjr-adaptive-qos-impr
 
 In your SSH Client:
 
-``` curl "https://raw.githubusercontent.com/dave14305/FreshJR_QOS/master/FreshJR_QOS.sh" -o /jffs/scripts/FreshJR_QOS --create-dirs && sh /jffs/scripts/FreshJR_QOS -install ```
+``` curl "https://raw.githubusercontent.com/dave14305/FreshJR_QOS/master/FreshJR_QOS.sh" -o /jffs/scripts/FreshJR_QOS --create-dirs && curl "https://raw.githubusercontent.com/dave14305/FreshJR_QOS/master/FreshJR_QoS_Stats.asp" -o /jffs/scripts/www_FreshJR_QoS_Stats.asp && sh /jffs/scripts/FreshJR_QOS -install ```
 
 ## Uninstall:
 
