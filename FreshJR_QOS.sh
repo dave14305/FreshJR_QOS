@@ -217,7 +217,7 @@ release=05/28/2020
 
 	tc_redirection_down_rules() {
 		echo "Applying  TC Down Rules"
-		${tc} filter del dev br0 parent 1: prio $1																					#remove original unidentified traffic rule
+		${tc} filter del dev br0 parent 1: prio $1 &> /dev/null																		#remove original unidentified traffic rule if it exists
 		${tc} filter del dev br0 parent 1: prio 22 &> /dev/null																		#remove original HTTPS rule
 		${tc} filter del dev br0 parent 1: prio 23 &> /dev/null																		#remove original HTTPS rule
 		! [ -z "$tc4_down" ] && ${tc} filter add dev br0 protocol all ${tc4_down}													#Script Interactively Defined Rule 4
@@ -243,7 +243,7 @@ release=05/28/2020
 
 	tc_redirection_up_rules() {
 		echo "Applying  TC Up   Rules"
-		${tc} filter del dev eth0 parent 1: prio $1																					#remove original unidentified traffic rule
+		${tc} filter del dev eth0 parent 1: prio $1 &> /dev/null																#remove original unidentified traffic rule if it exists
 		${tc} filter del dev eth0 parent 1: prio 22 &> /dev/null																	#remove original HTTPS rule
 		${tc} filter del dev eth0 parent 1: prio 23 &> /dev/null																	#remove original HTTPS rule
 		! [ -z "$tc4_up" ] && ${tc} filter add dev eth0 protocol all ${tc4_up}														#Script Interactively Defined Rule 4
@@ -306,7 +306,7 @@ webpath='/jffs/scripts/www_FreshJR_QoS_Stats.asp'		#path of FreshJR_QoS_Stats.as
 	VOIP_mark_down="0x80060001"			# Marks for iptables variant of download rules
 	Gaming_mark_down="0x80080001"		    # Note these marks are same as filter match/mask combo but have a 1 at the end.  That trailing 1 prevents them from being caught by unidentified mask
 	Others_mark_down="0x800a0001"
-	Web_mark_down="0x800d0001"
+	Web_mark_down="0x800c0001"
 	Streaming_mark_down="0x80040001"
 	Downloads_mark_down="0x80030001"
 	Default_mark_down="0x803f0001"
@@ -315,7 +315,7 @@ webpath='/jffs/scripts/www_FreshJR_QoS_Stats.asp'		#path of FreshJR_QoS_Stats.as
 	VOIP_mark_up="0x40060001"			# Marks for iptables variant of upload rules
 	Gaming_mark_up="0x40080001"		    # Note these marks are same as filter match/mask combo but have a 1 at the end.  That trailing 1 prevents them from being caught by unidentified mask
 	Others_mark_up="0x400a0001"
-	Web_mark_up="0x400d0001"
+	Web_mark_up="0x400c0001"
 	Streaming_mark_up="0x40040001"
 	Downloads_mark_up="0x40030001"
 	Default_mark_up="0x403f0001"
@@ -329,7 +329,7 @@ set_tc_variables(){
 	fi
 
 	#read order of QOS categories
-	Defaults="1:17"
+	#Defaults="1:17"  # no longer fixed location in 384.18 or higher
 	Net="1:10"
 	flowid=0
 	while read -r line;				# reads users order of QOS categories
@@ -351,11 +351,19 @@ set_tc_variables(){
 			eval "Cat${flowid}UpCeilPercent=${ucp7}"
 			;;
 		 '4')
-			Streaming="1:1${flowid}"
-			eval "Cat${flowid}DownBandPercent=${drp5}"
-			eval "Cat${flowid}UpBandPercent=${urp5}"
-			eval "Cat${flowid}DownCeilPercent=${dcp5}"
-			eval "Cat${flowid}UpCeilPercent=${ucp5}"
+		 	if [ -z "$Streaming" ]; then   # only process 4 if streaming not done (only process it once)
+				Streaming="1:1${flowid}"
+				eval "Cat${flowid}DownBandPercent=${drp5}"
+				eval "Cat${flowid}UpBandPercent=${urp5}"
+				eval "Cat${flowid}DownCeilPercent=${dcp5}"
+				eval "Cat${flowid}UpCeilPercent=${ucp5}"
+			else
+				Defaults="1:1${flowid}"
+				eval "Cat${flowid}DownBandPercent=${drp6}"
+				eval "Cat${flowid}UpBandPercent=${urp6}"
+				eval "Cat${flowid}DownCeilPercent=${dcp6}"
+				eval "Cat${flowid}UpCeilPercent=${ucp6}"
+			fi
 			;;
 		 '7')
 			Others="1:1${flowid}"
@@ -375,7 +383,7 @@ set_tc_variables(){
 			#net control
 			flowid=0
 			;;
-		 '13')
+		 '12')
 			Web="1:1${flowid}"
 			eval "Cat${flowid}DownBandPercent=${drp4}"
 			eval "Cat${flowid}UpBandPercent=${urp4}"
@@ -605,8 +613,13 @@ debug(){
 	read_nvram
 	set_tc_variables
 	current_undf_rule="$(tc filter show dev br0 | grep -v "/" | grep "000ffff" -B1)"
-	undf_flowid=$(echo $current_undf_rule | grep -o "flowid.*" | cut -d" " -f2 | head -1)
-	undf_prio=$(echo $current_undf_rule | grep -o "pref.*" | cut -d" " -f2 | head -1)
+	if [ -n "$current_undf_rule" ]; then
+		undf_flowid=$(echo $current_undf_rule | grep -o "flowid.*" | cut -d" " -f2 | head -1)
+		undf_prio=$(echo $current_undf_rule | grep -o "pref.*" | cut -d" " -f2 | head -1)
+	else
+		undf_flowid="1:12"
+		undf_prio=2
+	fi
 
 	logger -t "adaptive QOS" -s "Undf Prio: $undf_prio"
 	logger -t "adaptive QOS" -s "Undf FlowID: $undf_flowid"
@@ -1838,7 +1851,7 @@ update(){
 	echo -e  "\033[1;32mFreshJR QOS v${version} \033[0m"
 	echo "Checking for updates"
 	echo ""
-	url="https://raw.githubusercontent.com/dave14305/FreshJR_QOS/master/FreshJR_QOS.sh"
+	url="https://raw.githubusercontent.com/dave14305/FreshJR_QOS/develop/FreshJR_QOS.sh"
 	remotever=$(curl -fsN --retry 3 ${url} | grep "^version=" | sed -e s/version=//)
 
 	if [ "$version" != "$remotever" ]; then
@@ -1867,7 +1880,7 @@ update(){
 	echo -e "Installing: FreshJR_QOS_v${remotever}"
 	echo ""
 	echo "Curl Output:"
-	curl "https://raw.githubusercontent.com/dave14305/FreshJR_QOS/master/FreshJR_QOS.sh" -o /jffs/scripts/FreshJR_QOS --create-dirs && curl "https://raw.githubusercontent.com/dave14305/FreshJR_QOS/master/FreshJR_QoS_Stats.asp" -o "${webpath}" && sh /jffs/scripts/FreshJR_QOS -install
+	curl "https://raw.githubusercontent.com/dave14305/FreshJR_QOS/develop/FreshJR_QOS.sh" -o /jffs/scripts/FreshJR_QOS --create-dirs && curl "https://raw.githubusercontent.com/dave14305/FreshJR_QOS/develop/FreshJR_QoS_Stats.asp" -o "${webpath}" && sh /jffs/scripts/FreshJR_QOS -install
 	exit
 }
 
@@ -2089,11 +2102,16 @@ case "$arg1" in
 		fi
 
 		current_undf_rule="$(tc filter show dev br0 | grep -v "/" | grep "000ffff" -B1)"
-		undf_flowid=$(echo $current_undf_rule | grep -o "flowid.*" | cut -d" " -f2 | head -1)
-		undf_prio=$(echo $current_undf_rule | grep -o "pref.*" | cut -d" " -f2 | head -1)
+		if [ -n "$current_undf_rule" ]; then
+			undf_flowid=$(echo $current_undf_rule | grep -o "flowid.*" | cut -d" " -f2 | head -1)
+			undf_prio=$(echo $current_undf_rule | grep -o "pref.*" | cut -d" " -f2 | head -1)
+		else
+			undf_flowid="1:12"
+			undf_prio=2
+		fi
 		#if TC modifcations have no been applied then run modification script
 		#eg (if rule setting unidentified traffic to 1:17 exists) --> run modification script
-		if [ "${undf_flowid}" == "1:17" ] ; then
+		if [ "${undf_flowid}" == "1:17" ] || [ "${undf_flowid}" == "1:12" ] ; then
 			if [ "$arg1" == "check" ] ; then
 				logger -t "adaptive QOS" -s "Scheduled Persistence Check -> Reapplying Changes"
 			fi
@@ -2339,7 +2357,7 @@ case "$arg1" in
 		fi
     ;;
   'isuptodate')
-		url="https://raw.githubusercontent.com/dave14305/FreshJR_QOS/master/FreshJR_QOS.sh"
+		url="https://raw.githubusercontent.com/dave14305/FreshJR_QOS/develop/FreshJR_QOS.sh"
 		remotever=$(curl -fsN --retry 3 ${url} | grep "^version=" | sed -e s/version=//)
 		if [ "$version" == "$remotever" ]; then
 			exit 0 		#script IS current

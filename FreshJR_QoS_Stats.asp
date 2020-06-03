@@ -1,6 +1,6 @@
-﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <!--
-##FreshJR_QOS_v8.9 released 06/03/2020
+##FreshJR_QOS_v8.9b released 06/03/2020
 Modification on-top of RMerlins QoS_Stats page taken from 384.9
  -->
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -183,10 +183,10 @@ if (qos_mode == 2) {
     var bwdpi_app_rulelist = "<% nvram_get("bwdpi_app_rulelist"); %>".replace(/&#60/g, "<");
     var bwdpi_app_rulelist_row = bwdpi_app_rulelist.split("<");
     if (bwdpi_app_rulelist == "" || bwdpi_app_rulelist_row.length != 9) {
-        bwdpi_app_rulelist = "9,20<8<4<0,5,6,15,17<13,24<1,3,14<7,10,11,21,23<<";
+				bwdpi_app_rulelist = "9,20<8<4<0,5,6,15,17<4,13<13,24<1,3,14<7,10,11,21,23<";
         bwdpi_app_rulelist_row = bwdpi_app_rulelist.split("<");
     }
-    var category_title = ["Net Control Packets", "Gaming", "Video and Audio Streaming", "VoIP and Instant Messaging", "Web Surfing", "File Transferring", "Others", "Game Transferring"];
+    var category_title = ["Net Control Packets", "Gaming", "Video and Audio Streaming", "Work-From-Home", "Web Surfing", "File Transferring", "Others", "Game Transferring"];
     var cat_id_array = [
         [9, 20],
         [8],
@@ -195,7 +195,7 @@ if (qos_mode == 2) {
         [13, 24],
         [1, 3, 14],
         [7, 10, 11, 21, 23],
-        []
+        [4, 13]
     ];
 
 	var c_net=bwdpi_app_rulelist_row.indexOf(cat_id_array[0].toString())
@@ -1033,7 +1033,6 @@ function get_data() {
 
 function draw_chart(data_array, ctx, pie) {
     var code = '<table><thead style="text-align:left;"><tr><th style="padding-left:5px;">Class</th><th style="padding-left:5px; width:76px;">Total</th><th style="padding-left:30px; padding-right:15px;">Rate</th><th style="padding-left:15px;">Packet rate</th></tr></thead>';
-    var code_delay_append = '';
 	var values_array = [];
     var labels_array = [];
     for (i = 0; i < data_array.length - 1; i++) {
@@ -1071,16 +1070,7 @@ function draw_chart(data_array, ctx, pie) {
             value = value / 1024;
             unit = " GB";
         }
-		if (qos_mode == 2 && i == 6) {
-			code_delay_append += '<tr><td style="word-wrap:break-word;padding-left:5px;padding-right:5px;border:1px #2f3a3e solid; border-radius:5px;background-color:' + color[i] + ';margin-right:10px;line-height:20px;">' + label + '</td>';
-			code_delay_append += '<td style="padding-left:5px;">' + value.toFixed(2) + unit + '</td>';
-			rate = rate2kbs(data_array[i][2])
-			code_delay_append += '<td style="padding-left:5px; text-align:right;">' + rate + ' kB/s</td>';
-			rate = comma(data_array[i][3]);
-			code_delay_append += '<td style="padding-left:5px;; text-align:right;">' + rate.replace(/([0-9,])([a-zA-Z])/g, '$1 $2') + '</td></tr>';
-		}
-		else
-		{
+		if (qos_mode == 2) {
 			code += '<tr><td style="word-wrap:break-word;padding-left:5px;padding-right:5px;border:1px #2f3a3e solid; border-radius:5px;background-color:' + color[i] + ';margin-right:10px;line-height:20px;">' + label + '</td>';
 			code += '<td style="padding-left:5px;">' + value.toFixed(2) + unit + '</td>';
 			rate = rate2kbs(data_array[i][2])
@@ -1089,7 +1079,6 @@ function draw_chart(data_array, ctx, pie) {
 			code += '<td style="padding-left:5px; text-align:right;">' + rate.replace(/([0-9,])([a-zA-Z])/g, '$1 $2') + '</td></tr>';
 		}
     }
-	code += code_delay_append;
     code += '</table>';
     var pieData = {
         labels: labels_array,
@@ -1566,7 +1555,7 @@ function validate_percent(input)
 			<td><input type="text" class="input_12_table" maxlength="12" style="background-color: rgb(204, 204, 204); cursor:default" readonly></td>
 			<td><input type="text" class="input_12_table" maxlength="12" style="background-color: rgb(204, 204, 204); cursor:default" value="500,4500" readonly></td>
 			<td><input type="text" class="input_6_table" maxlength="6"   style="background-color: rgb(204, 204, 204); cursor:default" readonly></td>
-			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option value="UDP">VoIP</option></select></td>
+			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option value="UDP">Work-From-Home</option></select></td>
 		</tr>
 
 		<tr>
@@ -1576,7 +1565,7 @@ function validate_percent(input)
 			<td><input type="text" class="input_12_table" maxlength="12" style="background-color: rgb(204, 204, 204); cursor:default" value="16384:16415" readonly></td>
 			<td><input type="text" class="input_12_table" maxlength="12" style="background-color: rgb(204, 204, 204); cursor:default" readonly></td>
 			<td><input type="text" class="input_6_table" maxlength="6"   style="background-color: rgb(204, 204, 204); cursor:default" readonly></td>
-			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option value="UDP">VoIP</option></select></td>
+			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option value="UDP">Work-From-Home</option></select></td>
 		</tr>
 
 		<tr>
@@ -1612,7 +1601,7 @@ function validate_percent(input)
 			<td><input id="e6" onfocusout='validate_mark(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_6_table" maxlength="6"   autocomplete="off" autocorrect="off" autocapitalize="off"></td>
 			<td><select id="e7" class="input_option" style="width:55px;width:125px; font-size:11.5px; margin-left:-5px">
 					<option value="0">Net Control</option>
-					<option value="3">VoIP</option>
+					<option value="3">Work-From-Home</option>
 					<option value="1">Gaming</option>
 					<option value="6">Others</option>
 					<option value="4">Web Surfing</option>
@@ -1634,7 +1623,7 @@ function validate_percent(input)
 			<td><input id="f6" onfocusout='validate_mark(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_6_table" maxlength="6"   autocomplete="off" autocorrect="off" autocapitalize="off"></td>
 			<td><select id="f7" class="input_option" style="width:55px;width:125px; font-size:11.5px; margin-left:-5px">
 					<option value="0">Net Control</option>
-					<option value="3">VoIP</option>
+					<option value="3">Work-From-Home</option>
 					<option value="1">Gaming</option>
 					<option value="6">Others</option>
 					<option value="4">Web Surfing</option>
@@ -1656,7 +1645,7 @@ function validate_percent(input)
 			<td><input id="g6" onfocusout='validate_mark(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_6_table" maxlength="6"   autocomplete="off" autocorrect="off" autocapitalize="off"></td>
 			<td><select id="g7" class="input_option" style="width:55px;width:125px; font-size:11.5px; margin-left:-5px">
 					<option value="0">Net Control</option>
-					<option value="3">VoIP</option>
+					<option value="3">Work-From-Home</option>
 					<option value="1">Gaming</option>
 					<option value="6">Others</option>
 					<option value="4">Web Surfing</option>
@@ -1678,7 +1667,7 @@ function validate_percent(input)
 			<td><input id="h6" onfocusout='validate_mark(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_6_table" maxlength="6"   autocomplete="off" autocorrect="off" autocapitalize="off"></td>
 			<td><select id="h7" class="input_option" style="width:55px;width:125px; font-size:11.5px; margin-left:-5px">
 					<option value="0">Net Control</option>
-					<option value="3">VoIP</option>
+					<option value="3">Work-From-Home</option>
 					<option value="1">Gaming</option>
 					<option value="6">Others</option>
 					<option value="4">Web Surfing</option>
@@ -1758,7 +1747,7 @@ function validate_percent(input)
 			<td><input  id="r1" onfocusout='validate_mark(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_6_table" maxlength="6" autocomplete="off" autocorrect="off" autocapitalize="off"></td>
 			<td><select id="d1" class="input_option" style="width:55px;width:125px; font-size:11.5px; margin-left:-5px">
 					<option value="0">Net Control</option>
-					<option value="3">VoIP</option>
+					<option value="3">Work-From-Home</option>
 					<option value="1">Gaming</option>
 					<option value="6">Others</option>
 					<option value="4">Web Surfing</option>
@@ -1771,7 +1760,7 @@ function validate_percent(input)
 			<td><input  id="r2" onfocusout='validate_mark(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_6_table" maxlength="6" autocomplete="off" autocorrect="off" autocapitalize="off"></td>
 			<td><select id="d2" class="input_option" style="width:55px;width:125px; font-size:11.5px; margin-left:-5px">
 					<option value="0">Net Control</option>
-					<option value="3">VoIP</option>
+					<option value="3">Work-From-Home</option>
 					<option value="1">Gaming</option>
 					<option value="6">Others</option>
 					<option value="4">Web Surfing</option>
@@ -1784,7 +1773,7 @@ function validate_percent(input)
 			<td><input  id="r3" onfocusout='validate_mark(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_6_table" maxlength="6"  autocomplete="off" autocorrect="off" autocapitalize="off"></td>
 			<td><select id="d3" class="input_option" style="width:55px;width:125px; font-size:11.5px; margin-left:-5px">
 					<option value="0">Net Control</option>
-					<option value="3">VoIP</option>
+					<option value="3">Work-From-Home</option>
 					<option value="1">Gaming</option>
 					<option value="6">Others</option>
 					<option value="4">Web Surfing</option>
@@ -1797,7 +1786,7 @@ function validate_percent(input)
 			<td><input  id="r4" onfocusout='validate_mark(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_6_table" maxlength="6"  autocomplete="off" autocorrect="off" autocapitalize="off"></td>
 			<td><select id="d4" class="input_option" style="width:55px;width:125px; font-size:11.5px; margin-left:-5px">
 					<option value="0">Net Control</option>
-					<option value="3">VoIP</option>
+					<option value="3">Work-From-Home</option>
 					<option value="1">Gaming</option>
 					<option value="6">Others</option>
 					<option value="4">Web Surfing</option>
@@ -1822,7 +1811,7 @@ function validate_percent(input)
 			<td><input id="dcp0" onfocusout='validate_percent(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_6_table" style="margin-left:0px; height:18px;"  maxlength="3" autocomplete="off" autocorrect="off" autocapitalize="off" value="100"> % </td>
 		</tr>
 		<tr>
-			<th>VoIP</th>
+			<th>Work-From-Home</th>
 			<td><input id="drp1" onfocusout='validate_percent(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_6_table" style="margin-left:0px; height:18px;"  maxlength="2" autocomplete="off" autocorrect="off" autocapitalize="off" value="20"> % </td>
 			<td><input id="dcp1" onfocusout='validate_percent(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_6_table" style="margin-left:0px; height:18px;"  maxlength="3" autocomplete="off" autocorrect="off" autocapitalize="off" value="100"> % </td>
 		</tr>
@@ -1873,7 +1862,7 @@ function validate_percent(input)
 			<td><input id="ucp0" onfocusout='validate_percent(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_6_table" style="margin-left:0px; height:18px;"  maxlength="3" autocomplete="off" autocorrect="off" autocapitalize="off" value="100"> % </td>
 		</tr>
 		<tr>
-			<th>VoIP</th>
+			<th>Work-From-Home</th>
 			<td><input id="urp1" onfocusout='validate_percent(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_6_table" style="margin-left:0px; height:18px;"  maxlength="2" autocomplete="off" autocorrect="off" autocapitalize="off" value="20"> % </td>
 			<td><input id="ucp1" onfocusout='validate_percent(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_6_table" style="margin-left:0px; height:18px;"  maxlength="3" autocomplete="off" autocorrect="off" autocapitalize="off" value="100"> % </td>
 		</tr>

@@ -8,7 +8,7 @@ This script has been tested on ASUS AC-68U, running RMerlin FW 384.4, using Adap
 
 -- Script Changes Minimum Guaranteed Bandwidth per QOS category from 128Kbit into user defined percentages upload and download.
 
--- Script allows for custom QOS rules 
+-- Script allows for custom QOS rules
 
 -- Script allows for redirection of existing identified traffic
 
@@ -20,7 +20,7 @@ See <a href="https://www.snbforums.com/threads/release-freshjr-adaptive-qos-impr
 
 In your SSH Client:
 
-``` curl "https://raw.githubusercontent.com/dave14305/FreshJR_QOS/master/FreshJR_QOS.sh" -o /jffs/scripts/FreshJR_QOS --create-dirs && curl "https://raw.githubusercontent.com/dave14305/FreshJR_QOS/master/FreshJR_QoS_Stats.asp" -o /jffs/scripts/www_FreshJR_QoS_Stats.asp && sh /jffs/scripts/FreshJR_QOS -install ```
+``` curl "https://raw.githubusercontent.com/dave14305/FreshJR_QOS/develop/FreshJR_QOS.sh" -o /jffs/scripts/FreshJR_QOS --create-dirs && curl "https://raw.githubusercontent.com/dave14305/FreshJR_QOS/develop/FreshJR_QoS_Stats.asp" -o /jffs/scripts/www_FreshJR_QoS_Stats.asp && sh /jffs/scripts/FreshJR_QOS -install ```
 
 ## Uninstall:
 
