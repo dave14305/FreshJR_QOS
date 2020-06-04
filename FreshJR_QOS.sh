@@ -1,7 +1,7 @@
 #!/bin/sh
 ##FreshJR_QOS
-version=8.9
-release=05/28/2020
+version=8.9b
+release=06/04/2020
 #Copyright (C) 2017-2019 FreshJR - All Rights Reserved
 #Tested with ASUS AC-68U, FW384.9, using Adaptive QOS with Manual Bandwidth Settings
 # Script Changes Unidentified traffic destination away from "Defaults" into "Others"
@@ -383,7 +383,7 @@ set_tc_variables(){
 			#net control
 			flowid=0
 			;;
-		 '12')
+		 '24')
 			Web="1:1${flowid}"
 			eval "Cat${flowid}DownBandPercent=${drp4}"
 			eval "Cat${flowid}UpBandPercent=${urp4}"
@@ -413,7 +413,7 @@ EOF
 	DownRate4="$(expr ${DownCeil} \* ${Cat4DownBandPercent} / 100)"
 	DownRate5="$(expr ${DownCeil} \* ${Cat5DownBandPercent} / 100)"
 	DownRate6="$(expr ${DownCeil} \* ${Cat6DownBandPercent} / 100)"
-	DownRate7="$(expr ${DownCeil} \* ${drp6} / 100)"
+	DownRate7="$(expr ${DownCeil} \* ${Cat7DownBandPercent} / 100)"
 
 
 	UpRate0="$(expr ${UpCeil} \* ${urp0} / 100)"
@@ -423,7 +423,7 @@ EOF
 	UpRate4="$(expr ${UpCeil} \* ${Cat4UpBandPercent} / 100)"
 	UpRate5="$(expr ${UpCeil} \* ${Cat5UpBandPercent} / 100)"
 	UpRate6="$(expr ${UpCeil} \* ${Cat6UpBandPercent} / 100)"
-	UpRate7="$(expr ${UpCeil} \* ${urp6} / 100)"
+	UpRate7="$(expr ${UpCeil} \* ${Cat7UpBandPercent} / 100)"
 
 	DownCeil0="$(expr ${DownCeil} \* ${dcp0} / 100)"					#Minimum guaranteed Up/Down rates per QOS category corresponding to user defined percentages
 	DownCeil1="$(expr ${DownCeil} \* ${Cat1DownCeilPercent} / 100)"
@@ -432,7 +432,7 @@ EOF
 	DownCeil4="$(expr ${DownCeil} \* ${Cat4DownCeilPercent} / 100)"
 	DownCeil5="$(expr ${DownCeil} \* ${Cat5DownCeilPercent} / 100)"
 	DownCeil6="$(expr ${DownCeil} \* ${Cat6DownCeilPercent} / 100)"
-	DownCeil7="$(expr ${DownCeil} \* ${dcp6} / 100)"
+	DownCeil7="$(expr ${DownCeil} \* ${Cat7DownCeilPercent} / 100)"
 
 
 	UpCeil0="$(expr ${UpCeil} \* ${ucp0} / 100)"
@@ -442,7 +442,7 @@ EOF
 	UpCeil4="$(expr ${UpCeil} \* ${Cat4UpCeilPercent} / 100)"
 	UpCeil5="$(expr ${UpCeil} \* ${Cat5UpCeilPercent} / 100)"
 	UpCeil6="$(expr ${UpCeil} \* ${Cat6UpCeilPercent} / 100)"
-	UpCeil7="$(expr ${UpCeil} \* ${ucp6} / 100)"
+	UpCeil7="$(expr ${UpCeil} \* ${Cat7UpCeilPercent} / 100)"
 
 	ClassesPresent=0
 	#read existing burst/cburst per download class
