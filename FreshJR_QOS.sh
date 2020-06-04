@@ -1,6 +1,6 @@
 #!/bin/sh
 ##FreshJR_QOS
-version=8.9b
+version=8.9b2
 release=06/04/2020
 #Copyright (C) 2017-2019 FreshJR - All Rights Reserved
 #Tested with ASUS AC-68U, FW384.9, using Adaptive QOS with Manual Bandwidth Settings
