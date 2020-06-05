@@ -1,9 +1,9 @@
 #!/bin/sh
 ##FreshJR_QOS
-version=8.9b2
-release=06/04/2020
+version=8.9b3
+release=06/05/2020
 #Copyright (C) 2017-2019 FreshJR - All Rights Reserved
-#Tested with ASUS AC-68U, FW384.9, using Adaptive QOS with Manual Bandwidth Settings
+#Tested with ASUS AC-68U, FW384.18, using Adaptive QOS with Manual Bandwidth Settings
 # Script Changes Unidentified traffic destination away from "Defaults" into "Others"
 # Script Changes HTTPS traffic destination away from "Net Control" into "Web Surfing"
 # Script Changes Guaranteed Bandwidth per QOS category into logical percentages of upload and download.
@@ -147,8 +147,8 @@ release=06/04/2020
 			iptables -D POSTROUTING -t mangle -o $wan -p tcp -m multiport --dports 119,563 -j MARK --set-mark ${Downloads_mark_up} &> /dev/null				#Usenet - 		(All outgoing traffic to WAN destination ports 119 & 563 --> Downloads )
 			iptables -A POSTROUTING -t mangle -o $wan -p tcp -m multiport --dports 119,563 -j MARK --set-mark ${Downloads_mark_up}
 
-			iptables -D OUTPUT -t mangle -o $wan -p udp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up} &> /dev/null					#VPN Fix -		(Fixes upload traffic not detected when the router is acting as a VPN Client)
-			iptables -A OUTPUT -t mangle -o $wan -p udp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up}
+			iptables -D OUTPUT -t mangle -o $wan -p udp -m multiport ! --dports 53,123 -j MARK --set-mark ${Downloads_mark_up} &> /dev/null					#VPN Fix -		(Fixes upload traffic not detected when the router is acting as a VPN Client)
+			iptables -A OUTPUT -t mangle -o $wan -p udp -m multiport ! --dports 53,123 -j MARK --set-mark ${Downloads_mark_up}
 
 			iptables -D OUTPUT -t mangle -o $wan -p tcp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up} &> /dev/null					#VPN Fix -		(Fixes upload traffic not detected when the router is acting as a VPN Client)
 			iptables -A OUTPUT -t mangle -o $wan -p tcp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up}
@@ -329,11 +329,12 @@ set_tc_variables(){
 	fi
 
 	#read order of QOS categories
-	#Defaults="1:17"  # no longer fixed location in 384.18 or higher
-	Net="1:10"
 	flowid=0
 	while read -r line;				# reads users order of QOS categories
 	do
+		if [ "${line:0:1}" = '[' ]; then
+			flowid="${line:1:1}"
+		fi
 		#logger -s "${line}    ${flowid}"
 		case ${line} in
 		 '0')
@@ -380,8 +381,11 @@ set_tc_variables(){
 			eval "Cat${flowid}UpCeilPercent=${ucp2}"
 			;;
 		 '9')
-			#net control
-			flowid=0
+			Net="1:1${flowid}"
+			eval "Cat${flowid}DownBandPercent=${drp0}"
+			eval "Cat${flowid}UpBandPercent=${urp0}"
+			eval "Cat${flowid}DownCeilPercent=${dcp0}"
+			eval "Cat${flowid}UpCeilPercent=${ucp0}"
 			;;
 		 '24')
 			Web="1:1${flowid}"
@@ -390,23 +394,23 @@ set_tc_variables(){
 			eval "Cat${flowid}DownCeilPercent=${dcp4}"
 			eval "Cat${flowid}UpCeilPercent=${ucp4}"
 			;;
+		 'na')
+			 Defaults="1:1${flowid}"
+			 eval "Cat${flowid}DownBandPercent=${drp6}"
+			 eval "Cat${flowid}UpBandPercent=${urp6}"
+			 eval "Cat${flowid}DownCeilPercent=${dcp6}"
+			 eval "Cat${flowid}UpCeilPercent=${ucp6}"
 		esac
 
-		firstchar="${line%%[0-9]*}"
-		if [ "${firstchar}" == "[" ] ; then
-			flowid=$((flowid + 1))
-			#logger -s "flowid = ${flowid} ==========="
-		fi
-
 	done <<EOF
-		$(cat /tmp/bwdpi/qosd.conf | sed 's/rule=//g' | sed '/na/q')
+		$(sed -E '/^ceil_/d;s/rule=//g;/\{/q' /tmp/bwdpi/qosd.conf | head -n -1)
 EOF
 
 	#calculate up/down rates
 	DownCeil="$(printf "%.0f" $(nvram get qos_ibw))"
 	UpCeil="$(printf "%.0f" $(nvram get qos_obw))"
 
-	DownRate0="$(expr ${DownCeil} \* ${drp0} / 100)"					#Minimum guaranteed Up/Down rates per QOS category corresponding to user defined percentages
+	DownRate0="$(expr ${DownCeil} \* ${Cat0DownBandPercent} / 100)"					#Minimum guaranteed Up/Down rates per QOS category corresponding to user defined percentages
 	DownRate1="$(expr ${DownCeil} \* ${Cat1DownBandPercent} / 100)"
 	DownRate2="$(expr ${DownCeil} \* ${Cat2DownBandPercent} / 100)"
 	DownRate3="$(expr ${DownCeil} \* ${Cat3DownBandPercent} / 100)"
@@ -416,7 +420,7 @@ EOF
 	DownRate7="$(expr ${DownCeil} \* ${Cat7DownBandPercent} / 100)"
 
 
-	UpRate0="$(expr ${UpCeil} \* ${urp0} / 100)"
+	UpRate0="$(expr ${UpCeil} \* ${Cat0UpBandPercent} / 100)"
 	UpRate1="$(expr ${UpCeil} \* ${Cat1UpBandPercent} / 100)"
 	UpRate2="$(expr ${UpCeil} \* ${Cat2UpBandPercent} / 100)"
 	UpRate3="$(expr ${UpCeil} \* ${Cat3UpBandPercent} / 100)"
@@ -425,7 +429,7 @@ EOF
 	UpRate6="$(expr ${UpCeil} \* ${Cat6UpBandPercent} / 100)"
 	UpRate7="$(expr ${UpCeil} \* ${Cat7UpBandPercent} / 100)"
 
-	DownCeil0="$(expr ${DownCeil} \* ${dcp0} / 100)"					#Minimum guaranteed Up/Down rates per QOS category corresponding to user defined percentages
+	DownCeil0="$(expr ${DownCeil} \* ${Cat0DownCeilPercent} / 100)"					#Minimum guaranteed Up/Down rates per QOS category corresponding to user defined percentages
 	DownCeil1="$(expr ${DownCeil} \* ${Cat1DownCeilPercent} / 100)"
 	DownCeil2="$(expr ${DownCeil} \* ${Cat2DownCeilPercent} / 100)"
 	DownCeil3="$(expr ${DownCeil} \* ${Cat3DownCeilPercent} / 100)"
@@ -435,7 +439,7 @@ EOF
 	DownCeil7="$(expr ${DownCeil} \* ${Cat7DownCeilPercent} / 100)"
 
 
-	UpCeil0="$(expr ${UpCeil} \* ${ucp0} / 100)"
+	UpCeil0="$(expr ${UpCeil} \* ${Cat0UpCeilPercent} / 100)"
 	UpCeil1="$(expr ${UpCeil} \* ${Cat1UpCeilPercent} / 100)"
 	UpCeil2="$(expr ${UpCeil} \* ${Cat2UpCeilPercent} / 100)"
 	UpCeil3="$(expr ${UpCeil} \* ${Cat3UpCeilPercent} / 100)"
@@ -557,14 +561,13 @@ EOF
 ## Main Menu -appdb function
 appdb(){
 
-	if [ "$( grep -i "${1}"  /tmp/bwdpi/bwdpi.app.db | wc -l )" -lt "25" ] ; then
-		grep -i "${1}"  /tmp/bwdpi/bwdpi.app.db | while read -r line ; do
+		grep -m 25 -i "${1}"  /tmp/bwdpi/bwdpi.app.db | while read -r line ; do
 			echo $line | cut -f 4 -d ","
 
 			cat_decimal=$(echo $line | cut -f 1 -d "," )
 			cat_hex=$( printf "%02x" $cat_decimal )
 			case "$cat_decimal" in
-			 '9'|'20')
+			 '9'|'18'|'19'|'20')
 			   echo " Originally:  Net Control"
 			   ;;
 			 '0'|'5'|'6'|'15'|'17')
@@ -576,10 +579,10 @@ appdb(){
 			 '7'|'10'|'11'|'21'|'23')
 			   echo " Originally:  Others"
 			   ;;
-			 '13'|'24'|'18'|'19')
+			 '13'|'24')
 			   echo " Originally:  Web"
 			   ;;
-			 '4'|'12')
+			 '4')
 			   echo " Originally:  Streaming"
 			   ;;
 			 '1'|'3'|'14')
@@ -598,9 +601,6 @@ appdb(){
 			  #echo $line | cut -f 2 -d "," | awk '{printf("%04x 0xc03fffff\n",$1)}'
 			echo ""
 		done
-	else
-		echo "AppDB search parameter has to be more specfic"
-	fi
 }
 
 ## Main Menu -debug function
@@ -642,7 +642,7 @@ debug(){
 	logger -t "adaptive QOS" -s "DownCbursts -- $DownCburst0, $DownCburst1, $DownCburst2, $DownCburst3, $DownCburst4, $DownCburst5, $DownCburst6, $DownCburst7"
 	logger -t "adaptive QOS" -s "***********"
 	logger -t "adaptive QOS" -s "Uprates -- $UpRate0, $UpRate1, $UpRate2, $UpRate3, $UpRate4, $UpRate5, $UpRate6, $UpRate7"
-	logger -t "adaptive QOS" -s "Upciels -- $UpCeil0, $UpCeil1, $UpCeil2, $UpCeil3, $UpCeil4, $UpCeil5, $UpCeil6, $UpCeil7"
+	logger -t "adaptive QOS" -s "Upceils -- $UpCeil0, $UpCeil1, $UpCeil2, $UpCeil3, $UpCeil4, $UpCeil5, $UpCeil6, $UpCeil7"
 	logger -t "adaptive QOS" -s "Upbursts -- $UpBurst0, $UpBurst1, $UpBurst2, $UpBurst3, $UpBurst4, $UpBurst5, $UpBurst6, $UpBurst7"
 	logger -t "adaptive QOS" -s "UpCbursts -- $UpCburst0, $UpCburst1, $UpCburst2, $UpCburst3, $UpCburst4, $UpCburst5, $UpCburst6, $UpCburst7"
 	echo -en '\033[?7h'			#enable line wrap
@@ -2106,12 +2106,12 @@ case "$arg1" in
 			undf_flowid=$(echo $current_undf_rule | grep -o "flowid.*" | cut -d" " -f2 | head -1)
 			undf_prio=$(echo $current_undf_rule | grep -o "pref.*" | cut -d" " -f2 | head -1)
 		else
-			undf_flowid="1:12"
+			undf_flowid=""
 			undf_prio=2
 		fi
 		#if TC modifcations have no been applied then run modification script
 		#eg (if rule setting unidentified traffic to 1:17 exists) --> run modification script
-		if [ "${undf_flowid}" == "1:17" ] || [ "${undf_flowid}" == "1:12" ] ; then
+		if [ "${undf_flowid}" == "1:17" ] || [ -z "${undf_flowid}" ] ; then
 			if [ "$arg1" == "check" ] ; then
 				logger -t "adaptive QOS" -s "Scheduled Persistence Check -> Reapplying Changes"
 			fi

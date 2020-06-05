@@ -135,8 +135,6 @@ text-overflow: ellipsis;
 <script>
 var device = {};													// devices database --> device["IP"] = { mac: "AA:BB:CC:DD:EE:FF" , name:"name" }
 var clientlist = <% get_clientlist_from_json_database(); %>;		// data from /jffs/nmp_cl_json.js (used to correlate mac addresses to corresponding device names  )
-</script>
-<script>
 var tablesize = 500;						//max size of tracked connections table
 var tabledata;								//tabled of tracked connections after device-filtered
 var sortmode=6;								//current sort mode of tracked connections table (default =6)
@@ -1545,7 +1543,7 @@ function validate_percent(input)
 			<td><input type="text" class="input_12_table" maxlength="12" style="background-color: rgb(204, 204, 204); cursor:default" readonly></td>
 			<td><input type="text" class="input_12_table" maxlength="12" style="background-color: rgb(204, 204, 204); cursor:default" value="!80,443" readonly></td>
 			<td><input type="text" class="input_6_table" maxlength="6"   style="background-color: rgb(204, 204, 204); cursor:default" value="000000" readonly></td>
-			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option value="UDP">Gaming</option></select></td>
+			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly><option value="1">Gaming</option></select></td>
 		</tr>
 
 		<tr>
@@ -1555,7 +1553,7 @@ function validate_percent(input)
 			<td><input type="text" class="input_12_table" maxlength="12" style="background-color: rgb(204, 204, 204); cursor:default" readonly></td>
 			<td><input type="text" class="input_12_table" maxlength="12" style="background-color: rgb(204, 204, 204); cursor:default" value="500,4500" readonly></td>
 			<td><input type="text" class="input_6_table" maxlength="6"   style="background-color: rgb(204, 204, 204); cursor:default" readonly></td>
-			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option value="UDP">Work-From-Home</option></select></td>
+			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly><option value="3">Work-From-Home</option></select></td>
 		</tr>
 
 		<tr>
@@ -1565,7 +1563,7 @@ function validate_percent(input)
 			<td><input type="text" class="input_12_table" maxlength="12" style="background-color: rgb(204, 204, 204); cursor:default" value="16384:16415" readonly></td>
 			<td><input type="text" class="input_12_table" maxlength="12" style="background-color: rgb(204, 204, 204); cursor:default" readonly></td>
 			<td><input type="text" class="input_6_table" maxlength="6"   style="background-color: rgb(204, 204, 204); cursor:default" readonly></td>
-			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option value="UDP">Work-From-Home</option></select></td>
+			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly><option value="3">Work-From-Home</option></select></td>
 		</tr>
 
 		<tr>
@@ -1575,7 +1573,7 @@ function validate_percent(input)
 			<td><input type="text" class="input_12_table" maxlength="12" style="background-color: rgb(204, 204, 204); cursor:default" readonly></td>
 			<td><input type="text" class="input_12_table" maxlength="12" style="background-color: rgb(204, 204, 204); cursor:default" value="119,563" readonly></td>
 			<td><input type="text" class="input_6_table" maxlength="6"   style="background-color: rgb(204, 204, 204); cursor:default" readonly></td>
-			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option value="UDP">File Downloads</option></select></td>
+			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly><option value="5">File Downloads</option></select></td>
 		</tr>
 
 		<tr>
@@ -1585,7 +1583,7 @@ function validate_percent(input)
 			<td><input type="text" class="input_12_table" maxlength="12" style="background-color: rgb(204, 204, 204); cursor:default" readonly></td>
 			<td><input type="text" class="input_12_table" maxlength="12" style="background-color: rgb(204, 204, 204); cursor:default" value="80,443" readonly></td>
 			<td><input type="text" class="input_6_table" maxlength="6"   style="background-color: rgb(204, 204, 204); cursor:default" value="08****" readonly></td>
-			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option value="UDP">Game Downloads</option></select></td>
+			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly><option value="7">Game Downloads</option></select></td>
 		</tr>
 
 		<tr>
@@ -1688,58 +1686,58 @@ function validate_percent(input)
 		</tr>
 
 		</tr>
-			<td>Untracked </td>
+			<td>Untracked</td>
 			<td><input type="text" class="input_6_table" maxlength="6"  style="background-color: rgb(204, 204, 204); cursor:default"  value="000000"></td>
-			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option>Others</option></select></td>
+			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly><option>Others</option></select></td>
 		</tr>
 
 		</tr>
-			<td>Snapchat </td>
+			<td>Snapchat</td>
 			<td><input type="text" class="input_6_table" maxlength="6"  style="background-color: rgb(204, 204, 204); cursor:default"  value="00006B"></td>
-			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option>Others</option></select></td>
+			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly><option>Others</option></select></td>
 		</tr>
 
 		</tr>
 			<td>Speedtest.net</td>
 			<td><input type="text" class="input_6_table" maxlength="6"  style="background-color: rgb(204, 204, 204); cursor:default"  value="0D0007"></td>
-			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option>File Downloads</option></select></td>
+			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly><option>File Downloads</option></select></td>
 		</tr>
 
 		</tr>
 			<td>Google Play</td>
 			<td><input type="text" class="input_6_table" maxlength="6"  style="background-color: rgb(204, 204, 204); cursor:default"  value="0D0086"></td>
-			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option>File Downloads</option></select></td>
+			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly><option>File Downloads</option></select></td>
 		</tr>
 
 		</tr>
-			<td>Apple AppStore </td>
+			<td>Apple AppStore</td>
 			<td><input type="text" class="input_6_table" maxlength="6"  style="background-color: rgb(204, 204, 204); cursor:default"  value="0D00A0"></td>
-			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option>File Downloads</option></select></td>
+			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly><option>File Downloads</option></select></td>
 		</tr>
 
 
 		</tr>
 			<td>World Wide Web HTTP</td>
 			<td><input type="text" class="input_6_table" maxlength="6"  style="background-color: rgb(204, 204, 204); cursor:default"  value="12003F"></td>
-			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option>Web Surfing</option></select></td>
+			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly><option>Web Surfing</option></select></td>
 		</tr>
 
 		</tr>
 			<td>HTTP Protocol over TLS SSL + Misc</td>
 			<td><input type="text" class="input_6_table" maxlength="6"  style="background-color: rgb(204, 204, 204); cursor:default"  value="13****"></td>
-			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option>Web Surfing</option></select></td>
+			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly><option>Web Surfing</option></select></td>
 		</tr>
 
 		</tr>
 			<td>TLS SSL Connections + Misc </td>
 			<td><input type="text" class="input_6_table" maxlength="6"  style="background-color: rgb(204, 204, 204); cursor:default"  value="14****"></td>
-			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option>Web Surfing</option></select></td>
+			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly><option>Web Surfing</option></select></td>
 		</tr>
 
 		</tr>
-			<td>Advertisement </td>
+			<td>Advertisement</td>
 			<td><input type="text" class="input_6_table" maxlength="6"  style="background-color: rgb(204, 204, 204); cursor:default"  value="1A****"></td>
-			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly"><option>File Downloads</option></select></td>
+			<td><select class="input_option" style="width:125px; font-size:11.5px; margin-left:-5px; background-color: rgb(204, 204, 204); cursor:default" readonly><option>File Downloads</option></select></td>
 		</tr>
 
 		</tr>
