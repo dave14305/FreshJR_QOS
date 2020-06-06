@@ -1,14 +1,14 @@
-# FreshJR QOS - Modification Script for AdaptiveQOS on Asus Routers
+# FreshJR QOS - Modification Script for AdaptiveQOS on ASUS Routers
 
-This script has been tested on ASUS AC-68U, running RMerlin FW 384.4, using Adaptive QOS with Manual Bandwidth Settings
+This script has been tested on ASUS RT-AC68U, running ASUSWRT-Merlin 384.18, using Adaptive QoS with Manual Bandwidth Settings
 
 ## Quick Overview:
 
 -- Script Changes Unidentified Packet QOS destination from "Default" Traffic Container (Category7) into user definable (in WebUI) "Others" Traffic Container
 
--- Script Changes Minimum Guaranteed Bandwidth per QOS category from 128Kbit into user defined percentages upload and download.
+-- Script Changes Minimum Guaranteed Bandwidth per QOS category to user defined percentages for upload and download.
 
--- Script allows for custom QOS rules 
+-- Script allows for custom QOS rules
 
 -- Script allows for redirection of existing identified traffic
 
