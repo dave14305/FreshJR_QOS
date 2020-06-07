@@ -400,6 +400,7 @@ set_tc_variables(){
 			 eval "Cat${flowid}UpBandPercent=${urp6}"
 			 eval "Cat${flowid}DownCeilPercent=${dcp6}"
 			 eval "Cat${flowid}UpCeilPercent=${ucp6}"
+			 ;;
 		esac
 
 	done <<EOF
