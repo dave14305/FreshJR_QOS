@@ -82,7 +82,7 @@ iptable_up_rules(){
 
 			if [ "$(nvram get ipv6_service)" != "disabled" ]; then
 				ip6tables -D OUTPUT -t mangle -o $wan -p udp -m multiport ! --dports 53,123 -j MARK --set-mark ${Downloads_mark_up} > /dev/null 2>&1					#VPN Fix -		(Fixes upload traffic not detected when the router is acting as a VPN Client)
-				ip6tables -A OUTPUT -t mangle -o $wan -p udp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up}
+				ip6tables -A OUTPUT -t mangle -o $wan -p udp -m multiport ! --dports 53,123 -j MARK --set-mark ${Downloads_mark_up}
 
 				ip6tables -D OUTPUT -t mangle -o $wan -p tcp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up} > /dev/null 2>&1					#VPN Fix -		(Fixes upload traffic not detected when the router is acting as a VPN Client)
 				ip6tables -A OUTPUT -t mangle -o $wan -p tcp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up}
@@ -100,7 +100,7 @@ iptable_up_rules(){
 
 tc_redirection_down_rules() {
 		echo "Applying  TC Down Rules"
-		${tc} filter del dev br0 parent 1: prio $1																					#remove original unidentified traffic rule
+		${tc} filter del dev br0 parent 1: prio $1 > /dev/null 2>&1																		#remove original unidentified traffic rule
 		${tc} filter del dev br0 parent 1: prio 22 > /dev/null 2>&1																		#remove original HTTPS rule
 		${tc} filter del dev br0 parent 1: prio 23 > /dev/null 2>&1																		#remove original HTTPS rule
 		! [ -z "$tc4_down" ] && ${tc} filter add dev br0 protocol all ${tc4_down}													#Script Interactively Defined Rule 4
@@ -126,7 +126,7 @@ tc_redirection_down_rules() {
 
 tc_redirection_up_rules() {
 		echo "Applying  TC Up   Rules"
-		${tc} filter del dev eth0 parent 1: prio $1																					#remove original unidentified traffic rule
+		${tc} filter del dev eth0 parent 1: prio $1 > /dev/null 2>&1																	#remove original unidentified traffic rule
 		${tc} filter del dev eth0 parent 1: prio 22 > /dev/null 2>&1																	#remove original HTTPS rule
 		${tc} filter del dev eth0 parent 1: prio 23 > /dev/null 2>&1																	#remove original HTTPS rule
 		! [ -z "$tc4_up" ] && ${tc} filter add dev eth0 protocol all ${tc4_up}														#Script Interactively Defined Rule 4
@@ -189,7 +189,7 @@ webpath='/jffs/scripts/www_FreshJR_QoS_Stats.asp'		#path of FreshJR_QoS_Stats.as
 	VOIP_mark_down="0x80060001"			# Marks for iptables variant of download rules
 	Gaming_mark_down="0x80080001"		    # Note these marks are same as filter match/mask combo but have a 1 at the end.  That trailing 1 prevents them from being caught by unidentified mask
 	Others_mark_down="0x800a0001"
-	Web_mark_down="0x800d0001"
+	Web_mark_down="0x80180001"
 	Streaming_mark_down="0x80040001"
 	Downloads_mark_down="0x80030001"
 	Default_mark_down="0x803f0001"
@@ -198,7 +198,7 @@ webpath='/jffs/scripts/www_FreshJR_QoS_Stats.asp'		#path of FreshJR_QoS_Stats.as
 	VOIP_mark_up="0x40060001"			# Marks for iptables variant of upload rules
 	Gaming_mark_up="0x40080001"		    # Note these marks are same as filter match/mask combo but have a 1 at the end.  That trailing 1 prevents them from being caught by unidentified mask
 	Others_mark_up="0x400a0001"
-	Web_mark_up="0x400d0001"
+	Web_mark_up="0x40180001"
 	Streaming_mark_up="0x40040001"
 	Downloads_mark_up="0x40030001"
 	Default_mark_up="0x403f0001"
@@ -212,11 +212,12 @@ set_tc_variables(){
 	fi
 
 	#read order of QOS categories
-	Defaults="1:17"
-	Net="1:10"
 	flowid=0
 	while read -r line;				# reads users order of QOS categories
 	do
+		if [ "${line:0:1}" = '[' ]; then
+			flowid="${line:1:1}"
+		fi
 		#logger -s "${line}    ${flowid}"
 		case ${line} in
 		 '0')
@@ -234,11 +235,19 @@ set_tc_variables(){
 			eval "Cat${flowid}UpCeilPercent=${ucp7}"
 			;;
 		 '4')
-			Streaming="1:1${flowid}"
-			eval "Cat${flowid}DownBandPercent=${drp5}"
-			eval "Cat${flowid}UpBandPercent=${urp5}"
-			eval "Cat${flowid}DownCeilPercent=${dcp5}"
-			eval "Cat${flowid}UpCeilPercent=${ucp5}"
+		 if [ -z "$Streaming" ]; then   # only process 4 if streaming not done (only process it once)
+			 Streaming="1:1${flowid}"
+			 eval "Cat${flowid}DownBandPercent=${drp5}"
+			 eval "Cat${flowid}UpBandPercent=${urp5}"
+			 eval "Cat${flowid}DownCeilPercent=${dcp5}"
+			 eval "Cat${flowid}UpCeilPercent=${ucp5}"
+		 else
+			 Defaults="1:1${flowid}"
+			 eval "Cat${flowid}DownBandPercent=${drp6}"
+			 eval "Cat${flowid}UpBandPercent=${urp6}"
+			 eval "Cat${flowid}DownCeilPercent=${dcp6}"
+			 eval "Cat${flowid}UpCeilPercent=${ucp6}"
+		 fi
 			;;
 		 '7')
 			Others="1:1${flowid}"
@@ -255,68 +264,71 @@ set_tc_variables(){
 			eval "Cat${flowid}UpCeilPercent=${ucp2}"
 			;;
 		 '9')
-			#net control
-			flowid=0
-			;;
-		 '13')
+			 Net="1:1${flowid}"
+			 eval "Cat${flowid}DownBandPercent=${drp0}"
+			 eval "Cat${flowid}UpBandPercent=${urp0}"
+			 eval "Cat${flowid}DownCeilPercent=${dcp0}"
+			 eval "Cat${flowid}UpCeilPercent=${ucp0}"
+			 ;;
+		 '24')
 			Web="1:1${flowid}"
 			eval "Cat${flowid}DownBandPercent=${drp4}"
 			eval "Cat${flowid}UpBandPercent=${urp4}"
 			eval "Cat${flowid}DownCeilPercent=${dcp4}"
 			eval "Cat${flowid}UpCeilPercent=${ucp4}"
 			;;
+		'na')
+			Defaults="1:1${flowid}"
+			eval "Cat${flowid}DownBandPercent=${drp6}"
+			eval "Cat${flowid}UpBandPercent=${urp6}"
+			eval "Cat${flowid}DownCeilPercent=${dcp6}"
+			eval "Cat${flowid}UpCeilPercent=${ucp6}"
+			;;
 		esac
 
-		firstchar="${line%%[0-9]*}"
-		if [ "${firstchar}" = "[" ] ; then
-			flowid=$((flowid + 1))
-			#logger -s "flowid = ${flowid} ==========="
-		fi
-
-	done < "$(cat /tmp/bwdpi/qosd.conf | sed 's/rule=//g' | sed '/na/q')"
-
+	done <<EOF
+		$(sed -E '/^ceil_/d;s/rule=//g;/\{/q' /tmp/bwdpi/qosd.conf | head -n -1)
+EOF
 
 	#calculate up/down rates
-	DownCeil="$(printf "%.0f" "$(nvram get qos_ibw)")"
-	UpCeil="$(printf "%.0f" "$(nvram get qos_obw)")"
+	DownCeil="$(printf "%.0f" $(nvram get qos_ibw))"
+	UpCeil="$(printf "%.0f" $(nvram get qos_obw))"
 
-	DownRate0="$(expr ${DownCeil} \* ${drp0} / 100)"					#Minimum guaranteed Up/Down rates per QOS category corresponding to user defined percentages
+	DownRate0="$(expr ${DownCeil} \* ${Cat0DownBandPercent} / 100)"					#Minimum guaranteed Up/Down rates per QOS category corresponding to user defined percentages
 	DownRate1="$(expr ${DownCeil} \* ${Cat1DownBandPercent} / 100)"
 	DownRate2="$(expr ${DownCeil} \* ${Cat2DownBandPercent} / 100)"
 	DownRate3="$(expr ${DownCeil} \* ${Cat3DownBandPercent} / 100)"
 	DownRate4="$(expr ${DownCeil} \* ${Cat4DownBandPercent} / 100)"
 	DownRate5="$(expr ${DownCeil} \* ${Cat5DownBandPercent} / 100)"
 	DownRate6="$(expr ${DownCeil} \* ${Cat6DownBandPercent} / 100)"
-	DownRate7="$(expr ${DownCeil} \* ${drp6} / 100)"
+	DownRate7="$(expr ${DownCeil} \* ${Cat7DownBandPercent} / 100)"
 
-
-	UpRate0="$(expr ${UpCeil} \* ${urp0} / 100)"
+	UpRate0="$(expr ${UpCeil} \* ${Cat0UpBandPercent} / 100)"
 	UpRate1="$(expr ${UpCeil} \* ${Cat1UpBandPercent} / 100)"
 	UpRate2="$(expr ${UpCeil} \* ${Cat2UpBandPercent} / 100)"
 	UpRate3="$(expr ${UpCeil} \* ${Cat3UpBandPercent} / 100)"
 	UpRate4="$(expr ${UpCeil} \* ${Cat4UpBandPercent} / 100)"
 	UpRate5="$(expr ${UpCeil} \* ${Cat5UpBandPercent} / 100)"
 	UpRate6="$(expr ${UpCeil} \* ${Cat6UpBandPercent} / 100)"
-	UpRate7="$(expr ${UpCeil} \* ${urp6} / 100)"
+	UpRate7="$(expr ${UpCeil} \* ${Cat7UpBandPercent} / 100)"
 
-	DownCeil0="$(expr ${DownCeil} \* ${dcp0} / 100)"					#Minimum guaranteed Up/Down rates per QOS category corresponding to user defined percentages
+	DownCeil0="$(expr ${DownCeil} \* ${Cat0DownCeilPercent} / 100)"					#Minimum guaranteed Up/Down rates per QOS category corresponding to user defined percentages
 	DownCeil1="$(expr ${DownCeil} \* ${Cat1DownCeilPercent} / 100)"
 	DownCeil2="$(expr ${DownCeil} \* ${Cat2DownCeilPercent} / 100)"
 	DownCeil3="$(expr ${DownCeil} \* ${Cat3DownCeilPercent} / 100)"
 	DownCeil4="$(expr ${DownCeil} \* ${Cat4DownCeilPercent} / 100)"
 	DownCeil5="$(expr ${DownCeil} \* ${Cat5DownCeilPercent} / 100)"
 	DownCeil6="$(expr ${DownCeil} \* ${Cat6DownCeilPercent} / 100)"
-	DownCeil7="$(expr ${DownCeil} \* ${dcp6} / 100)"
+	DownCeil7="$(expr ${DownCeil} \* ${Cat7DownCeilPercent} / 100)"
 
-
-	UpCeil0="$(expr ${UpCeil} \* ${ucp0} / 100)"
+	UpCeil0="$(expr ${UpCeil} \* ${Cat0UpCeilPercent} / 100)"
 	UpCeil1="$(expr ${UpCeil} \* ${Cat1UpCeilPercent} / 100)"
 	UpCeil2="$(expr ${UpCeil} \* ${Cat2UpCeilPercent} / 100)"
 	UpCeil3="$(expr ${UpCeil} \* ${Cat3UpCeilPercent} / 100)"
 	UpCeil4="$(expr ${UpCeil} \* ${Cat4UpCeilPercent} / 100)"
 	UpCeil5="$(expr ${UpCeil} \* ${Cat5UpCeilPercent} / 100)"
 	UpCeil6="$(expr ${UpCeil} \* ${Cat6UpCeilPercent} / 100)"
-	UpCeil7="$(expr ${UpCeil} \* ${ucp6} / 100)"
+	UpCeil7="$(expr ${UpCeil} \* ${Cat7UpCeilPercent} / 100)"
 
 	ClassesPresent=0
 	#read existing burst/cburst per download class
@@ -426,8 +438,7 @@ set_tc_variables(){
 ## Main Menu -appdb function
 appdb(){
 
-	if [ "$( grep -i "${1}"  /tmp/bwdpi/bwdpi.app.db | wc -l )" -lt "25" ] ; then
-		grep -i "${1}"  /tmp/bwdpi/bwdpi.app.db | while read -r line ; do
+		grep -m 25 -i "${1}" /tmp/bwdpi/bwdpi.app.db | while read -r line ; do
 			echo $line | cut -f 4 -d ","
 
 			cat_decimal=$(echo $line | cut -f 1 -d "," )
@@ -467,9 +478,6 @@ appdb(){
 			  #echo $line | cut -f 2 -d "," | awk '{printf("%04x 0xc03fffff\n",$1)}'
 			echo ""
 		done
-	else
-		echo "AppDB search parameter has to be more specfic"
-	fi
 }
 
 ## Main Menu -debug function
@@ -482,8 +490,13 @@ debug(){
 	read_nvram
 	set_tc_variables
 	current_undf_rule="$(tc filter show dev br0 | grep -v "/" | grep "000ffff" -B1)"
-	undf_flowid=$(echo $current_undf_rule | grep -o "flowid.*" | cut -d" " -f2 | head -1)
-	undf_prio=$(echo $current_undf_rule | grep -o "pref.*" | cut -d" " -f2 | head -1)
+	if [ -n "$current_undf_rule" ]; then
+		undf_flowid=$(echo $current_undf_rule | grep -o "flowid.*" | cut -d" " -f2 | head -1)
+		undf_prio=$(echo $current_undf_rule | grep -o "pref.*" | cut -d" " -f2 | head -1)
+	else
+		undf_flowid=""
+		undf_prio=2
+	fi
 
 	logger -t "adaptive QOS" -s "Undf Prio: $undf_prio"
 	logger -t "adaptive QOS" -s "Undf FlowID: $undf_flowid"
@@ -2091,11 +2104,16 @@ start() {
 		fi
 
 		current_undf_rule="$(tc filter show dev br0 | grep -v "/" | grep "000ffff" -B1)"
-		undf_flowid=$(echo $current_undf_rule | grep -o "flowid.*" | cut -d" " -f2 | head -1)
-		undf_prio=$(echo $current_undf_rule | grep -o "pref.*" | cut -d" " -f2 | head -1)
+		if [ -n "$current_undf_rule" ]; then
+			undf_flowid=$(echo $current_undf_rule | grep -o "flowid.*" | cut -d" " -f2 | head -1)
+			undf_prio=$(echo $current_undf_rule | grep -o "pref.*" | cut -d" " -f2 | head -1)
+		else
+			undf_flowid=""
+			undf_prio=2
+		fi
 		#if TC modifcations have no been applied then run modification script
 		#eg (if rule setting unidentified traffic to 1:17 exists) --> run modification script
-		if [ "${undf_flowid}" = "1:17" ] ; then
+		if [ "${undf_flowid}" = "1:17" ] || [ -z "${undf_flowid}" ]; then
 			if [ "$1" = "check" ] ; then
 				logger -t "adaptive QOS" -s "Scheduled Persistence Check -> Reapplying Changes"
 			fi # check
