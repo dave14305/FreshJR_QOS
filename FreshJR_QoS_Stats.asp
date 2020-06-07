@@ -113,8 +113,6 @@ text-overflow: ellipsis;
 var custom_settings = <% get_custom_settings(); %>;
 var device = {};													// devices database --> device["IP"] = { mac: "AA:BB:CC:DD:EE:FF" , name:"name" }
 var clientlist = <% get_clientlist_from_json_database(); %>;		// data from /jffs/nmp_cl_json.js (used to correlate mac addresses to corresponding device names  )
-</script>
-<script>
 var tablesize = 500;						//max size of tracked connections table
 var tabledata;								//tabled of tracked connections after device-filtered
 var sortmode=6;								//current sort mode of tracked connections table (default =6)
@@ -165,11 +163,11 @@ if (qos_mode == 2) {
     var bwdpi_app_rulelist = "<% nvram_get("bwdpi_app_rulelist"); %>".replace(/&#60/g, "<");
     var bwdpi_app_rulelist_row = bwdpi_app_rulelist.split("<");
     if (bwdpi_app_rulelist == "" || bwdpi_app_rulelist_row.length != 9) {
-        bwdpi_app_rulelist = "9,20<8<4<0,5,6,15,17<13,24<1,3,14<7,10,11,21,23<<";
+        bwdpi_app_rulelist = "9,20<8<4<0,5,6,15,17<4,13<13,24<1,3,14<7,10,11,21,23<";
         bwdpi_app_rulelist_row = bwdpi_app_rulelist.split("<");
     }
-    var category_title = ["Net Control Packets", "Gaming", "Video and Audio Streaming", "VoIP and Instant Messaging", "Web Surfing", "File Transferring", "Others", "Game Transferring"];
-		var class_title = ["Net Control", "Gaming", "Streaming", "VoIP and IM", "Web Surfing", "File Downloads", "Others", "Game Downloads"];
+    var category_title = ["Net Control Packets", "Gaming", "Video and Audio Streaming", "Work-From-Home", "Web Surfing", "File Transferring", "Others", "Game Transferring"];
+		var class_title = ["Net Control", "Gaming", "Streaming", "Work-From-Home", "Web Surfing", "File Downloads", "Others", "Game Downloads"];
     var cat_id_array = [
         [9, 20],
         [8],
@@ -178,7 +176,7 @@ if (qos_mode == 2) {
         [13, 24],
         [1, 3, 14],
         [7, 10, 11, 21, 23],
-        []
+        [4, 13]
     ];
 
 	var c_net=bwdpi_app_rulelist_row.indexOf(cat_id_array[0].toString())
@@ -952,8 +950,7 @@ function get_data() {
 }
 
 function draw_chart(data_array, ctx, pie) {
-    var code = '<table><thead style="text-align:left;"><tr><th style="padding-left:5px;">Class</th><th style="padding-left:5px; width:76px;">Total</th><th style="padding-left:30px; padding-right:15px;">Rate</th><th style="padding-left:15px;">Packet rate</th></tr></thead>';
-    var code_delay_append = '';
+  var code = '<table><thead style="text-align:left;"><tr><th style="padding-left:5px;">Class</th><th style="padding-left:5px; width:76px;">Total</th><th style="padding-left:30px; padding-right:15px;">Rate</th><th style="padding-left:15px;">Packet rate</th></tr></thead>';
 	var values_array = [];
     var labels_array = [];
     for (i = 0; i < data_array.length - 1; i++) {
@@ -991,16 +988,7 @@ function draw_chart(data_array, ctx, pie) {
             value = value / 1024;
             unit = " GB";
         }
-		if (qos_mode == 2 && i == 6) {
-			code_delay_append += '<tr><td style="word-wrap:break-word;padding-left:5px;padding-right:5px;border:1px #2f3a3e solid; border-radius:5px;background-color:' + color[i] + ';margin-right:10px;line-height:20px;">' + label + '</td>';
-			code_delay_append += '<td style="padding-left:5px;">' + value.toFixed(2) + unit + '</td>';
-			rate = rate2kbs(data_array[i][2])
-			code_delay_append += '<td style="padding-left:5px; text-align:right;">' + rate + ' kB/s</td>';
-			rate = comma(data_array[i][3]);
-			code_delay_append += '<td style="padding-left:5px;; text-align:right;">' + rate.replace(/([0-9,])([a-zA-Z])/g, '$1 $2') + '</td></tr>';
-		}
-		else
-		{
+		if (qos_mode == 2) {
 			code += '<tr><td style="word-wrap:break-word;padding-left:5px;padding-right:5px;border:1px #2f3a3e solid; border-radius:5px;background-color:' + color[i] + ';margin-right:10px;line-height:20px;">' + label + '</td>';
 			code += '<td style="padding-left:5px;">' + value.toFixed(2) + unit + '</td>';
 			rate = rate2kbs(data_array[i][2])
@@ -1009,7 +997,6 @@ function draw_chart(data_array, ctx, pie) {
 			code += '<td style="padding-left:5px; text-align:right;">' + rate.replace(/([0-9,])([a-zA-Z])/g, '$1 $2') + '</td></tr>';
 		}
     }
-	code += code_delay_append;
     code += '</table>';
     var pieData = {
         labels: labels_array,
@@ -1853,7 +1840,7 @@ function SetCurrentPage() {
 			<td><input id="dcp0" onfocusout='validate_percent(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_6_table" style="margin-left:0px; height:18px;"  maxlength="3" autocomplete="off" autocorrect="off" autocapitalize="off" value="100"> % </td>
 		</tr>
 		<tr>
-			<th>VoIP</th>
+			<th>Work-From-Home</th>
 			<td><input id="drp1" onfocusout='validate_percent(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_6_table" style="margin-left:0px; height:18px;"  maxlength="2" autocomplete="off" autocorrect="off" autocapitalize="off" value="20"> % </td>
 			<td><input id="dcp1" onfocusout='validate_percent(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_6_table" style="margin-left:0px; height:18px;"  maxlength="3" autocomplete="off" autocorrect="off" autocapitalize="off" value="100"> % </td>
 		</tr>
@@ -1904,7 +1891,7 @@ function SetCurrentPage() {
 			<td><input id="ucp0" onfocusout='validate_percent(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_6_table" style="margin-left:0px; height:18px;"  maxlength="3" autocomplete="off" autocorrect="off" autocapitalize="off" value="100"> % </td>
 		</tr>
 		<tr>
-			<th>VoIP</th>
+			<th>Work-From-Home</th>
 			<td><input id="urp1" onfocusout='validate_percent(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_6_table" style="margin-left:0px; height:18px;"  maxlength="2" autocomplete="off" autocorrect="off" autocapitalize="off" value="20"> % </td>
 			<td><input id="ucp1" onfocusout='validate_percent(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' type="text" class="input_6_table" style="margin-left:0px; height:18px;"  maxlength="3" autocomplete="off" autocorrect="off" autocapitalize="off" value="100"> % </td>
 		</tr>
