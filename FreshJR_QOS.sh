@@ -75,7 +75,7 @@ release=05/28/2020
 
 		if [ "$( echo $gameCIDR | tr -cd '.' | wc -c )" -eq "3" ] ; then
 			iptables -D POSTROUTING -t mangle -o br0 -d $gameCIDR -m mark --mark 0x80000000/0x8000ffff -p tcp -m multiport ! --sports 80,443  -j MARK --set-mark ${Gaming_mark_down} &> /dev/null    	#Gaming - (Incoming "Unidentified" TCP traffic, for devices specified, not from WAN source ports 80 & 443 -->  Gaming)
-			iptables -A POSTROUTING -t mangle -o br0 -d $gameCIDR -m mark --mark 0x80000000/0x8000ffff -p tcp -m multiport ! --sports 80,433  -j MARK --set-mark ${Gaming_mark_down}
+			iptables -A POSTROUTING -t mangle -o br0 -d $gameCIDR -m mark --mark 0x80000000/0x8000ffff -p tcp -m multiport ! --sports 80,443  -j MARK --set-mark ${Gaming_mark_down}
 
 			iptables -D POSTROUTING -t mangle -o br0 -d $gameCIDR -m mark --mark 0x80000000/0x8000ffff -p udp -m multiport ! --sports 80,443  -j MARK --set-mark ${Gaming_mark_down} &> /dev/null    	#Gaming - (Incoming "Unidentified" UDP traffic, for devices specified, not from WAN source ports 80 & 443 -->  Gaming)
 			iptables -A POSTROUTING -t mangle -o br0 -d $gameCIDR -m mark --mark 0x80000000/0x8000ffff -p udp -m multiport ! --sports 80,443  -j MARK --set-mark ${Gaming_mark_down}
