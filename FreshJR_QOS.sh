@@ -1393,8 +1393,6 @@ start() {
 
 show_help() {
 	echo -en "\033c\e[3J"		#clear screen
-	echo -en '\033[?7l'			#disable line wrap
-	# printf '\e[8;30;120t'		#set height/width of terminal
 	echo -e  "\033[1;32mFreshJR QOS v${version} \033[0m"
 	echo -e  "\033[1;32mreleased ${release} \033[0m"
 	echo ""
@@ -1414,32 +1412,14 @@ show_help() {
 	echo "  FreshJR_QOS -debug              print traffic control parameters"
 	echo "  FreshJR_QOS -debug2             print parsed nvram parameters"
 	echo ""
-	echo '  FreshJR_QOS -appdb "App Name"   looks up mark for specifed application'
-	echo ""
-	echo "  FreshJR_QOS -rules              create/modify custom rules"
-	echo "  FreshJR_QOS -rates              modify bandwidth allocations"
-	echo ""
 	echo '  FreshJR_QOS -menu               interactive main menu'
 	echo ""
-	# echo "  Current Setup:"
-	# echo "           Local IP            Remote IP           Proto  Local Port     Remote Port    Mark        Dst"
-	# printf '  Rule     %-19s %-19s %-6s %-14s %-14s %-7s %-10s\n' "$e1" "$e2" "$e3" "$e4" "$e5" "$e6" "$([ -z $e7 ] || echo "--> $(dst_2_name $e7)")"
-	# printf '  Rule     %-19s %-19s %-6s %-14s %-14s %-7s %-10s\n' "$f1" "$f2" "$f3" "$f4" "$f5" "$f6" "$([ -z $f7 ] || echo "--> $(dst_2_name $f7)")"
-	# printf '  Rule     %-19s %-19s %-6s %-14s %-14s %-7s %-10s\n' "$g1" "$g2" "$g3" "$g4" "$g5" "$g6" "$([ -z $g7 ] || echo "--> $(dst_2_name $g7)")"
-	# printf '  Rule     %-19s %-19s %-6s %-14s %-14s %-7s %-10s\n' "$h1" "$h2" "$h3" "$h4" "$h5" "$h6" "$([ -z $h7 ] || echo "--> $(dst_2_name $h7)")"
-	# printf '  Gameip   %-19s %-19s %-6s %-14s %-14s %-7s %-10s\n'  "${gameCIDR}" "" "$([ -z $gameCIDR ] || echo "both")" "" "$([ -z $gameCIDR ] || echo "!80:443")" "$([ -z $gameCIDR ] || echo "000000")" "--> Gaming"
-	# printf '  Appdb    %-44s                                 %-7s %-10s\n' "$(mark_2_name $r1)" "$r1" "$([ -z $d1 ] || echo "--> $(dst_2_name $d1)")"
-	# printf '  Appdb    %-44s                                 %-7s %-10s\n' "$(mark_2_name $r2)" "$r2" "$([ -z $d2 ] || echo "--> $(dst_2_name $d2)")"
-	# printf '  Appdb    %-44s                                 %-7s %-10s\n' "$(mark_2_name $r3)" "$r3" "$([ -z $d3 ] || echo "--> $(dst_2_name $d3)")"
-	# printf '  Appdb    %-44s                                 %-7s %-10s\n' "$(mark_2_name $r4)" "$r4" "$([ -z $d4 ] || echo "--> $(dst_2_name $d4)")"
-	echo ""
-	echo -en '\033[?7h'			#enable line wrap
 } # show_help
 
 generate_bwdpi_arrays() {
 	# generate if not exist, plus after wrs restart (signature update)
-	awk -F, 'BEGIN { print "var catdb_array = \[ "} { print "\[\""$1"\",\""$2"\"\]," } END { print "\[\]\]\;" }' /tmp/bwdpi/bwdpi.cat.db | tr '\n' ' ' > /www/user/ext/freshjr_arrays.js
-	awk -F, 'BEGIN { print "var appname_array = \[ "} { print "\[\""$1"\",\""$2"\",\""$4"\"\]," } END { print "\[\]\]\;" }' /tmp/bwdpi/bwdpi.app.db | tr '\n' ' ' >> /www/user/ext/freshjr_arrays.js
+	awk -F, 'BEGIN { print "var catdb_array = \[ "} { print "\[\""$1"\",\""$2"\"\]," } END { print "\[\]\]\;" }' /tmp/bwdpi/bwdpi.cat.db | tr '\n' ' ' > /www/user/ext/flexqos_arrays.js
+	awk -F, 'BEGIN { print "var appname_array = \[ "} { print "\[\""$1"\",\""$2"\",\""$4"\"\]," } END { print "\[\]\]\;" }' /tmp/bwdpi/bwdpi.app.db | tr '\n' ' ' >> /www/user/ext/flexqos_arrays.js
 }
 
 ################################################################################
@@ -1454,8 +1434,13 @@ if [ -z "$wan" ] ; then
 fi
 
 case "$arg1" in
- 'start'|'check')																	##RAN ON FIREWALL-START OR CRON TASK
-		start "$arg1"
+ 'start')
+ 		# triggered from firewall-start with wan iface passed
+		start "$2"
+		;;
+	'check')
+		# triggered from cron or service-event without wan iface
+		start
 		;;
  'install'|'enable')															## INSTALLS AND TURNS ON SCRIPT
  		install
