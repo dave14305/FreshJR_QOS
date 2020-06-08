@@ -2061,6 +2061,16 @@ write_iptables_rules() {
 	IFS="$OLDIFS"
 } # write_iptables_rules
 
+check_qos_tc() {
+	dlclasscnt="$(tc class show dev br0 | grep "parent 1:1 " | wc -l)"
+	ulclasscnt="$(tc class show dev eth0 | grep "parent 1:1 " | wc -l)"
+	dlfiltercnt="$(tc filter show dev br0 | grep -E "flowid 1:1[0-7] $" | wc -l)"
+	ulfiltercnt="$(tc filter show dev eth0 | grep -E "flowid 1:1[0-7] $" | wc -l)"
+	dlqdisccnt="$(tc qdisc show dev br0 | grep -E "parent 1:1[0-7] " | wc -l)"
+	ulqdisccnt="$(tc qdisc show dev eth0 | grep -E "parent 1:1[0-7] " | wc -l)"
+	
+} # check_qos_tc
+
 start() {
 	cru a FreshJR_QOS "30 3 * * * /jffs/scripts/FreshJR_QOS -check"			#makes sure daily check if active
 	cru d FreshJR_QOS_run_once												#(used for stock firmware to trigger script and have it run after terminal is closed when making changes)
@@ -2192,9 +2202,11 @@ show_help() {
 } # show_help
 
 generate_bwdpi_arrays() {
+	# generate if not exist, plus after wrs restart (signature update)
 	awk -F, 'BEGIN { print "var catdb_array = \[ "} { print "\[\""$1"\",\""$2"\"\]," } END { print "\[\]\]\;" }' /tmp/bwdpi/bwdpi.cat.db | tr '\n' ' ' > /www/user/ext/freshjr_arrays.js
 	awk -F, 'BEGIN { print "var appname_array = \[ "} { print "\[\""$1"\",\""$2"\",\""$4"\"\]," } END { print "\[\]\]\;" }' /tmp/bwdpi/bwdpi.app.db | tr '\n' ' ' >> /www/user/ext/freshjr_arrays.js
 }
+
 #Main program here, will execute different things depending on arguments
 
 . /usr/sbin/helper.sh  # initialize Merlin Addon API helper functions
