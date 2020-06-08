@@ -1054,35 +1054,14 @@ prompt_restart() {
 menu() {
   read_nvram
 	echo -en "\033c\e[3J"		#clear screen
-	echo -en '\033[?7l'			#disable line wrap
-	printf '\e[8;30;120t'		#set height/width of terminal
 	echo -e  "\033[1;32mFreshJR QOS v${version} released ${release} \033[0m"
 	echo "  (1) about               explain functionality"
 	echo "  (2) update              check for updates "
-	echo ""
-	echo "  (3) QoS rules           QoS rules (user defined)"
-	echo "  (4) QoS rates           QoS rates (bandwidth allocation per category)"
-	echo ""
 	echo "  (5) debug               traffic control parameters"
 	echo "  (6) debug2              parsed nvram parameters"
-	echo ""
 	echo "  (u) uninstall           uninstall script"
-	echo ""
 	echo "  (e) exit"
 	echo ""
-	echo "  Current Setup:"
-	echo "           Local IP            Remote IP           Proto  Local Port     Remote Port    Mark        Dst"
-  printf '  Rule     %-19s %-19s %-6s %-14s %-14s %-7s %-10s\n' "$e1" "$e2" "$e3" "$e4" "$e5" "$e6" "$([ -z $e7 ] || echo "--> $(dst_2_name $e7)")"
-  printf '  Rule     %-19s %-19s %-6s %-14s %-14s %-7s %-10s\n' "$f1" "$f2" "$f3" "$f4" "$f5" "$f6" "$([ -z $f7 ] || echo "--> $(dst_2_name $f7)")"
-  printf '  Rule     %-19s %-19s %-6s %-14s %-14s %-7s %-10s\n' "$g1" "$g2" "$g3" "$g4" "$g5" "$g6" "$([ -z $g7 ] || echo "--> $(dst_2_name $g7)")"
-  printf '  Rule     %-19s %-19s %-6s %-14s %-14s %-7s %-10s\n' "$h1" "$h2" "$h3" "$h4" "$h5" "$h6" "$([ -z $h7 ] || echo "--> $(dst_2_name $h7)")"
-  printf '  Gameip   %-19s %-19s %-6s %-14s %-14s %-7s %-10s\n'  "${gameCIDR}" "" "$([ -z $gameCIDR ] || echo "both")" "" "$([ -z $gameCIDR ] || echo "!80:443")" "$([ -z $gameCIDR ] || echo "000000")" "--> Gaming"
-  printf '  Appdb    %-44s                                 %-7s %-10s\n' "$(mark_2_name $r1)" "$r1" "$([ -z $d1 ] || echo "--> $(dst_2_name $d1)")"
-  printf '  Appdb    %-44s                                 %-7s %-10s\n' "$(mark_2_name $r2)" "$r2" "$([ -z $d2 ] || echo "--> $(dst_2_name $d2)")"
-  printf '  Appdb    %-44s                                 %-7s %-10s\n' "$(mark_2_name $r3)" "$r3" "$([ -z $d3 ] || echo "--> $(dst_2_name $d3)")"
-  printf '  Appdb    %-44s                                 %-7s %-10s\n' "$(mark_2_name $r4)" "$r4" "$([ -z $d4 ] || echo "--> $(dst_2_name $d4)")"
-	echo ""
-	echo -en '\033[?7h'			#enable line wrap
 	echo -n "Make a selection: "
 	read input
 	case $input in
@@ -1093,16 +1072,6 @@ menu() {
 				;;
 			'2')
 			    update
-				read -n 1 -s -r -p "(Press any key to return)"
-				echo -en "\033c"		#clear screen
-				;;
-			'3')
-				rules
-				read -n 1 -s -r -p "(Press any key to return)"
-				echo -en "\033c"		#clear screen
-				;;
-			'4')
-				rates
 				read -n 1 -s -r -p "(Press any key to return)"
 				echo -en "\033c"		#clear screen
 				;;
@@ -1515,23 +1484,6 @@ case "$arg1" in
   'menu')
 		menu
 		;;
-  'isinstalled')
-		if grep -q -x '/jffs/scripts/FreshJR_QOS -start $1 & ' /jffs/scripts/firewall-start ; then
-			exit 0		#script IS installed
-		else
-			exit 1		#script in NOT installed
-		fi
-    ;;
-  'isuptodate')
-		url="https://raw.githubusercontent.com/dave14305/FreshJR_QOS/master/FreshJR_QOS.sh"
-		remotever=$(curl -fsN --retry 3 ${url} | grep "^version=" | sed -e s/version=//)
-		if [ "$version" = "$remotever" ]; then
-			exit 0 		#script IS current
-		else
-			exit 1		#script is NOT up to date
-		fi
-
-    ;;
 	*)
 		show_help
 		;;
