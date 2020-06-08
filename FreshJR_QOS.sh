@@ -1506,9 +1506,6 @@ case "$arg1" in
  'debug2')
 		debug2
 		;;
- 'debug3')
-    debug3
-		;;
   'about')
     about
 		;;
