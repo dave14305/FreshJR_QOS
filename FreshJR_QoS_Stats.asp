@@ -1441,39 +1441,6 @@ function FreshJR_mod_apply()
 			}
 		}
 
-		// var drp0=document.getElementById('drp0').value;			if (!(validate_percent(drp0)))  drp0="5";
-		// var drp1=document.getElementById('drp1').value;			if (!(validate_percent(drp1)))  drp1="20";
-		// var drp2=document.getElementById('drp2').value;			if (!(validate_percent(drp2)))  drp2="15";
-		// var drp3=document.getElementById('drp3').value;			if (!(validate_percent(drp3)))  drp3="10";
-		// var drp4=document.getElementById('drp4').value;			if (!(validate_percent(drp4)))  drp4="10";
-		// var drp5=document.getElementById('drp5').value;			if (!(validate_percent(drp5)))  drp5="30";
-		// var drp6=document.getElementById('drp6').value;			if (!(validate_percent(drp6)))  drp6="5";
-		// var drp7=document.getElementById('drp7').value;			if (!(validate_percent(drp7)))  drp7="5";
-		// var dcp0=document.getElementById('dcp0').value;			if (!(validate_percent(dcp0)))  dcp0="5";
-		// var dcp1=document.getElementById('dcp1').value;			if (!(validate_percent(dcp1)))  dcp1="20";
-		// var dcp2=document.getElementById('dcp2').value;			if (!(validate_percent(dcp2)))  dcp2="15";
-		// var dcp3=document.getElementById('dcp3').value;			if (!(validate_percent(dcp3)))  dcp3="30";
-		// var dcp4=document.getElementById('dcp4').value;			if (!(validate_percent(dcp4)))  dcp4="10";
-		// var dcp5=document.getElementById('dcp5').value;			if (!(validate_percent(dcp5)))  dcp5="10";
-		// var dcp6=document.getElementById('dcp6').value;			if (!(validate_percent(dcp6)))  dcp6="5";
-		// var dcp7=document.getElementById('dcp7').value;			if (!(validate_percent(dcp7)))  dcp7="5";
-		// var urp0=document.getElementById('urp0').value;			if (!(validate_percent(urp0)))  urp0="100";
-		// var urp1=document.getElementById('urp1').value;			if (!(validate_percent(urp1)))  urp1="100";
-		// var urp2=document.getElementById('urp2').value;			if (!(validate_percent(urp2)))  urp2="100";
-		// var urp3=document.getElementById('urp3').value;			if (!(validate_percent(urp3)))  urp3="100";
-		// var urp4=document.getElementById('urp4').value;			if (!(validate_percent(urp4)))  urp4="100";
-		// var urp5=document.getElementById('urp5').value;			if (!(validate_percent(urp5)))  urp5="100";
-		// var urp6=document.getElementById('urp6').value;			if (!(validate_percent(urp6)))  urp6="100";
-		// var urp7=document.getElementById('urp7').value;			if (!(validate_percent(urp7)))  urp7="100";
-		// var ucp0=document.getElementById('ucp0').value;			if (!(validate_percent(ucp0)))  ucp0="100";
-		// var ucp1=document.getElementById('ucp1').value;			if (!(validate_percent(ucp1)))  ucp0="100";
-		// var ucp2=document.getElementById('ucp2').value;			if (!(validate_percent(ucp2)))  ucp0="100";
-		// var ucp3=document.getElementById('ucp3').value;			if (!(validate_percent(ucp3)))  ucp0="100";
-		// var ucp4=document.getElementById('ucp4').value;			if (!(validate_percent(ucp4)))  ucp0="100";
-		// var ucp5=document.getElementById('ucp5').value;			if (!(validate_percent(ucp5)))  ucp0="100";
-		// var ucp6=document.getElementById('ucp6').value;			if (!(validate_percent(ucp6)))  ucp0="100";
-		// var ucp7=document.getElementById('ucp7').value;			if (!(validate_percent(ucp7)))  ucp0="100";
-
 	custom_settings.freshjr_defiptables = iptables_defrulelist_array;
 	custom_settings.freshjr_iptables = iptables_rulelist_array;
 	custom_settings.freshjr_defappdb = appdb_defrulelist_array;
