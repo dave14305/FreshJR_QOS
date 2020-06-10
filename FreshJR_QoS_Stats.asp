@@ -115,8 +115,8 @@ var clientlist = <% get_clientlist_from_json_database(); %>;		// data from /jffs
 var tablesize = 500;						//max size of tracked connections table
 var tabledata;								//tabled of tracked connections after device-filtered
 var sortmode=6;								//current sort mode of tracked connections table (default =6)
-var dhcp_start = "<% nvram_get("dhcp_start"); %>"
-var dhcp_start = dhcp_start.substr(0, dhcp_start.lastIndexOf(".")) + ".";
+var dhcp_start = "<% nvram_get("dhcp_start"); %>";
+dhcp_start = dhcp_start.substr(0, dhcp_start.lastIndexOf(".")) + ".";
 var iptables_rulelist_array="";
 var appdb_rulelist_array="";
 var rulename1="Rule1";
@@ -592,10 +592,8 @@ function populate_devicefilter(){
 function initial() {
 	SetCurrentPage();
 	set_FreshJR_mod_vars();
-	show_iptables_default_rules();
-	show_appdb_default_rules();
-	show_appdb_rules();
 	show_iptables_rules();
+	show_appdb_rules();
 	get_devicenames();						//used for printing name next to IP
 	populate_devicefilter();				//used to populate drop down filter
 	populate_classmenu();
@@ -1040,7 +1038,7 @@ function rate2kbs(rate)
 	return 0
 }
 
-function addRow(obj, head){
+function add_ipt_Row(obj, head){
 	if(head == 1)
 		iptables_rulelist_array += "<"
 	else
@@ -1068,6 +1066,20 @@ function validAppDBForm(){
 	return true;
 }
 
+function addRow_AppDB_Group(upper){
+	if(validAppDBForm()){
+		var rule_num = document.getElementById('appdb_rulelist_table').rows.length;
+		if(rule_num >= upper){
+			alert("This table only allows " + upper + " items!");
+			return;
+		}
+		addAppDBRow(document.form.appdb_mark_x, 1);
+		addAppDBRow(document.form.appdb_class_x, 0);
+		document.form.appdb_class_x.value="0";
+		show_appdb_rules();
+	}
+}
+
 function validForm(){
 	if(!Block_chars(document.form.ipt_local_port_x, ["<" ,">"])){
 				return false;
@@ -1083,87 +1095,48 @@ function validForm(){
 	return true;
 }
 
-function addRow_AppDB(upper){
-	if(validAppDBForm()){
-		var rule_num = document.getElementById('appdb_rulelist_table').rows.length;
-		if(rule_num >= upper){
-			alert("This table only allows " + upper + " items!");
-			return;
-		}
-		addAppDBRow(document.form.appdb_mark_x, 1);
-		addAppDBRow(document.form.appdb_class_x, 0);
-		document.form.appdb_class_x.value="0";
-		show_appdb_rules();
-	}
-}
-
-function addRow_Group(upper){
+function addRow_ipt_Group(upper){
 	if(validForm()){
 		var rule_num = document.getElementById('iptables_rulelist_table').rows.length;
-		var item_num = document.getElementById('iptables_rulelist_table').rows[0].cells.length;
 		if(rule_num >= upper){
 			alert("This table only allows " + upper + " items!");
 			return;
 		}
-
-		addRow(document.form.ipt_local_ip_x, 1);
-		addRow(document.form.ipt_remote_ip_x, 0);
-		addRow(document.form.ipt_proto_x, 0);
-		addRow(document.form.ipt_local_port_x, 0);
-		addRow(document.form.ipt_remote_port_x, 0);
-		addRow(document.form.ipt_mark_x, 0);
-		addRow(document.form.ipt_class_x, 0);
+		add_ipt_Row(document.form.ipt_local_ip_x, 1);
+		add_ipt_Row(document.form.ipt_remote_ip_x, 0);
+		add_ipt_Row(document.form.ipt_proto_x, 0);
+		add_ipt_Row(document.form.ipt_local_port_x, 0);
+		add_ipt_Row(document.form.ipt_remote_port_x, 0);
+		add_ipt_Row(document.form.ipt_mark_x, 0);
+		add_ipt_Row(document.form.ipt_class_x, 0);
 		document.form.ipt_proto_x.value="both";
 		document.form.ipt_class_x.value="0";
 		show_iptables_rules();
 	}
 }
 
-function del_defRow2(r) {
-
-}
-
-function del_defRow(r){
+function del_appdb_Row(r){
 	var i=r.parentNode.parentNode.rowIndex;
-	// put the contents into the edit bar in case user wants to change it and add it to user rules
-	document.form.ipt_local_ip_x.value = document.getElementById('iptables_defrulelist_table').rows[i].cells[0].innerHTML;
-	document.form.ipt_remote_ip_x.value = document.getElementById('iptables_defrulelist_table').rows[i].cells[1].innerHTML;
-	document.form.ipt_proto_x.value = document.getElementById('iptables_defrulelist_table').rows[i].cells[2].innerHTML.toLowerCase();
-	if (document.getElementById('iptables_defrulelist_table').rows[i].cells[3].innerHTML.lastIndexOf("…") < 0)
-		document.form.ipt_local_port_x.value = document.getElementById('iptables_defrulelist_table').rows[i].cells[3].innerHTML;
-	else
-		document.form.ipt_local_port_x.value = document.getElementById('iptables_defrulelist_table').rows[i].cells[3].title;
-	if (document.getElementById('iptables_defrulelist_table').rows[i].cells[4].innerHTML.lastIndexOf("…") < 0)
-		document.form.ipt_remote_port_x.value = document.getElementById('iptables_defrulelist_table').rows[i].cells[4].innerHTML;
-	else
-		document.form.ipt_remote_port_x.value = document.getElementById('iptables_defrulelist_table').rows[i].cells[4].title;
-	document.form.ipt_mark_x.value = document.getElementById('iptables_defrulelist_table').rows[i].cells[5].innerHTML;
-	document.form.ipt_class_x.value = class_title.indexOf(document.getElementById('iptables_defrulelist_table').rows[i].cells[6].innerHTML);
-	// delete row
-	document.getElementById('iptables_defrulelist_table').deleteRow(i);
-	var iptables_defrulelist_value = "";
-	for(k=0; k<document.getElementById('iptables_defrulelist_table').rows.length; k++){
-		for(j=0; j<document.getElementById('iptables_defrulelist_table').rows[k].cells.length-1; j++){
-			if(j == 0)
-				iptables_defrulelist_value += "<";
-			else
-				iptables_defrulelist_value += ">";
+	document.getElementById('appdb_rulelist_table').deleteRow(i);
+	var appdb_rulelist_value = "";
+	for(k=0; k<document.getElementById('appdb_rulelist_table').rows.length; k++){
+		for(j=1; j<document.getElementById('appdb_rulelist_table').rows[k].cells.length-1; j++){
+			if(j == 1)
+				appdb_rulelist_value += "<";
+			else if (j == 2)
+				appdb_rulelist_value += ">";
 			if(j == 2)
-				iptables_defrulelist_value += document.getElementById('iptables_defrulelist_table').rows[k].cells[j].innerHTML.toLowerCase();
-			else if(j == 6)
-				iptables_defrulelist_value += class_title.indexOf(document.getElementById('iptables_defrulelist_table').rows[k].cells[j].innerHTML);
-			else if(document.getElementById('iptables_defrulelist_table').rows[k].cells[j].innerHTML.lastIndexOf("…")<0)
-				iptables_defrulelist_value += document.getElementById('iptables_defrulelist_table').rows[k].cells[j].innerHTML;
-			else
-				iptables_defrulelist_value += document.getElementById('iptables_defrulelist_table').rows[k].cells[j].title;
+				appdb_rulelist_value += class_title.indexOf(document.getElementById('appdb_rulelist_table').rows[k].cells[j].innerHTML);
+			else if (j == 1)
+				appdb_rulelist_value += document.getElementById('appdb_rulelist_table').rows[k].cells[j].innerHTML;
 		}
 	}
-	iptables_defrulelist_array = iptables_defrulelist_value;
-	if(iptables_defrulelist_array == "")
-	show_iptables_default_rules();
+	appdb_rulelist_array = appdb_rulelist_value;
+	if(appdb_rulelist_array == "")
+	show_appdb_rules();
 }
 
-function del_Row(r){
+function del_ipt_Row(r){
 	var i=r.parentNode.parentNode.rowIndex;
 	document.getElementById('iptables_rulelist_table').deleteRow(i);
 	var iptables_rulelist_value = "";
@@ -1188,7 +1161,14 @@ function del_Row(r){
 	show_iptables_rules();
 }
 
-function edit_Row(r){
+function edit_appdb_Row(r){
+	var i=r.parentNode.parentNode.rowIndex;
+	document.form.appdb_mark_x.value = document.getElementById('appdb_rulelist_table').rows[i].cells[1].innerHTML;
+	document.form.appdb_class_x.value = class_title.indexOf(document.getElementById('appdb_rulelist_table').rows[i].cells[2].innerHTML);
+	del_appdb_Row(r);
+}
+
+function edit_ipt_Row(r){
 	var i=r.parentNode.parentNode.rowIndex;
 	document.form.ipt_local_ip_x.value = document.getElementById('iptables_rulelist_table').rows[i].cells[0].innerHTML;
 	document.form.ipt_remote_ip_x.value = document.getElementById('iptables_rulelist_table').rows[i].cells[1].innerHTML;
@@ -1203,46 +1183,7 @@ function edit_Row(r){
 		document.form.ipt_remote_port_x.value = document.getElementById('iptables_rulelist_table').rows[i].cells[4].title;
 	document.form.ipt_mark_x.value = document.getElementById('iptables_rulelist_table').rows[i].cells[5].innerHTML;
 	document.form.ipt_class_x.value = class_title.indexOf(document.getElementById('iptables_rulelist_table').rows[i].cells[6].innerHTML);
-	del_Row(r);
-}
-
-function show_iptables_default_rules(){
-	var iptables_defrulelist_row = decodeURIComponent(iptables_defrulelist_array).split('<');
-	var code = "";
-	var overlib_str = "";
-
-	code +='<table width="100%" border="1" cellspacing="0" cellpadding="4" align="center" class="list_table" id="iptables_defrulelist_table">';
-	if(iptables_defrulelist_row.length == 1)
-		code +='<tr><td style="color:#FFCC00;" colspan="8">No default rules defined</td></tr>';
-	else{
-		for(var i = 1; i < iptables_defrulelist_row.length; i++){
-			code +='<tr id="row'+i+'">';
-			var iptables_defrulelist_col = iptables_defrulelist_row[i].split('>');
-			var wid=[19, 19, 9, 9, 9, 9, 20];
-				for(var j = 0; j < iptables_defrulelist_col.length; j++){
-						if(j==2){
-							code +='<td width="'+wid[j]+'%">'+ iptables_defrulelist_col[j].toUpperCase(); +'</td>';
-						}else if(j==6){
-							code +='<td width="'+wid[j]+'%">'+ class_title[iptables_defrulelist_col[j]] +'</td>';
-						}else if(j==3 || j==4){
-							if(iptables_defrulelist_col[j].length > 5) {
-								overlib_str = iptables_defrulelist_col[j];
-								iptables_defrulelist_col[j] = iptables_defrulelist_col[j].substring(0,5)+"&#8230;";
-								code +='<td width="'+wid[j]+'%" title="' + overlib_str + '">'+ iptables_defrulelist_col[j] +'</td>';
-							}
-							else {
-						  	code +='<td width="'+wid[j]+'%">'+ iptables_defrulelist_col[j] +'</td>';
-							}
-						}
-						else {
-							code +='<td width="'+wid[j]+'%">'+ iptables_defrulelist_col[j] +'</td>';
-						}
-				}
-				code +='<td width="6%"><input class="remove_btn" onclick="del_defRow(this);" value=""/></td></tr>';
-		}
-	}
-	code +='</table>';
-	document.getElementById("iptables_defaultrules_block").innerHTML = code;
+	del_ipt_Row(r);
 }
 
 function show_iptables_rules(){
@@ -1277,40 +1218,12 @@ function show_iptables_rules(){
 							code +='<td width="'+wid[j]+'%">'+ iptables_rulelist_col[j] +'</td>';
 						}
 				}
-				code +='<td width="6%"><input class="edit_btn" onclick="edit_Row(this);" value=""/>';
-				code +='<input class="remove_btn" onclick="del_Row(this);" value=""/></td></tr>';
+				code +='<td width="6%"><input class="edit_btn" onclick="edit_ipt_Row(this);" value=""/>';
+				code +='<input class="remove_btn" onclick="del_ipt_Row(this);" value=""/></td></tr>';
 		}
 	}
 	code +='</table>';
 	document.getElementById("iptables_rules_block").innerHTML = code;
-}
-
-
-function show_appdb_default_rules() {
-	var appdb_defrulelist_row = decodeURIComponent(appdb_defrulelist_array).split('<');
-	var code = "";
-	var overlib_str = "";
-
-	code +='<table width="100%" border="1" cellspacing="0" cellpadding="4" align="center" class="list_table" id="appdb_defrulelist_table">';
-	if(appdb_defrulelist_row.length == 1)
-		code +='<tr><td style="color:#FFCC00;" colspan="4">No default rules defined</td></tr>';
-	else{
-		for(var i = 1; i < appdb_defrulelist_row.length; i++){
-			code +='<tr id="row'+i+'">';
-			var appdb_defrulelist_col = appdb_defrulelist_row[i].split('>');
-				for(var j = 0; j < appdb_defrulelist_col.length; j++){
-						if (j==1){
-							code +='<td width="20%">'+ class_title[appdb_defrulelist_col[j]] +'</td>';
-						} else {
-							code +='<td width="auto">'+ catdb_label_array[catdb_mark_array.indexOf(appdb_defrulelist_col[j])] +'</td>';
-							code +='<td width="9%">'+ appdb_defrulelist_col[j] +'</td>';
-						}
-				}
-				code +='<td width="12%"><input class="remove_btn" onclick="del_defRow2(this);" value=""/></td></tr>';
-		}
-	}
-	code +='</table>';
-	document.getElementById("appdb_defaultrules_block").innerHTML = code;
 }
 
 function show_appdb_rules() {
@@ -1333,8 +1246,8 @@ function show_appdb_rules() {
 							code +='<td width="9%">'+ appdb_rulelist_col[j] +'</td>';
 						}
 				}
-				code +='<td width="12%"><input class="edit_btn" onclick="edit_Row2(this);" value=""/>';
-				code +='<input class="remove_btn" onclick="del_Row2(this);" value=""/></td></tr>';
+				code +='<td width="12%"><input class="edit_btn" onclick="edit_appdb_Row(this);" value=""/>';
+				code +='<input class="remove_btn" onclick="del_appdb_Row(this);" value=""/></td></tr>';
 		}
 	}
 	code +='</table>';
@@ -1369,6 +1282,8 @@ function set_FreshJR_mod_vars()
 	{
 		if ( custom_settings.freshjr_iptables == undefined )  // rules not yet converted to API format
 			{
+				// prepend default rules which can be later edited/deleted by user
+				iptables_rulelist_array = "<>>udp>>500,4500>>3<>>udp>16384:16415>>>3<>>tcp>>119,563>>5<>>tcp>>80,443>08****>7";
 				var FreshJR_nvram = decodeURIComponent('<% nvram_char_to_ascii("",fb_comment); %>')+'>'+decodeURIComponent('<% nvram_char_to_ascii("",fb_email_dbg); %>');
 				FreshJR_nvram = FreshJR_nvram.split('>');
 				for (var j=0;j<FreshJR_nvram.length;j++) {
@@ -1391,13 +1306,10 @@ function set_FreshJR_mod_vars()
 		else // rules are migrated to new API variables
 			iptables_rulelist_array = custom_settings.freshjr_iptables;
 
-		if ( custom_settings.freshjr_defiptables == undefined ) // rules not yet migrated to new API variables
-			iptables_defrulelist_array = "<>>udp>>500,4500>>3<>>udp>16384:16415>>>3<>>tcp>>119,563>>5<>>tcp>>80,443>08****>7";
-		else // rules are migrated to new API variables
-			iptables_defrulelist_array = custom_settings.freshjr_defiptables;
-
 		if ( custom_settings.freshjr_appdb == undefined )
 		{
+			// start with default appdb rules which can be edited/deleted later by user
+			appdb_rulelist_array = "<000000>6<00006B>6<0D0007>5<0D0086>5<0D00A0>5<12003F>4<13****>4<14****>4<1A****>5";
 			var FreshJR_nvram = decodeURIComponent('<% nvram_char_to_ascii("",fb_email_dbg); %>').split(">");
 			for (var j=1;j<5;j++) {
 				var appdb_temp_rule = "";
@@ -1417,11 +1329,6 @@ function set_FreshJR_mod_vars()
 		else
 			appdb_rulelist_array = custom_settings.freshjr_appdb;
 
-		if ( custom_settings.freshjr_defappdb == undefined )
-			appdb_defrulelist_array = "<000000>6<00006B>6<0D0007>5<0D0086>5<0D00A0>5<12003F>4<13****>4<14****>4<1A****>5";
-		else
-			appdb_defrulelist_array = custom_settings.freshjr_defappdb;
-
 		// get gameCIDR
 		if ( custom_settings.freshjr_gamecidr == undefined )
 		{
@@ -1435,24 +1342,20 @@ function set_FreshJR_mod_vars()
 		if (gameCIDR)
 			rules.push(create_rule(gameCIDR, "", "both", "!80,443", "", "000000", "1"));
 
-		var iptables_combined_rules = iptables_defrulelist_array + iptables_rulelist_array;
 		var r=0;
-		var iptables_combined_array = iptables_combined_rules.split("<");
-		for (r=0;r<iptables_combined_array.length;r++){
-			var iptables_combined_row = iptables_combined_array[r].split(">");
-			if (iptables_combined_row.length > 1)
-				rules.push(create_rule(iptables_combined_row[0], iptables_combined_row[1], iptables_combined_row[2], iptables_combined_row[3], iptables_combined_row[4], iptables_combined_row[5], iptables_combined_row[6]));
+		var iptables_temp_array = iptables_rulelist_array.split("<");
+		for (r=0;r<iptables_temp_array.length;r++){
+			var iptables_rulelist_row = iptables_temp_array[r].split(">");
+			if (iptables_rulelist_row.length > 1)
+				rules.push(create_rule(iptables_rulelist_row[0], iptables_rulelist_row[1], iptables_rulelist_row[2], iptables_rulelist_row[3], iptables_rulelist_row[4], iptables_rulelist_row[5], iptables_rulelist_row[6]));
 		}
 
-		var appdb_combined_rules = appdb_defrulelist_array + appdb_rulelist_array;
-		var appdb_combined_array = appdb_combined_rules.split("<");
-		for (a=0; a<appdb_combined_array.length;a++) {
-			var appdb_combined_row = appdb_combined_array[a].split(">");
-			if (appdb_combined_row.length > 1)
-				rules.push(create_rule("", "", "", "", "", appdb_combined_row[0], appdb_combined_row[1]));
+		var appdb_temp_array = appdb_rulelist_array.split("<");
+		for (a=0; a<appdb_temp_array.length;a++) {
+			var appdb_rulelist_row = appdb_temp_array[a].split(">");
+			if (appdb_rulelist_row.length > 1)
+				rules.push(create_rule("", "", "", "", "", appdb_rulelist_row[0], appdb_rulelist_row[1]));
 		}
-
-
 
 		// get Bandwidth
 		if ( custom_settings.freshjr_bandwidth == undefined )
@@ -1776,12 +1679,11 @@ function SetCurrentPage() {
 			</select>
 		</td>
 		<td width="6%">
-			<div><input type="button" class="add_btn" onClick="addRow_Group(99);" value=""></div>
+			<div><input type="button" class="add_btn" onClick="addRow_ipt_Group(99);" value=""></div>
 		</td>
 	</tr>
 </tbody>
 </table>
-<div id="iptables_defaultrules_block" style=""></div>
 <div id="iptables_rules_block" style=""></div>
 
 <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" class="FormTable_table">
@@ -1807,12 +1709,11 @@ function SetCurrentPage() {
 			</select>
 		</td>
 		<td width="12%">
-			<div><input type="button" class="add_btn" onClick="addRow_AppDB(99);" value=""></div>
+			<div><input type="button" class="add_btn" onClick="addRow_AppDB_Group(99);" value=""></div>
 		</td>
 	</tr>
 </tbody>
 </table>
-<div id="appdb_defaultrules_block" style=""></div>
 <div id="appdb_rules_block" style=""></div>
 
 <table border="0" cellpadding="0" cellspacing="0" class="FormTable" style="float:left; width:350px; display:inline-table; margin: 10px auto 10px auto">
