@@ -1479,7 +1479,6 @@ function FreshJR_mod_apply()
 	custom_settings.freshjr_defappdb = appdb_defrulelist_array;
 	custom_settings.freshjr_appdb = appdb_rulelist_array;
 	custom_settings.freshjr_bandwidth = encodeURIComponent(bandwidth);
-	custom_settings.freshjr_ruleflag = "FF";
 
 	/* Store object as a string in the amng_custom hidden input field */
 	document.getElementById('amng_custom').value = JSON.stringify(custom_settings);
