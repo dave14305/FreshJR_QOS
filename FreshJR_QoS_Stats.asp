@@ -1369,8 +1369,8 @@ function set_FreshJR_mod_vars()
 	{
 		if ( custom_settings.freshjr_iptables == undefined )  // rules not yet converted to API format
 			{
-				var FreshJR_nvram = decodeURIComponent('<% nvram_char_to_ascii("",fb_comment); %>').split(">");
-				FreshJR_nvram += decodeURIComponent('<% nvram_char_to_ascii("",fb_email_dbg); %>').split(">");
+				var FreshJR_nvram = decodeURIComponent('<% nvram_char_to_ascii("",fb_comment); %>')+'>'+decodeURIComponent('<% nvram_char_to_ascii("",fb_email_dbg); %>');
+				FreshJR_nvram = FreshJR_nvram.split('>');
 				for (var j=0;j<FreshJR_nvram.length;j++) {
 					var iptables_temp_rule = "";
 					FreshJR_nvram[j] = FreshJR_nvram[j].split(";");
