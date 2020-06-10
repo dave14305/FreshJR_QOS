@@ -1,10 +1,10 @@
 #!/bin/sh
-##FreshJR_QOS
-version=8.8
-release=03/07/2019
+## FlexQoS
+version=1.0
+release=12/31/2020
 # shellcheck disable=SC2039
-#Copyright (C) 2017-2019 FreshJR - All Rights Reserved
-#Tested with ASUS AC-68U, FW384.9, using Adaptive QOS with Manual Bandwidth Settings
+# Forked from FreshJR_QOS v8.8, written by FreshJR07 https://github.com/FreshJR07/FreshJR_QOS
+#
 # Script Changes Unidentified traffic destination away from "Defaults" into "Others"
 # Script Changes HTTPS traffic destination away from "Net Control" into "Web Surfing"
 # Script Changes Guaranteed Bandwidth per QOS category into logical percentages of upload and download.
@@ -28,20 +28,10 @@ release=03/07/2019
 #  Gaming traffic originating from ports 80 & 443 is primarily downloads & patches (some lobby/login protocols mixed within)
 #  Manually configurable rule will take untracked traffic, not originating from 80/443, for specified devices and place it into Gaming
 #  Use of this gaming rule REQUIRES devices to have a continuous static ip assignment && this range needs to be defined in the script
-#
-#  Custom rules can be created within the WebUI OR by running the -rules command:
-#      (custom rules):  /jffs/scripts/FreshJR_QOS -rules
-#
-#  Default bandwidth allocation per category can be adjusted via WebUI OR -rates command:
-#      (custom rates):  /jffs/scripts/FreshJR_QOS -rates
-#
-##For discussion visit this thread:
-##  https://www.snbforums.com/threads/release-freshjr-adaptive-qos-improvements-custom-rules-and-inner-workings.36836/
-##  https://github.com/FreshJR07/FreshJR_QOS (Source Code + Backup Link)
-#
 ##License
-##  FreshJR_QOS is free to use under the GNU General Public License, version 3 (GPL-3.0).
+##  FlexQoS is free to use under the GNU General Public License, version 3 (GPL-3.0).
 ##  https://opensource.org/licenses/GPL-3.0
+
 
 iptable_down_rules() {
 		echo "Applying - Iptable Down Rules"
@@ -57,12 +47,12 @@ iptable_down_rules() {
 
 		##DOWNLOAD (INCOMMING TRAFFIC) CUSTOM RULES END HERE  -- legacy method
 
-		if [ "$( echo $gameCIDR | tr -cd '.' | wc -c )" -eq "3" ] ; then
-			iptables -D POSTROUTING -t mangle -o br0 -d $gameCIDR -m mark --mark 0x80000000/0x8000ffff -p tcp -m multiport ! --sports 80,443  -j MARK --set-mark ${Gaming_mark_down} > /dev/null 2>&1    	#Gaming - (Incoming "Unidentified" TCP traffic, for devices specified, not from WAN source ports 80 & 443 -->  Gaming)
-			iptables -A POSTROUTING -t mangle -o br0 -d $gameCIDR -m mark --mark 0x80000000/0x8000ffff -p tcp -m multiport ! --sports 80,433  -j MARK --set-mark ${Gaming_mark_down}
+		if [ "$( echo "$gameCIDR" | tr -cd '.' | wc -c )" -eq "3" ] ; then
+			iptables -D POSTROUTING -t mangle -o br0 -d "$gameCIDR" -m mark --mark 0x80000000/0x8000ffff -p tcp -m multiport ! --sports 80,443  -j MARK --set-mark ${Gaming_mark_down} > /dev/null 2>&1    	#Gaming - (Incoming "Unidentified" TCP traffic, for devices specified, not from WAN source ports 80 & 443 -->  Gaming)
+			iptables -A POSTROUTING -t mangle -o br0 -d "$gameCIDR" -m mark --mark 0x80000000/0x8000ffff -p tcp -m multiport ! --sports 80,443  -j MARK --set-mark ${Gaming_mark_down}
 
-			iptables -D POSTROUTING -t mangle -o br0 -d $gameCIDR -m mark --mark 0x80000000/0x8000ffff -p udp -m multiport ! --sports 80,443  -j MARK --set-mark ${Gaming_mark_down} > /dev/null 2>&1    	#Gaming - (Incoming "Unidentified" UDP traffic, for devices specified, not from WAN source ports 80 & 443 -->  Gaming)
-			iptables -A POSTROUTING -t mangle -o br0 -d $gameCIDR -m mark --mark 0x80000000/0x8000ffff -p udp -m multiport ! --sports 80,443  -j MARK --set-mark ${Gaming_mark_down}
+			iptables -D POSTROUTING -t mangle -o br0 -d "$gameCIDR" -m mark --mark 0x80000000/0x8000ffff -p udp -m multiport ! --sports 80,443  -j MARK --set-mark ${Gaming_mark_down} > /dev/null 2>&1    	#Gaming - (Incoming "Unidentified" UDP traffic, for devices specified, not from WAN source ports 80 & 443 -->  Gaming)
+			iptables -A POSTROUTING -t mangle -o br0 -d "$gameCIDR" -m mark --mark 0x80000000/0x8000ffff -p udp -m multiport ! --sports 80,443  -j MARK --set-mark ${Gaming_mark_down}
 		fi
 	}
 
@@ -89,12 +79,12 @@ iptable_up_rules(){
 			fi
 		##UPLOAD (OUTGOING TRAFFIC) CUSTOM RULES END HERE  -- legacy method
 
-		if [ "$( echo $gameCIDR | tr -cd '.' | wc -c )" -eq "3" ] ; then
-			iptables -D POSTROUTING -t mangle -o $wan -s $gameCIDR -m mark --mark 0x40000000/0x4000ffff -p tcp -m multiport ! --dports 80,443 -j MARK --set-mark ${Gaming_mark_up} > /dev/null 2>&1 	#Gaming - (Outgoing "Unidentified" TCP traffic, for devices specified, not to WAN destination ports 80 & 443 -->  Gaming)
-			iptables -A POSTROUTING -t mangle -o $wan -s $gameCIDR -m mark --mark 0x40000000/0x4000ffff -p tcp -m multiport ! --dports 80,443 -j MARK --set-mark ${Gaming_mark_up}
+		if [ "$( echo "$gameCIDR" | tr -cd '.' | wc -c )" -eq "3" ] ; then
+			iptables -D POSTROUTING -t mangle -o $wan -s "$gameCIDR" -m mark --mark 0x40000000/0x4000ffff -p tcp -m multiport ! --dports 80,443 -j MARK --set-mark ${Gaming_mark_up} > /dev/null 2>&1 	#Gaming - (Outgoing "Unidentified" TCP traffic, for devices specified, not to WAN destination ports 80 & 443 -->  Gaming)
+			iptables -A POSTROUTING -t mangle -o $wan -s "$gameCIDR" -m mark --mark 0x40000000/0x4000ffff -p tcp -m multiport ! --dports 80,443 -j MARK --set-mark ${Gaming_mark_up}
 
-			iptables -D POSTROUTING -t mangle -o $wan -s $gameCIDR -m mark --mark 0x40000000/0x4000ffff -p udp -m multiport ! --dports 80,443 -j MARK --set-mark ${Gaming_mark_up} > /dev/null 2>&1 	#Gaming - (Outgoing "Unidentified" UDP traffic, for devices specified, not to WAN destination ports 80 & 443 -->  Gaming)
-			iptables -A POSTROUTING -t mangle -o $wan -s $gameCIDR -m mark --mark 0x40000000/0x4000ffff -p udp -m multiport ! --dports 80,443 -j MARK --set-mark ${Gaming_mark_up}
+			iptables -D POSTROUTING -t mangle -o $wan -s "$gameCIDR" -m mark --mark 0x40000000/0x4000ffff -p udp -m multiport ! --dports 80,443 -j MARK --set-mark ${Gaming_mark_up} > /dev/null 2>&1 	#Gaming - (Outgoing "Unidentified" UDP traffic, for devices specified, not to WAN destination ports 80 & 443 -->  Gaming)
+			iptables -A POSTROUTING -t mangle -o $wan -s "$gameCIDR" -m mark --mark 0x40000000/0x4000ffff -p udp -m multiport ! --dports 80,443 -j MARK --set-mark ${Gaming_mark_up}
 		fi
 	}
 
@@ -103,10 +93,10 @@ tc_redirection_down_rules() {
 		${tc} filter del dev br0 parent 1: prio $1 > /dev/null 2>&1																		#remove original unidentified traffic rule
 		${tc} filter del dev br0 parent 1: prio 22 > /dev/null 2>&1																		#remove original HTTPS rule
 		${tc} filter del dev br0 parent 1: prio 23 > /dev/null 2>&1																		#remove original HTTPS rule
-		! [ -z "$tc4_down" ] && ${tc} filter add dev br0 protocol all ${tc4_down}													#Script Interactively Defined Rule 4
-		! [ -z "$tc3_down" ] && ${tc} filter add dev br0 protocol all ${tc3_down}													#Script Interactively Defined Rule 3
-		! [ -z "$tc2_down" ] && ${tc} filter add dev br0 protocol all ${tc2_down}													#Script Interactively Defined Rule 2
-		! [ -z "$tc1_down" ] && ${tc} filter add dev br0 protocol all ${tc1_down}													#Script Interactively Defined Rule 1
+		[ -n "$tc4_down" ] && ${tc} filter add dev br0 protocol all ${tc4_down}													#Script Interactively Defined Rule 4
+		[ -n "$tc3_down" ] && ${tc} filter add dev br0 protocol all ${tc3_down}													#Script Interactively Defined Rule 3
+		[ -n "$tc2_down" ] && ${tc} filter add dev br0 protocol all ${tc2_down}													#Script Interactively Defined Rule 2
+		[ -n "$tc1_down" ] && ${tc} filter add dev br0 protocol all ${tc1_down}													#Script Interactively Defined Rule 1
 		${tc} filter add dev br0 protocol all prio 20 u32 match mark 0x8012003F 0xc03fffff flowid ${Web}							#         HTTP  rule with different destination
 		${tc} filter add dev br0 protocol all prio 22 u32 match mark 0x80130000 0xc03f0000 flowid ${Web}							#recreate HTTPS rule with different destination
 		${tc} filter add dev br0 protocol all prio 23 u32 match mark 0x80140000 0xc03f0000 flowid ${Web}							#recreate HTTPS rule with different destination
@@ -129,10 +119,10 @@ tc_redirection_up_rules() {
 		${tc} filter del dev eth0 parent 1: prio $1 > /dev/null 2>&1																	#remove original unidentified traffic rule
 		${tc} filter del dev eth0 parent 1: prio 22 > /dev/null 2>&1																	#remove original HTTPS rule
 		${tc} filter del dev eth0 parent 1: prio 23 > /dev/null 2>&1																	#remove original HTTPS rule
-		! [ -z "$tc4_up" ] && ${tc} filter add dev eth0 protocol all ${tc4_up}														#Script Interactively Defined Rule 4
-		! [ -z "$tc3_up" ] && ${tc} filter add dev eth0 protocol all ${tc3_up}														#Script Interactively Defined Rule 3
-		! [ -z "$tc2_up" ] && ${tc} filter add dev eth0 protocol all ${tc2_up}														#Script Interactively Defined Rule 2
-		! [ -z "$tc1_up" ] && ${tc} filter add dev eth0 protocol all ${tc1_up}														#Script Interactively Defined Rule 1
+		[ -n "$tc4_up" ] && ${tc} filter add dev eth0 protocol all ${tc4_up}														#Script Interactively Defined Rule 4
+		[ -n "$tc3_up" ] && ${tc} filter add dev eth0 protocol all ${tc3_up}														#Script Interactively Defined Rule 3
+		[ -n "$tc2_up" ] && ${tc} filter add dev eth0 protocol all ${tc2_up}														#Script Interactively Defined Rule 2
+		[ -n "$tc1_up" ] && ${tc} filter add dev eth0 protocol all ${tc1_up}														#Script Interactively Defined Rule 1
 		${tc} filter add dev eth0 protocol all prio 20 u32 match mark 0x4012003F 0xc03fffff flowid ${Web}							#         HTTP  rule with different destination
 		${tc} filter add dev eth0 protocol all prio 22 u32 match mark 0x40130000 0xc03f0000 flowid ${Web}							#recreate HTTPS rule with different destination
 		${tc} filter add dev eth0 protocol all prio 23 u32 match mark 0x40140000 0xc03f0000 flowid ${Web}							#recreate HTTPS rule with different destination
@@ -444,7 +434,7 @@ appdb(){
 			cat_decimal=$(echo $line | cut -f 1 -d "," )
 			cat_hex=$( printf "%02x" $cat_decimal )
 			case "$cat_decimal" in
-			 '9'|'20')
+			 '9'|'18'|'19'|'20')
 			   echo " Originally:  Net Control"
 			   ;;
 			 '0'|'5'|'6'|'15'|'17')
@@ -456,10 +446,10 @@ appdb(){
 			 '7'|'10'|'11'|'21'|'23')
 			   echo " Originally:  Others"
 			   ;;
-			 '13'|'24'|'18'|'19')
+			 '13'|'24')
 			   echo " Originally:  Web"
 			   ;;
-			 '4'|'12')
+			 '4')
 			   echo " Originally:  Streaming"
 			   ;;
 			 '1'|'3'|'14')
@@ -600,16 +590,6 @@ debug2(){
 	echo -en '\033[?7h'			#enable line wrap
 }
 
-## Main Menu -gameip function
-gameip(){
-	if [ "$( echo $1 | tr -cd '.' | wc -c )" -eq "3" ] ; then
-		gameCIDR=${input}
-	else
-		gameCIDR=''
-	fi
-	save_nvram
-}
-
 ## helper function to parse csv nvram variables
 read_nvram(){
 	OLDIFS=$IFS
@@ -678,6 +658,7 @@ save_nvram(){
 	# nvram set fb_comment="${e1};${e2};${e3};${e4};${e5};${e6};${e7}>${f1};${f2};${f3};${f4};${f5};${f6};${f7}>${g1};${g2};${g3};${g4};${g5};${g6};${g7}"
 	# nvram set fb_email_dbg="${h1};${h2};${h3};${h4};${h5};${h6};${h7}>${r1};${d1}>${r2};${d2}>${r3};${d3}>${r4};${d4}>${gameCIDR}>${ruleFLAG}>${drp0};${drp1};${drp2};${drp3};${drp4};${drp5};${drp6};${drp7}>${dcp0};${dcp1};${dcp2};${dcp3};${dcp4};${dcp5};${dcp6};${dcp7}>${urp0};${urp1};${urp2};${urp3};${urp4};${urp5};${urp6};${urp7}>${ucp0};${ucp1};${ucp2};${ucp3};${ucp4};${ucp5};${ucp6};${ucp7}"
 	# nvram commit
+	true
 }
 
 ## helper function for interactive menu mode
@@ -722,8 +703,8 @@ parse_tcrule() {
 	#filter field
 	if [ "$( echo ${1} | wc -c )" -eq "7" ] ; then
 		if [ "${id}" = "****" ] ; then
-			DOWN_mark="0x80${1//!/} 0xc03ff0000"
-			UP_mark="0x40${1//!/} 0xc03ff0000"
+			DOWN_mark="0x80${1//\*/0} 0xc03f0000"
+			UP_mark="0x40${1//\*/0} 0xc03f0000"
 		else
 			DOWN_mark="0x80${1//!/} 0xc03fffff"
 			UP_mark="0x40${1//!/} 0xc03fffff"
@@ -837,8 +818,8 @@ parse_iptablerule() {
 	#match mark
 	if [ "$( echo ${6} | wc -c )" -eq "7" ] ; then
 		if [ "$( echo ${6} | tail -c -5 )" = "****" ] ; then
-			DOWN_mark="-m mark --mark 0x80${6//!/}/0xc03f0000"
-			UP_mark="-m mark --mark 0x40${6//!/}/0xc03f0000"
+			DOWN_mark="-m mark --mark 0x80${6//\*/0}/0xc03f0000"
+			UP_mark="-m mark --mark 0x40${6//\*/0}/0xc03f0000"
 		else
 			DOWN_mark="-m mark --mark 0x80${6//!/}/0xc03fffff"
 			UP_mark="-m mark --mark 0x40${6//!/}/0xc03fffff"
@@ -938,8 +919,6 @@ parse_iptablerule() {
 
 about() {
 	echo -en "\033c\e[3J"		#clear screen
-	echo -en '\033[?7l'			#disable line wrap
-	printf '\e[8;41;160t'		#set height/width of terminal
 	echo "FreshJR_QOS v${version} released ${release}"
 	echo ""
 	echo 'License'
@@ -982,10 +961,6 @@ about() {
 	echo "How to Use Advanced Functionality"
 	echo '  Interactive terminal mode can be accessed by running the -menu command:'
 	echo '      (interactive mode) :  /jffs/scripts/FreshJR_QOS -menu'
-	echo '  Custom rules can be created via the WebUI OR directly accessed by running the -rules command:'
-	echo '      (custom rules)     :  /jffs/scripts/FreshJR_QOS -rules'
-	echo '  Bandwidth allocation per category can be adjusted via the WebUI OR directly accessed by running the -rates command:'
-	echo '      (custom rates)     :  /jffs/scripts/FreshJR_QOS -rates'
 	echo ""
 	echo 'Development'
 	echo '  Tested with ASUS AC-68U, FW384.9, using Adaptive QOS with Manual Bandwidth Settings'
@@ -1144,6 +1119,9 @@ remove_webui() {
 
 install_webui() {
 	if nvram get rc_support | /bin/grep -q am_addons; then
+		if ! [ -f "$webpath" ]; then
+			curl "https://raw.githubusercontent.com/dave14305/FreshJR_QOS/master/FreshJR_QoS_Stats.asp" -o "$webpath"
+		fi
 		# if old bind mount exists, remove it
 		if mount | grep -q www_FreshJR_QoS_Stats.asp; then
 			umount /www/QoS_Stats.asp
@@ -1167,7 +1145,10 @@ install_webui() {
 				mount -o bind /tmp/menuTree.js /www/require/modules/menuTree.js
 			fi
 		fi
-	fi
+	else
+		echo "This firmware version does not support the Addon API"
+		return 1
+	fi # rc_support
 }
 
 Auto_ServiceEventEnd() {
@@ -1252,7 +1233,6 @@ install() {
 
 uninstall() {
 	sed -i '/FreshJR_QOS/d' /jffs/scripts/firewall-start 2>/dev/null						#remove FreshJR_QOS from firewall start
-	sed -i '/FreshJR_QOS/d' /jffs/scripts/script_usbmount 2>/dev/null						#remove FreshJR_QOS from script_usbmount - only used on stock ASUS firmware installs
 	sed -i '/freshjr/d' /jffs/configs/profile.add 2>/dev/null								#remove aliases used to launch interactive mode
 	sed -i '/FreshJR/d' /jffs/configs/profile.add 2>/dev/null
 	cru d FreshJR_QOS
@@ -1261,9 +1241,6 @@ uninstall() {
 	remove_webui
 	rm -f "${webpath}"
 
-	if [ "$(nvram get script_usbmount)" = "/jffs/scripts/script_usbmount" ] ; then												   #only used on stock ASUS firmware installs
-		nvram unset script_usbmount
-	fi
 	sed -i '/^freshjr_/d' /jffs/addons/custom_settings.txt
 	echo -e  "\033[1;32m FreshJR QOS has been uninstalled \033[0m"
 } # uninstall
@@ -1301,9 +1278,7 @@ check_qos_tc() {
 	ulclasscnt="$(tc class show dev eth0 | grep "parent 1:1 " | wc -l)"
 	dlfiltercnt="$(tc filter show dev br0 | grep -E "flowid 1:1[0-7] $" | wc -l)"
 	ulfiltercnt="$(tc filter show dev eth0 | grep -E "flowid 1:1[0-7] $" | wc -l)"
-	dlqdisccnt="$(tc qdisc show dev br0 | grep -E "parent 1:1[0-7] " | wc -l)"
-	ulqdisccnt="$(tc qdisc show dev eth0 | grep -E "parent 1:1[0-7] " | wc -l)"
-
+  # return ${dlclasscnt}+${ulclasscnt}+${dlfiltercnt}+${ulfiltercnt}
 } # check_qos_tc
 
 start() {
@@ -1322,6 +1297,7 @@ start() {
 
 		##check if should mount QoS_stats page
 		install_webui
+		generate_bwdpi_arrays
 		read_nvram	#needs to be set before parse_iptablerule or custom rates
 		get_config
 
@@ -1341,11 +1317,6 @@ start() {
 				sleepdelay=$(($sleepdelay+10))
 			done
 			logger -t "adaptive QOS" -s -- "TC Modification Delay ended after $sleepdelay seconds"
-		fi
-
-		if [ "$1" = "mount" ] ; then
-			logger -t "adaptive QOS" -s -- "--Post USB Mount-- Delayed Start (10min)"
-			sleep 600s
 		fi
 
 		current_undf_rule="$(tc filter show dev br0 | grep -v "/" | grep "000ffff" -B1)"
@@ -1418,8 +1389,12 @@ show_help() {
 
 generate_bwdpi_arrays() {
 	# generate if not exist, plus after wrs restart (signature update)
-	awk -F, 'BEGIN { print "var catdb_array = \[ "} { print "\[\""$1"\",\""$2"\"\]," } END { print "\[\]\]\;" }' /tmp/bwdpi/bwdpi.cat.db | tr '\n' ' ' > /www/user/ext/flexqos_arrays.js
-	awk -F, 'BEGIN { print "var appname_array = \[ "} { print "\[\""$1"\",\""$2"\",\""$4"\"\]," } END { print "\[\]\]\;" }' /tmp/bwdpi/bwdpi.app.db | tr '\n' ' ' >> /www/user/ext/flexqos_arrays.js
+	if ! [ -f /www/user/ext/flexqos_arrays.js ] || [ /tmp/bwdpi.app.db -nt /www/user/ext/flexqos_arrays.js ]; then
+		awk -F, 'BEGIN { printf "var catdb_mark_array = [ \"000000\", "} { printf("\"%02X****\", ",$1) }' /tmp/bwdpi/bwdpi.cat.db > /www/ext/flexqos_arrays.js
+		awk -F, '{ printf("\"%02X%04X\", ",$1,$2) } END { printf "\"\" ]\;" }' /tmp/bwdpi/bwdpi.app.db >> /www/ext/flexqos_arrays.js
+		awk -F, 'BEGIN { printf "var catdb_label_array = [ \"Untracked\", "} { printf("\"%s\", ",$2) }' /tmp/bwdpi/bwdpi.cat.db >> /www/ext/flexqos_arrays.js
+		awk -F, '{ printf("\"%s\", ",$4) } END { printf "\"\" ]\;" }' /tmp/bwdpi/bwdpi.app.db >> /www/ext/flexqos_arrays.js
+	fi
 }
 
 ################################################################################
