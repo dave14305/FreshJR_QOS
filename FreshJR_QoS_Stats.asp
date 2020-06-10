@@ -25,8 +25,7 @@ Modification on-top of RMerlins QoS_Stats page taken from 384.9
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/js/table/table.js"></script>
 <script type="text/javascript" src="/js/httpApi.js"></script>
-<script type="text/javascript" src="/base64.js"></script>
-<script type="text/javascript" src="/ext/freshjr_arrays.js"></script>
+<script type="text/javascript" src="/ext/flexqos_arrays.js"></script>
 <style>
 
 .tableApi_table th {
@@ -1066,9 +1065,6 @@ function validAppDBForm(){
 				return false;
 	}
 
-	if( document.form.appdb_appname_x.value == "" || document.form.appdb_mark_x.value == "" )
-		return false;
-
 	return true;
 }
 
@@ -1094,8 +1090,7 @@ function addRow_AppDB(upper){
 			alert("This table only allows " + upper + " items!");
 			return;
 		}
-		addAppDBRow(document.form.appdb_appname_x, 1);
-		addAppDBRow(document.form.appdb_mark_x, 0);
+		addAppDBRow(document.form.appdb_mark_x, 1);
 		addAppDBRow(document.form.appdb_class_x, 0);
 		document.form.appdb_class_x.value="0";
 		show_appdb_rules();
@@ -1304,11 +1299,10 @@ function show_appdb_default_rules() {
 			code +='<tr id="row'+i+'">';
 			var appdb_defrulelist_col = appdb_defrulelist_row[i].split('>');
 				for(var j = 0; j < appdb_defrulelist_col.length; j++){
-						if (j==2){
+						if (j==1){
 							code +='<td width="20%">'+ class_title[appdb_defrulelist_col[j]] +'</td>';
-						} else if (j==0){
-							code +='<td width="auto">'+ appdb_defrulelist_col[j] +'</td>';
 						} else {
+							code +='<td width="auto">'+ catdb_label_array[catdb_mark_array.indexOf(appdb_defrulelist_col[j])] +'</td>';
 							code +='<td width="9%">'+ appdb_defrulelist_col[j] +'</td>';
 						}
 				}
@@ -1332,11 +1326,10 @@ function show_appdb_rules() {
 			code +='<tr id="row'+i+'">';
 			var appdb_rulelist_col = appdb_rulelist_row[i].split('>');
 				for(var j = 0; j < appdb_rulelist_col.length; j++){
-						if (j==2){
+						if (j==1){
 							code +='<td width="20%">'+ class_title[appdb_rulelist_col[j]] +'</td>';
-						}else if (j==0){
-							code +='<td width="auto">'+ appdb_rulelist_col[j] +'</td>'
 						} else {
+							code +='<td width="auto">'+ catdb_label_array[catdb_mark_array.indexOf(appdb_rulelist_col[j])] +'</td>';
 							code +='<td width="9%">'+ appdb_rulelist_col[j] +'</td>';
 						}
 				}
@@ -1397,12 +1390,12 @@ function set_FreshJR_mod_vars()
 			// document.form.fb_comment.value = "";  // uncomment once script ready
 			}
 		else // rules are migrated to new API variables
-			iptables_rulelist_array = Base64.decode(custom_settings.freshjr_iptables);
+			iptables_rulelist_array = custom_settings.freshjr_iptables;
 
 		if ( custom_settings.freshjr_defiptables == undefined ) // rules not yet migrated to new API variables
 			iptables_defrulelist_array = "<>>both>>!80,443>000000>1<>>udp>>500,4500>>3<>>udp>16384:16415>>>3<>>tcp>>119,563>>5<>>tcp>>80,443>08****>7";
 		else // rules are migrated to new API variables
-			iptables_defrulelist_array = Base64.decode(custom_settings.freshjr_defiptables);
+			iptables_defrulelist_array = custom_settings.freshjr_defiptables;
 
 		if ( custom_settings.freshjr_appdb == undefined )
 		{
@@ -1412,24 +1405,24 @@ function set_FreshJR_mod_vars()
 				FreshJR_nvram[j] = FreshJR_nvram[j].split(";");
 				for (var k=0;k<FreshJR_nvram[j].length;k++) {
 					if (k==0)
-						appdb_temp_rule += "<>";
+						appdb_temp_rule += "<";
 					else
 						appdb_temp_rule += ">";
 					appdb_temp_rule += FreshJR_nvram[j][k];
 				} // for inner loop
-			if (appdb_temp_rule != "<>>0")
+			if (appdb_temp_rule != "<>0")
 				appdb_rulelist_array += appdb_temp_rule;
 			}
 			FreshJR_nvram = "";
 		// document.form.fb_email_dbg.value = "";  // uncomment once script ready
 		}
 		else
-			appdb_rulelist_array = Base64.decode(custom_settings.freshjr_appdb);
+			appdb_rulelist_array = custom_settings.freshjr_appdb;
 
 		if ( custom_settings.freshjr_defappdb == undefined )
-			appdb_defrulelist_array = "<Untracked>000000>6<Snapchat>00006B>6<Speedtest.net>0D0007>5<Google Play>0D0086>5<Apple AppStore>0D00A0>5<World Wide Web HTTP>12003F>4<HTTP Protocol over TLS SSL + Misc>13****>4<TLS SSL Connections + Misc>14****>4<Advertisement>1A****>5";
+			appdb_defrulelist_array = "<000000>6<00006B>6<0D0007>5<0D0086>5<0D00A0>5<12003F>4<13****>4<14****>4<1A****>5";
 		else
-			appdb_defrulelist_array = Base64.decode(custom_settings.freshjr_defappdb);
+			appdb_defrulelist_array = custom_settings.freshjr_defappdb;
 
 		var iptables_combined_rules = iptables_defrulelist_array + iptables_rulelist_array;
 		var r=0;
@@ -1603,10 +1596,10 @@ function FreshJR_mod_apply()
 		// var ucp6=document.getElementById('ucp6').value;			if (!(validate_percent(ucp6)))  ucp0="100";
 		// var ucp7=document.getElementById('ucp7').value;			if (!(validate_percent(ucp7)))  ucp0="100";
 
-	custom_settings.freshjr_defiptables = Base64.encode(iptables_defrulelist_array);
-	custom_settings.freshjr_iptables = Base64.encode(iptables_rulelist_array);
-	custom_settings.freshjr_defappdb = Base64.encode(appdb_defrulelist_array);
-	custom_settings.freshjr_appdb = Base64.encode(appdb_rulelist_array);
+	custom_settings.freshjr_defiptables = iptables_defrulelist_array;
+	custom_settings.freshjr_iptables = iptables_rulelist_array;
+	custom_settings.freshjr_defappdb = appdb_defrulelist_array;
+	custom_settings.freshjr_appdb = appdb_rulelist_array;
 	custom_settings.freshjr_bandwidth = encodeURIComponent(bandwidth);
 	//custom_settings.freshjr_gamecidr = document.getElementById('gameCIDR').value;
 	custom_settings.freshjr_ruleflag = "FF";
@@ -1750,13 +1743,13 @@ function SetCurrentPage() {
 	</thead>
 	<tbody>
 	<tr>
-		<th width="19%"><a href="javascript:void(0);" onClick="openHint(7,25);"><div class="table_text">Local IP/CIDR</div></a></th>
-		<th width="19%"><a href="javascript:void(0);" onClick="openHint(7,25);"><div class="table_text">Remote IP/CIDR</div></a></th>
-		<th width="9%"><a href="javascript:void(0);" onClick="openHint(7,25);"><div class="table_text">Protocol</div></a></th>
-		<th width="9%"><a href="javascript:void(0);" onClick="openHint(7,24);"><div class="table_text">Local Port</div></a></th>
-		<th width="9%"><a href="javascript:void(0);" onClick="openHint(7,24);"><div class="table_text">Remote Port</div></a></th>
-		<th width="9%"><a href="javascript:void(0);" onClick="openHint(7,24);"><div class="table_text">Mark</div></a></th>
-		<th width="20%"><a href="javascript:void(0);" onClick="openHint(7,24);"><div class="table_text">Class</div></a></th>
+		<th width="19%"><a href="javascript:void(0);" onClick="overlib(ipsyntaxL, 500, 500);"><div class="table_text">Local IP/CIDR</div></a></th>
+		<th width="19%"><a href="javascript:void(0);" onClick="overlib(ipsyntaxR, 500, 500);"><div class="table_text">Remote IP/CIDR</div></a></th>
+		<th width="9%"><a href="javascript:void(0);" onClick="overlib(protosyntax, 300, 500);"><div class="table_text">Protocol</div></a></th>
+		<th width="9%"><a href="javascript:void(0);" onClick="overlib(portsyntax, 300, 500);"><div class="table_text">Local Port</div></a></th>
+		<th width="9%"><a href="javascript:void(0);" onClick="overlib(portsyntax, 300, 500);"><div class="table_text">Remote Port</div></a></th>
+		<th width="9%"><a href="javascript:void(0);" onClick="overlib(marksyntax, 500, 500);"><div class="table_text">Mark</div></a></th>
+		<th width="20%"><a href="javascript:void(0);" onClick="overlib(classsyntax, 300, 500);"><div class="table_text">Class</div></a></th>
 		<th width="6%">Add / Del</th>
 	</tr>
 	<tr>
@@ -1803,9 +1796,9 @@ function SetCurrentPage() {
 	</thead>
 	<tbody>
 	<tr>
-		<th width="auto"><a href="javascript:void(0);" onClick="openHint(7,25);"><div class="table_text">Application</div></a></th>
-		<th width="9%"><a href="javascript:void(0);" onClick="openHint(7,24);"><div class="table_text">Mark</div></a></th>
-		<th width="20%"><a href="javascript:void(0);" onClick="openHint(7,24);"><div class="table_text">Class</div></a></th>
+		<th width="auto"><div class="table_text">Application</div></a></th>
+		<th width="9%"><a href="javascript:void(0);" onClick="overlib(marksyntax, 500, 500);"><div class="table_text">Mark</div></a></th>
+		<th width="20%"><a href="javascript:void(0);" onClick="overlib(classsyntax, 300, 500);"><div class="table_text">Class</div></a></th>
 		<th width="12%">Add / Del</th>
 	</tr>
 	<tr>
