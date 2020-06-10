@@ -119,23 +119,8 @@ var dhcp_start = "<% nvram_get("dhcp_start"); %>";
 dhcp_start = dhcp_start.substr(0, dhcp_start.lastIndexOf(".")) + ".";
 var iptables_rulelist_array="";
 var appdb_rulelist_array="";
-var rulename1="Rule1";
-var rulename2="Rule2";
-var rulename3="Rule3";
-var rulename4="Rule4";
-var appdb = [];	// AppDB array
-var appdb1;				// AppDB rules
-var appdb2;
-var appdb3;
-var appdb4;
 var rules = [];	// array for iptables rules
-var rule1;				// IPv4 rules
-var rule2;
-var rule3;
-var rule4;
-var gamerule;
 var gameCIDR;			// CIDR/IP of game devices
-var ruleFLAG;			// Unused - reserved for toggling ON/OFF hardcoded rules in future release
 //Syntax Hints
 var ipsyntaxL = '<b>Syntax:</b> <p>&emsp;&nbsp;192.168.X.XXX</p> <p>&emsp;!192.168.X.XXX</p> <p>&nbsp;</p> <p>&emsp;&nbsp;192.168.X.XXX/CIDR</p> <p>&emsp;!192.168.X.XXX/CIDR</p>';
 var ipsyntaxR = '<b>Syntax:</b> <p>&emsp;&nbsp;75.75.75.75</p> <p>&emsp;!75.75.75.75</p> <p>&nbsp;</p> <p>&emsp;&nbsp;75.75.75.75/CIDR</p> <p>&emsp;!75.75.75.75/CIDR</p>';
@@ -804,10 +789,10 @@ function eval_rule(CLip, CRip, CProto, CLport, CRport, CCat, CId){
 					continue;
 				}
 			}
-			else if (( rules[i][0] & 15) == 4 )						//if port rule is ONLY a local multiport match
+			else if ((rules[i][0] & 15) == "4" )						//if port rule is ONLY a local multiport match
 			{
 				var match=false;
-				for (var j = 0; i < rules[i][5].length; i++) {
+				for (var j = 0; j < rules[i][5].length; j++) {
 					if(rules[i][5][j] == CLport) 	match=true;
 				}
 				if (rules[i][2]) 					match=!(match);
@@ -817,7 +802,7 @@ function eval_rule(CLip, CRip, CProto, CLport, CRport, CCat, CId){
 				  continue;
 				}
 			}
-			else if (( rules[i][0] & 15) == 8 )						//if port rule is ONLY a remote multiport match
+			else if ((rules[i][0] & 15) == "8" )						//if port rule is ONLY a remote multiport match
 			{
 			    var match=false;
 			    for (var j = 0; j < rules[i][9].length; j++) {
@@ -1301,6 +1286,9 @@ function set_FreshJR_mod_vars()
 				if (iptables_temp_rule != "<>>both>>>>0")
 					iptables_rulelist_array += iptables_temp_rule;
 				}
+				gameCIDR=FreshJR_nvram[8].toString();
+				if (gameCIDR.length > 1)
+				 	iptables_rulelist_array = "<"+gameCIDR+">>both>>!80,443>000000>1" + iptables_rulelist_array;
 				FreshJR_nvram = "";
 			}
 		else // rules are migrated to new API variables
@@ -1328,19 +1316,6 @@ function set_FreshJR_mod_vars()
 		}
 		else
 			appdb_rulelist_array = custom_settings.freshjr_appdb;
-
-		// get gameCIDR
-		if ( custom_settings.freshjr_gamecidr == undefined )
-		{
-			var FreshJR_nvram = decodeURIComponent('<% nvram_char_to_ascii("",fb_email_dbg); %>').split(">");
-			gameCIDR=FreshJR_nvram[5];
-			FreshJR_nvram = "";
-		}
-		else
-			gameCIDR = custom_settings.freshjr_gamecidr;
-
-		if (gameCIDR)
-			rules.push(create_rule(gameCIDR, "", "both", "!80,443", "", "000000", "1"));
 
 		var r=0;
 		var iptables_temp_array = iptables_rulelist_array.split("<");
@@ -1504,7 +1479,6 @@ function FreshJR_mod_apply()
 	custom_settings.freshjr_defappdb = appdb_defrulelist_array;
 	custom_settings.freshjr_appdb = appdb_rulelist_array;
 	custom_settings.freshjr_bandwidth = encodeURIComponent(bandwidth);
-	//custom_settings.freshjr_gamecidr = document.getElementById('gameCIDR').value;
 	custom_settings.freshjr_ruleflag = "FF";
 
 	/* Store object as a string in the amng_custom hidden input field */
@@ -1642,13 +1616,13 @@ function SetCurrentPage() {
 	</thead>
 	<tbody>
 	<tr>
-		<th width="19%"><a href="javascript:void(0);" onClick="overlib(ipsyntaxL, 500, 500);"><div class="table_text">Local IP/CIDR</div></a></th>
-		<th width="19%"><a href="javascript:void(0);" onClick="overlib(ipsyntaxR, 500, 500);"><div class="table_text">Remote IP/CIDR</div></a></th>
-		<th width="9%"><a href="javascript:void(0);" onClick="overlib(protosyntax, 300, 500);"><div class="table_text">Protocol</div></a></th>
-		<th width="9%"><a href="javascript:void(0);" onClick="overlib(portsyntax, 300, 500);"><div class="table_text">Local Port</div></a></th>
-		<th width="9%"><a href="javascript:void(0);" onClick="overlib(portsyntax, 300, 500);"><div class="table_text">Remote Port</div></a></th>
-		<th width="9%"><a href="javascript:void(0);" onClick="overlib(marksyntax, 500, 500);"><div class="table_text">Mark</div></a></th>
-		<th width="20%"><a href="javascript:void(0);" onClick="overlib(classsyntax, 300, 500);"><div class="table_text">Class</div></a></th>
+		<th width="19%"><a href="javascript:void(0);" onClick="overlib(ipsyntaxL, 500, 500);" onmouseout="nd();"><div class="table_text">Local IP/CIDR</div></a></th>
+		<th width="19%"><a href="javascript:void(0);" onClick="overlib(ipsyntaxR, 500, 500);" onmouseout="nd();"><div class="table_text">Remote IP/CIDR</div></a></th>
+		<th width="9%"><a href="javascript:void(0);" onClick="overlib(protosyntax, 300, 500);" onmouseout="nd();"><div class="table_text">Protocol</div></a></th>
+		<th width="9%"><a href="javascript:void(0);" onClick="overlib(portsyntax, 300, 500);" onmouseout="nd();"><div class="table_text">Local Port</div></a></th>
+		<th width="9%"><a href="javascript:void(0);" onClick="overlib(portsyntax, 300, 500);" onmouseout="nd();"><div class="table_text">Remote Port</div></a></th>
+		<th width="9%"><a href="javascript:void(0);" onClick="overlib(marksyntax, 500, 500);" onmouseout="nd();"><div class="table_text">Mark</div></a></th>
+		<th width="20%"><a href="javascript:void(0);" onClick="overlib(classsyntax, 300, 500);" onmouseout="nd();"><div class="table_text">Class</div></a></th>
 		<th width="6%">Add / Del</th>
 	</tr>
 	<tr>
@@ -1695,8 +1669,8 @@ function SetCurrentPage() {
 	<tbody>
 	<tr>
 		<th width="auto"><div class="table_text">Application</div></a></th>
-		<th width="9%"><a href="javascript:void(0);" onClick="overlib(marksyntax, 500, 500);"><div class="table_text">Mark</div></a></th>
-		<th width="20%"><a href="javascript:void(0);" onClick="overlib(classsyntax, 300, 500);"><div class="table_text">Class</div></a></th>
+		<th width="9%"><a href="javascript:void(0);" onClick="overlib(marksyntax, 500, 500);" onmouseout="nd();"><div class="table_text">Mark</div></a></th>
+		<th width="20%"><a href="javascript:void(0);" onClick="overlib(classsyntax, 300, 500);" onmouseout="nd();"><div class="table_text">Class</div></a></th>
 		<th width="12%">Add / Del</th>
 	</tr>
 	<tr>
