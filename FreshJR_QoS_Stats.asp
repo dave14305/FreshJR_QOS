@@ -1387,13 +1387,12 @@ function set_FreshJR_mod_vars()
 					iptables_rulelist_array += iptables_temp_rule;
 				}
 				FreshJR_nvram = "";
-			// document.form.fb_comment.value = "";  // uncomment once script ready
 			}
 		else // rules are migrated to new API variables
 			iptables_rulelist_array = custom_settings.freshjr_iptables;
 
 		if ( custom_settings.freshjr_defiptables == undefined ) // rules not yet migrated to new API variables
-			iptables_defrulelist_array = "<>>both>>!80,443>000000>1<>>udp>>500,4500>>3<>>udp>16384:16415>>>3<>>tcp>>119,563>>5<>>tcp>>80,443>08****>7";
+			iptables_defrulelist_array = "<>>udp>>500,4500>>3<>>udp>16384:16415>>>3<>>tcp>>119,563>>5<>>tcp>>80,443>08****>7";
 		else // rules are migrated to new API variables
 			iptables_defrulelist_array = custom_settings.freshjr_defiptables;
 
@@ -1414,7 +1413,6 @@ function set_FreshJR_mod_vars()
 				appdb_rulelist_array += appdb_temp_rule;
 			}
 			FreshJR_nvram = "";
-		// document.form.fb_email_dbg.value = "";  // uncomment once script ready
 		}
 		else
 			appdb_rulelist_array = custom_settings.freshjr_appdb;
@@ -1423,6 +1421,19 @@ function set_FreshJR_mod_vars()
 			appdb_defrulelist_array = "<000000>6<00006B>6<0D0007>5<0D0086>5<0D00A0>5<12003F>4<13****>4<14****>4<1A****>5";
 		else
 			appdb_defrulelist_array = custom_settings.freshjr_defappdb;
+
+		// get gameCIDR
+		if ( custom_settings.freshjr_gamecidr == undefined )
+		{
+			var FreshJR_nvram = decodeURIComponent('<% nvram_char_to_ascii("",fb_email_dbg); %>').split(">");
+			gameCIDR=FreshJR_nvram[5];
+			FreshJR_nvram = "";
+		}
+		else
+			gameCIDR = custom_settings.freshjr_gamecidr;
+
+		if (gameCIDR)
+			rules.push(create_rule(gameCIDR, "", "both", "!80,443", "", "000000", "1"));
 
 		var iptables_combined_rules = iptables_defrulelist_array + iptables_rulelist_array;
 		var r=0;
@@ -1438,21 +1449,10 @@ function set_FreshJR_mod_vars()
 		for (a=0; a<appdb_combined_array.length;a++) {
 			var appdb_combined_row = appdb_combined_array[a].split(">");
 			if (appdb_combined_row.length > 1)
-				rules.push(create_rule("", "", "", "", "", appdb_combined_row[1], appdb_combined_row[2]));
+				rules.push(create_rule("", "", "", "", "", appdb_combined_row[0], appdb_combined_row[1]));
 		}
 
-		// get gameCIDR
-		if ( custom_settings.freshjr_gamecidr == undefined )
-		{
-			var FreshJR_nvram = decodeURIComponent('<% nvram_char_to_ascii("",fb_email_dbg); %>').split(">");
-			gameCIDR=FreshJR_nvram[5];
-			FreshJR_nvram = "";
-		}
-		else
-			gameCIDR = custom_settings.freshjr_gamecidr;
 
-		if (gameCIDR)
-			gamerule=create_rule(gameCIDR, "", "both", "!80,443", "", "000000", "1");
 
 		// get Bandwidth
 		if ( custom_settings.freshjr_bandwidth == undefined )
@@ -1607,8 +1607,6 @@ function FreshJR_mod_apply()
 	/* Store object as a string in the amng_custom hidden input field */
 	document.getElementById('amng_custom').value = JSON.stringify(custom_settings);
 
-	document.form.fb_comment.value = decodeURIComponent('<% nvram_char_to_ascii("",fb_comment); %>');
-	document.form.fb_email_dbg.value = decodeURIComponent('<% nvram_char_to_ascii("",fb_email_dbg); %>');
 	//document.form.action_script.value = "restart_qos;restart_firewall";
 	document.form.submit();
 }
@@ -1708,8 +1706,6 @@ function SetCurrentPage() {
 <input type="hidden" name="action_script" value="">
 <input type="hidden" name="action_wait" value="15">
 <input type="hidden" name="flag" value="">
-<input type="hidden" name="fb_comment" value="asd">
-<input type="hidden" name="fb_email_dbg" value="zxc">
 <input type="hidden" name="amng_custom" id="amng_custom" value="">
 <table class="content" align="center" cellpadding="0" cellspacing="0">
 <tr>
