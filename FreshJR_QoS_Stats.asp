@@ -576,16 +576,16 @@ function populate_devicefilter(){
 
 function initial() {
 	SetCurrentPage();
+	show_menu();
 	set_FreshJR_mod_vars();
-	show_iptables_rules();
-	show_appdb_rules();
 	get_devicenames();						//used for printing name next to IP
 	populate_devicefilter();				//used to populate drop down filter
 	populate_classmenu();
-    show_menu();
-    refreshRate = document.getElementById('refreshrate').value;
+  refreshRate = document.getElementById('refreshrate').value;
 	deviceFilter = document.getElementById('devicefilter').value;
-    get_data();
+  get_data();
+	show_iptables_rules();
+	show_appdb_rules();
     //draw_conntrack_table();  get_data() already draws table
 	if (qos_mode == 0){		//if QoS is invalid
 		document.getElementById('filter_device').style.display = "none";
@@ -1536,7 +1536,7 @@ function SetCurrentPage() {
 
 </script>
 </head>
-<body onload="initial();">
+<body onload="initial();" class="bg">
 <div id="TopBanner"></div>
 <div id="Loading" class="popup_bg"></div>
 <iframe name="hidden_frame" id="hidden_frame" width="0" height="0" frameborder="0"></iframe>
