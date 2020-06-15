@@ -53,13 +53,13 @@ function tableValid_block_chars(_value, keywordArray){
 		}
 	}
 	if(invalid_char != "")
-		return'<#JS_validstr2#>" '+ invalid_char +'" !';
+		return'This string cannot contain:" '+ invalid_char +'" !';
 
 	// check if char in the specified array
 	if(_value) {
 		for(var i = 0; i < keywordArray.length; i++) {
 			if( _value.indexOf(keywordArray[i]) >= 0) {
-				return keywordArray + " <#JS_invalid_chars#>";
+				return keywordArray + " are invalid characters.";
 			}
 		}
 	}
@@ -136,7 +136,7 @@ var tableValidator = {
 			_$obj.val(_value);
 			if(_value == "") {
 				if(_$obj.hasClass("valueMust"))
-					hintMsg = "<#JS_fieldblank#>";
+					hintMsg = "Fields cannot be blank.";
 				else
 					hintMsg = HINTPASS;
 			}
@@ -210,7 +210,7 @@ var tableValidator = {
 
 			if(_value == "") {
 				if(_$obj.hasClass("valueMust"))
-					hintMsg = "<#JS_fieldblank#>";
+					hintMsg = "Fields cannot be blank.";
 				else
 					hintMsg = HINTPASS;
 			}
@@ -225,11 +225,11 @@ var tableValidator = {
 
 				if(singlerangere.test(PortRange)) {  // single port range
 					if(parseInt(RegExp.$1) >= parseInt(RegExp.$2)) {
-						hintMsg = _value + " <#JS_validportrange#>";
+						hintMsg = _value + " is not a valid port range!";
 					}
 					else{
 						if(!eachPort(RegExp.$1, mini, maxi) || !eachPort(RegExp.$2, mini, maxi)) {
-							hintMsg = "<#JS_validrange#> " + mini + " <#JS_validrange_to#> " + maxi;
+							hintMsg = "Please enter a value between " + mini + " to " + maxi;
 						}
 						else
 							hintMsg =  HINTPASS;
@@ -238,8 +238,8 @@ var tableValidator = {
 				else if (multiportre.test(PortRange)) {
 					var split = PortRange.split(",");
 					for (var i = 0; i < split.length; i++) {
-						if(!eachport(split[i], mini, maxi)){
-							hintMsg = "<#JS_validrange#> " + mini + " <#JS_validrange_to#> " + maxi;
+						if(!eachPort(split[i], mini, maxi)){
+							hintMsg = "Please enter a value between " + mini + " to " + maxi;
 						}
 						else
 							hintMsg =  HINTPASS;
@@ -247,7 +247,7 @@ var tableValidator = {
 				}
 				else {
 					if(!tableValid_range(PortRange, mini, maxi)) {
-						hintMsg = "<#JS_validrange#> " + mini + " <#JS_validrange_to#> " + maxi;
+						hintMsg = "Please enter a value between " + mini + " to " + maxi;
 					}
 					else
 						hintMsg =  HINTPASS;
@@ -267,6 +267,68 @@ var tableValidator = {
 			return true;
 		}
 	},
+
+	qosMark : {
+		keyPress : function($obj, event) {
+			var objValue = $obj.val();
+			var keyPressed = event.keyCode ? event.keyCode : event.which;
+
+			if (tableValid_isFunctionButton(event)) {
+				return true;
+			}
+
+			if ((keyPressed > 47 && keyPressed < 58) || (keyPressed > 64 && keyPressed < 71) || (keyPressed > 96 && keyPressed < 103)) {	//0~9 A~F
+				return true;
+			}
+			if (keyPressed == 42) { // *
+				if (objValue.length > 1) {
+					for(var i=0;i<objValue.length;i++) {
+						var c=objValue.charAt(i);
+						if (c == '*' && i < 2)
+							return false;
+					}
+					$obj.val(objValue.substr(0,2)+"****");
+				}
+			}
+
+			return false;
+		},
+		blur : function(_$obj) {
+			var hintMsg = "";
+			var _value = _$obj.val();
+			_value = $.trim(_value);
+			_$obj.val(_value);
+			if(_value == "") {
+				if(_$obj.hasClass("valueMust"))
+					hintMsg = "Fields cannot be blank.";
+				else
+					hintMsg = HINTPASS;
+			}
+			else {
+				var markre = new RegExp("^([0-9a-fA-F]{2})([0-9a-fA-F]{4}|[\*]{4})$", "gi");
+				if(markre.test(_value)) {
+					hintMsg = HINTPASS;
+				}
+				else {
+					hintMsg = "Please enter a valid mark or wildcard";
+				}
+			}
+
+			if(_$obj.next().closest(".hint").length) {
+				_$obj.next().closest(".hint").remove();
+			}
+			if(hintMsg != HINTPASS) {
+				var $hintHtml = $('<div>');
+				$hintHtml.addClass("hint");
+				$hintHtml.html(hintMsg);
+				_$obj.after($hintHtml);
+				_$obj.focus();
+				return false;
+			}
+			return true;
+		}
+	},
+
 
 	portNum : {
 		keyPress : function($obj, event) {
@@ -289,7 +351,7 @@ var tableValidator = {
 			_$obj.val(_value);
 			if(_value == "") {
 				if(_$obj.hasClass("valueMust"))
-					hintMsg = "<#JS_fieldblank#>";
+					hintMsg = "Fields cannot be blank.";
 				else
 					hintMsg = HINTPASS;
 			}
@@ -297,7 +359,7 @@ var tableValidator = {
 				var mini = 1;
 				var maxi = 65535;
 				if(!tableValid_range(_value, mini, maxi)) {
-					hintMsg = "<#JS_validrange#> " + mini + " <#JS_validrange_to#> " + maxi;
+					hintMsg = "Please enter a value between " + mini + " to " + maxi;
 				}
 				else
 					hintMsg = HINTPASS;
@@ -391,7 +453,7 @@ var tableValidator = {
 			_$obj.val(_value);
 			if(_value == "") {
 				if(_$obj.hasClass("valueMust"))
-					hintMsg = "<#JS_fieldblank#>";
+					hintMsg = "Fields cannot be blank.";
 				else
 					hintMsg = HINTPASS;
 			}
@@ -410,12 +472,12 @@ var tableValidator = {
 						_$obj.val(tableValid_decimalToIPAddr(ipNum));
 					}
 					else {
-						hintMsg = _value + " <#JS_validip#>";
+						hintMsg = _value + " is not a valid IP address!";
 					}
 				}
 				else{ // IP plus netmask
 					if(_value.split("/").length > 2) {
-						hintMsg = _value + " <#JS_validip#>";
+						hintMsg = _value + " is not a valid IP address!";
 					}
 					else {
 						var ip_tmp = _value.split("/")[0];
@@ -423,9 +485,9 @@ var tableValidator = {
 						ipNum = tableValid_ipAddrToIPDecimal(ip_tmp);
 						if(ipNum > startIPAddr && ipNum < endIPAddr) {
 							if(mask_tmp == "" || isNaN(mask_tmp))
-								hintMsg = _value + " <#JS_validip#>";
+								hintMsg = _value + " is not a valid IP address!";
 							else if(mask_tmp == 0 || mask_tmp > 32)
-								hintMsg = _value + " <#JS_validip#>";
+								hintMsg = _value + " is not a valid IP address!";
 							else {
 								hintMsg = HINTPASS;
 								//convert number to ip address
@@ -433,7 +495,7 @@ var tableValidator = {
 							}
 						}
 						else {
-							hintMsg = _value + " <#JS_validip#>";
+							hintMsg = _value + " is not a valid IP address!";
 						}
 					}
 				}
@@ -496,7 +558,7 @@ var tableValidator = {
 			_$obj.val(_value);
 			if(_value == "") {
 				if(_$obj.hasClass("valueMust"))
-					hintMsg = "<#JS_fieldblank#>";
+					hintMsg = "Fields cannot be blank.";
 				else
 					hintMsg = HINTPASS;
 			}
@@ -505,9 +567,9 @@ var tableValidator = {
 				var legal_hwaddr = new RegExp("(^([a-fA-F0-9][aAcCeE02468])(\:))", "gi"); // for legal MAC, unicast & globally unique (OUI enforced)
 
 				if(!hwaddr.test(_value))
-					hintMsg = "<#LANHostConfig_ManualDHCPMacaddr_itemdesc#>";
+					hintMsg = "The format for the MAC address is six groups of two hexadecimal digits, separated by colons (:), in transmission order (e.g. 12:34:56:aa:bc:ef)";
 				else if(!legal_hwaddr.test(_value))
-					hintMsg = "<#IPConnection_x_illegal_mac#>";
+					hintMsg = "MAC address is not valid.";
 				else
 					hintMsg = HINTPASS;
 			}
@@ -595,16 +657,16 @@ var tableValidator = {
 			_$obj.val(_value);
 			if(_value == "") {
 				if(_$obj.hasClass("valueMust"))
-					hintMsg = "<#JS_fieldblank#>";
+					hintMsg = "Fields cannot be blank.";
 				else
 					hintMsg = HINTPASS;
 			}
 			else {
 				var ipformat = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
 				if(!_value.match(ipformat))
-					hintMsg = _value + " <#JS_validip#>";
+					hintMsg = _value + " is not a valid IP address!";
 				else if(!validate_dhcp_range(_value))
-					hintMsg = _value + " <#JS_validip#>";
+					hintMsg = _value + " is not a valid IP address!";
 				else
 					hintMsg = HINTPASS;
 			}
@@ -679,14 +741,14 @@ var tableValidator = {
 			_$obj.val(_value);
 			if(_value == "") {
 				if(_$obj.hasClass("valueMust"))
-					hintMsg = "<#JS_fieldblank#>";
+					hintMsg = "Fields cannot be blank.";
 				else
 					hintMsg = HINTPASS;
 			}
 			else {
 				var ipformat = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
 				if(!_value.match(ipformat))
-					hintMsg = _value + " <#JS_validip#>";
+					hintMsg = _value + " is not a valid IP address!";
 				else
 					hintMsg = HINTPASS;
 			}

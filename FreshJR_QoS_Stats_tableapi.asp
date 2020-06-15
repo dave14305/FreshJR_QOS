@@ -1176,7 +1176,7 @@ function show_iptables_rules(){
 		data: iptables_temp_array,
 		container: "iptables_rules_block",
 		title: "iptables Rules",
-		titieHint: "Add your custom rules using the button above.",
+		//titieHint: "Add your custom rules using the button above.",
 		capability: {
 			add: true,
 			del: true,
@@ -1219,6 +1219,7 @@ function show_iptables_rules(){
 					"title" : "Local IP/CIDR",
 					"maxlength" : "18",
 					"valueMust" : false,
+					"placeholder": "192.168.1.254 192.168.1.10/31 !192.168.1.254",
 					"validator" : "ipAddress"
 				},
 				{
@@ -1226,6 +1227,7 @@ function show_iptables_rules(){
 					"title" : "Remote IP/CIDR",
 					"maxlength" : "18",
 					"valueMust" : false,
+					"placeholder": "8.8.8.8 8.8.0.0/16 !8.8.0.0/16",
 					"validator" : "ipAddress"
 				},
 				{
@@ -1237,19 +1239,25 @@ function show_iptables_rules(){
 					"editMode" : "text",
 					"title" : "Local Port",
 					"maxlength" : "36",
+					"valueMust" : false,
+					"placeholder": "1234 12345:23456 1234,5678,91011",
 					"validator" : "portRange"
 				},
 				{
 					"editMode" : "text",
 					"title" : "Remote Port",
 					"maxlength" : "36",
+					"valueMust" : false,
+					"placeholder": "1234 12345:23456 1234,5678,91011",
 					"validator" : "portRange"
 				},
 				{
 					"editMode" : "text",
 					"title" : "Mark",
 					"maxlength" : "6",
-					"validator" : "description"
+					"valueMust" : false,
+					"placeholder": "111111 or 11****",
+					"validator" : "qosMark"
 				},
 				{
 					"editMode" : "select",
@@ -1293,7 +1301,7 @@ function show_iptables_rules(){
 					"editMode" : "text",
 					"maxlength" : "6",
 					"valueMust" : false,
-					"validator" : "description"
+					"validator" : "qosMark"
 				},
 				{
 					"editMode" : "select",
@@ -1456,15 +1464,17 @@ function set_FreshJR_mod_vars()
 
 		var r=0;
 		iptables_temp_array = iptables_rulelist_array.split("<");
+		iptables_temp_array.shift();
 		// for (r=0;r<iptables_temp_array.length;r++){
 		// 	var iptables_rulelist_row = iptables_temp_array[r].split(">");
 		// 	if (iptables_rulelist_row.length > 1)
 		// 		rules.push(create_rule(iptables_rulelist_row[0], iptables_rulelist_row[1], iptables_rulelist_row[2], iptables_rulelist_row[3], iptables_rulelist_row[4], iptables_rulelist_row[5], iptables_rulelist_row[6]));
 		// }
-		for (r=iptables_temp_array.length-1;r>=0;r--){
-			iptables_temp_array[r]=iptables_temp_array[r].split(">");
-			if (iptables_temp_array[r].length > 1)
+		for (r=0;r<iptables_temp_array.length;r++){
+			if (iptables_temp_array[r] != "") {
+				iptables_temp_array[r]=iptables_temp_array[r].split(">");
 				rules.push(create_rule(iptables_temp_array[r][0], iptables_temp_array[r][1], iptables_temp_array[r][2], iptables_temp_array[r][3], iptables_temp_array[r][4], iptables_temp_array[r][5], iptables_temp_array[r][6]));
+			}
 		}
 
 		var appdb_temp_array = appdb_rulelist_array.split("<");
