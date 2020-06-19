@@ -106,6 +106,9 @@ text-overflow: ellipsis;
 	border-left-width:1px;
 	border-right-width:1px;
 }
+td.appdb_desc{
+	font-family: "Lucida Console";
+}
 </style>
 
 <script>
@@ -116,9 +119,10 @@ var tablesize = 500;						//max size of tracked connections table
 var tabledata;								//tabled of tracked connections after device-filtered
 var sortmode=6;								//current sort mode of tracked connections table (default =6)
 var dhcp_start = "<% nvram_get("dhcp_start"); %>";
-dhcp_start = dhcp_start.substr(0, dhcp_start.lastIndexOf(".")) + ".";
+dhcp_start = dhcp_start.substr(0, dhcp_start.lastIndexOf(".")+1);
 var iptables_rulelist_array="";
-var iptables_temp_array="";
+var iptables_temp_array=[];
+var appdb_temp_array=[];
 var appdb_rulelist_array="";
 var rules = [];	// array for iptables rules
 var gameCIDR;			// CIDR/IP of game devices
@@ -543,21 +547,8 @@ function populate_classmenu(){
 	for (i = 0; i < class_title.length; i++) {
 	  code += '<option value="' + i + '">' + class_title[i] + "</option>\n";
 	}
-	// document.getElementById('ipt_class_x').innerHTML=code;
 	document.getElementById('appdb_class_x').innerHTML=code;
 }
-
-// <select name="ipt_class_x" class="input_option">
-// 	<option value="0">Net Control</option>
-// 	<option value="3">VoIP</option>
-// 	<option value="1">Gaming</option>
-// 	<option value="6">Others</option>
-// 	<option value="4">Web Surfing</option>
-// 	<option value="2">Streaming</option>
-// 	<option value="7">Game Downloads</option>
-// 	<option value="5">File Downloads</option>
-// </select>
-
 
 function populate_devicefilter(){
 	var code = '<option value="*" > </option>';
@@ -592,17 +583,16 @@ function initial() {
 		document.getElementById('tracked_connections').style.display = "none";
 		document.getElementById('refresh_data').style.display = "none";
 	}
-     $.ajax({
-        url: "Main_DHCPStatus_Content.asp",
-        success:   function(result){
-			result = result.match(/leasearray=([\s\S]*?);/);
-			if (result[1]){
-				update_devicenames(eval(result[1])); //regex data string into actual array
-			}
-        }
-      });
+	$.ajax({
+	  url: "Main_DHCPStatus_Content.asp",
+	  success:   function(result){
+	result = result.match(/leasearray=([\s\S]*?);/);
+	if (result[1]){
+		update_devicenames(eval(result[1])); //regex data string into actual array
+	}
+	  }
+	});
 }
-
 
 function get_qos_class(category, appid) {
     var i, j, catlist, rules;
@@ -651,7 +641,7 @@ function create_rule(Lip, Rip, Proto, Lport, Rport, Mark, Dst){
 	//rule[15]=Remote IP end
 	//rule[16]=Mark (General Category Match)
 	//rule[17]=Mark (Specific Traffic Match)
-    //rule[18]=QoS Destination
+	//rule[18]=QoS Destination
 
   rule[0]=0;
   if (Dst)	rule[18]=bwdpi_app_rulelist_row.indexOf(cat_id_array[Dst].toString());
@@ -1023,16 +1013,6 @@ function rate2kbs(rate)
 	return 0
 }
 
-function add_ipt_Row(obj, head){
-	if(head == 1)
-		iptables_rulelist_array += "<"
-	else
-		iptables_rulelist_array += ">"
-
-	iptables_rulelist_array += obj.value;
-	obj.value = "";
-}
-
 function addAppDBRow(obj, head){
 	if(head == 1)
 		appdb_rulelist_array += "<"
@@ -1060,43 +1040,9 @@ function addRow_AppDB_Group(upper){
 		}
 		addAppDBRow(document.form.appdb_mark_x, 1);
 		addAppDBRow(document.form.appdb_class_x, 0);
+		document.getElementById('appdb_desc_x').innerHTML="";
 		document.form.appdb_class_x.value="0";
 		show_appdb_rules();
-	}
-}
-
-function validForm(){
-	if(!Block_chars(document.form.ipt_local_port_x, ["<" ,">"])){
-				return false;
-	}
-
-	if(!Block_chars(document.form.ipt_remote_port_x, ["<" ,">"])){
-				return false;
-	}
-
-	if( document.form.ipt_local_ip_x.value == "" && document.form.ipt_remote_ip_x.value == "" && document.form.ipt_local_port_x.value == "" && document.form.ipt_remote_port_x.value == "" && document.form.ipt_mark_x.value == "" )
-		return false;
-
-	return true;
-}
-
-function addRow_ipt_Group(upper){
-	if(validForm()){
-		var rule_num = document.getElementById('iptables_rulelist_table').rows.length;
-		if(rule_num >= upper){
-			alert("This table only allows " + upper + " items!");
-			return;
-		}
-		add_ipt_Row(document.form.ipt_local_ip_x, 1);
-		add_ipt_Row(document.form.ipt_remote_ip_x, 0);
-		add_ipt_Row(document.form.ipt_proto_x, 0);
-		add_ipt_Row(document.form.ipt_local_port_x, 0);
-		add_ipt_Row(document.form.ipt_remote_port_x, 0);
-		add_ipt_Row(document.form.ipt_mark_x, 0);
-		add_ipt_Row(document.form.ipt_class_x, 0);
-		document.form.ipt_proto_x.value="both";
-		document.form.ipt_class_x.value="0";
-		show_iptables_rules();
 	}
 }
 
@@ -1121,54 +1067,12 @@ function del_appdb_Row(r){
 	show_appdb_rules();
 }
 
-function del_ipt_Row(r){
-	var i=r.parentNode.parentNode.rowIndex;
-	document.getElementById('iptables_rulelist_table').deleteRow(i);
-	var iptables_rulelist_value = "";
-	for(k=0; k<document.getElementById('iptables_rulelist_table').rows.length; k++){
-		for(j=0; j<document.getElementById('iptables_rulelist_table').rows[k].cells.length-1; j++){
-			if(j == 0)
-				iptables_rulelist_value += "<";
-			else
-				iptables_rulelist_value += ">";
-			if(j == 2)
-				iptables_rulelist_value += document.getElementById('iptables_rulelist_table').rows[k].cells[j].innerHTML.toLowerCase();
-			else if(j == 6)
-				iptables_rulelist_value += class_title.indexOf(document.getElementById('iptables_rulelist_table').rows[k].cells[j].innerHTML);
-			else if(document.getElementById('iptables_rulelist_table').rows[k].cells[j].innerHTML.lastIndexOf("…")<0)
-				iptables_rulelist_value += document.getElementById('iptables_rulelist_table').rows[k].cells[j].innerHTML;
-			else
-				iptables_rulelist_value += document.getElementById('iptables_rulelist_table').rows[k].cells[j].title;
-		}
-	}
-	iptables_rulelist_array = iptables_rulelist_value;
-	if(iptables_rulelist_array == "")
-	show_iptables_rules();
-}
-
 function edit_appdb_Row(r){
 	var i=r.parentNode.parentNode.rowIndex;
+	document.getElementById('appdb_desc_x').innerHTML = document.getElementById('appdb_rulelist_table').rows[i].cells[0].innerHTML;
 	document.form.appdb_mark_x.value = document.getElementById('appdb_rulelist_table').rows[i].cells[1].innerHTML;
 	document.form.appdb_class_x.value = class_title.indexOf(document.getElementById('appdb_rulelist_table').rows[i].cells[2].innerHTML);
 	del_appdb_Row(r);
-}
-
-function edit_ipt_Row(r){
-	var i=r.parentNode.parentNode.rowIndex;
-	document.form.ipt_local_ip_x.value = document.getElementById('iptables_rulelist_table').rows[i].cells[0].innerHTML;
-	document.form.ipt_remote_ip_x.value = document.getElementById('iptables_rulelist_table').rows[i].cells[1].innerHTML;
-	document.form.ipt_proto_x.value = document.getElementById('iptables_rulelist_table').rows[i].cells[2].innerHTML.toLowerCase();
-	if (document.getElementById('iptables_rulelist_table').rows[i].cells[3].innerHTML.lastIndexOf("…") < 0)
-		document.form.ipt_local_port_x.value = document.getElementById('iptables_rulelist_table').rows[i].cells[3].innerHTML;
-	else
-		document.form.ipt_local_port_x.value = document.getElementById('iptables_rulelist_table').rows[i].cells[3].title;
-	if (document.getElementById('iptables_rulelist_table').rows[i].cells[4].innerHTML.lastIndexOf("…") < 0)
-		document.form.ipt_remote_port_x.value = document.getElementById('iptables_rulelist_table').rows[i].cells[4].innerHTML;
-	else
-		document.form.ipt_remote_port_x.value = document.getElementById('iptables_rulelist_table').rows[i].cells[4].title;
-	document.form.ipt_mark_x.value = document.getElementById('iptables_rulelist_table').rows[i].cells[5].innerHTML;
-	document.form.ipt_class_x.value = class_title.indexOf(document.getElementById('iptables_rulelist_table').rows[i].cells[6].innerHTML);
-	del_ipt_Row(r);
 }
 
 function show_iptables_rules(){
@@ -1314,46 +1218,56 @@ function show_iptables_rules(){
 	tableApi.genTableAPI(tableStruct);
 }
 
-function show_iptables_rules_old(){
-	show_iptables_rules_table();
-	return;
-	var iptables_rulelist_row = decodeURIComponent(iptables_rulelist_array).split('<');
-	var code = "";
-	var overlib_str = "";
-
-	code +='<table width="100%" border="1" cellspacing="0" cellpadding="4" align="center" class="list_table" id="iptables_rulelist_table">';
-	if(iptables_rulelist_row.length == 1)
-		code +='<tr><td style="color:#FFCC00;" colspan="8">No rules defined</td></tr>';
-	else{
-		for(var i = 1; i < iptables_rulelist_row.length; i++){
-			code +='<tr id="row'+i+'">';
-			var iptables_rulelist_col = iptables_rulelist_row[i].split('>');
-			var wid=[19, 19, 9, 9, 9, 9, 20];
-				for(var j = 0; j < iptables_rulelist_col.length; j++){
-						if(j==2){
-							code +='<td width="'+wid[j]+'%">'+ iptables_rulelist_col[j].toUpperCase(); +'</td>';
-						}else if(j==6){
-							code +='<td width="'+wid[j]+'%">'+ class_title[iptables_rulelist_col[j]] +'</td>';
-						}else if(j==3 || j==4){
-							if(iptables_rulelist_col[j].length > 5) {
-								overlib_str = iptables_rulelist_col[j];
-								iptables_rulelist_col[j] = iptables_rulelist_col[j].substring(0,5)+"&#8230;";
-								code +='<td width="'+wid[j]+'%" title="' + overlib_str + '">'+ iptables_rulelist_col[j] +'</td>';
-							}
-							else {
-						  	code +='<td width="'+wid[j]+'%">'+ iptables_rulelist_col[j] +'</td>';
-							}
-						}
-						else {
-							code +='<td width="'+wid[j]+'%">'+ iptables_rulelist_col[j] +'</td>';
-						}
+function show_appdb_rules_bad(){
+	var tableStruct = {
+		data: appdb_temp_array,
+		container: "appdb_rules_block",
+		title: "AppDB Rules",
+		//titieHint: "Add your custom rules using the button above.",
+		capability: {
+			add: true,
+			del: true
+		},
+		header: [
+			{
+				"title" : "Description"
+			},
+			{
+				"title" : "Mark",
+				"width" : "9%"
+			},
+			{
+				"title" : "Class",
+				"width" : "18%"
+			}
+		],
+		createPanel: {
+			inputs : [
+				{
+					"editMode" : "hidden",
+					"title" : "Description",
+					"value" : "",
+					"valueMust" : false
+				},
+				{
+					"editMode" : "text",
+					"title" : "Mark",
+					"maxlength" : "6",
+					"valueMust" : true,
+					"placeholder": "111111 or 11****",
+					"validator" : "qosMark"
+				},
+				{
+					"editMode" : "select",
+					"title" : "Class",
+					"option" : {"Net Control" : "0", "Gaming" : "1", "Streaming" : "2", "Work-From-Home" : "3", "Web Surfing" : "4", "File Downloads" : "5", "Others" : "6", "Game Downloads" : "7" }
 				}
-				code +='<td width="6%"><input class="edit_btn" onclick="edit_ipt_Row(this);" value=""/>';
-				code +='<input class="remove_btn" onclick="del_ipt_Row(this);" value=""/></td></tr>';
+			],
+			maximum: 32
 		}
+//		ruleDuplicateValidation : "triggerPort"
 	}
-	code +='</table>';
-	document.getElementById("iptables_rules_block").innerHTML = code;
+	tableApi.genTableAPI(tableStruct);
 }
 
 function show_appdb_rules() {
@@ -1477,11 +1391,14 @@ function set_FreshJR_mod_vars()
 			}
 		}
 
-		var appdb_temp_array = appdb_rulelist_array.split("<");
-		for (a=0; a<appdb_temp_array.length;a++) {
-			var appdb_rulelist_row = appdb_temp_array[a].split(">");
-			if (appdb_rulelist_row.length > 1)
-				rules.push(create_rule("", "", "", "", "", appdb_rulelist_row[0], appdb_rulelist_row[1]));
+		appdb_temp_array = appdb_rulelist_array.split("<");
+		appdb_temp_array.shift();
+		for (var a=0; a<appdb_temp_array.length;a++) {
+			if (appdb_temp_array[a] != "") {
+				appdb_temp_array[a]=appdb_temp_array[a].split(">");
+				appdb_temp_array[a].unshift(catdb_label_array[catdb_mark_array.indexOf(appdb_temp_array[a][0])]);
+				rules.push(create_rule("", "", "", "", "", appdb_temp_array[a][1], appdb_temp_array[a][2]));
+			}
 		}
 
 		// get Bandwidth
@@ -1492,7 +1409,7 @@ function set_FreshJR_mod_vars()
 			FreshJR_nvram = "";
 		}
 		else
-			bandwidth = decodeURIComponent(custom_settings.freshjr_bandwidth);
+			bandwidth = custom_settings.freshjr_bandwidth;
 
 			var bandwidth_array = bandwidth.split("<");
 			bandwidth_array.shift();
@@ -1593,11 +1510,20 @@ function FreshJR_mod_apply()
 			}
 		}
 
-	custom_settings.freshjr_defiptables = iptables_defrulelist_array;
+	var iptables_rulelist_array = "";
+	for(var i = 0; i < iptables_temp_array.length; i++) {
+		if(iptables_temp_array[i].length != 0) {
+			iptables_rulelist_array += "<";
+			for(var j = 0; j < iptables_temp_array[i].length; j += 1) {
+				iptables_rulelist_array += iptables_temp_array[i][j];
+				if( (j + 1) != iptables_temp_array[i].length)
+					iptables_rulelist_array += ">";
+			}
+		}
+	}
 	custom_settings.freshjr_iptables = iptables_rulelist_array;
-	custom_settings.freshjr_defappdb = appdb_defrulelist_array;
 	custom_settings.freshjr_appdb = appdb_rulelist_array;
-	custom_settings.freshjr_bandwidth = encodeURIComponent(bandwidth);
+	custom_settings.freshjr_bandwidth = bandwidth;
 
 	/* Store object as a string in the amng_custom hidden input field */
 	document.getElementById('amng_custom').value = JSON.stringify(custom_settings);
@@ -1606,58 +1532,10 @@ function FreshJR_mod_apply()
 	document.form.submit();
 }
 
-function validate_ipv4(input)
-{
-	if (!(input))								 return 1;			//is blank
-
-	input = input.replace(/^\!/,"");
-	input = input.split(".");
-	if (input.length != 4)			 		 			return false; //console.log("fail length");
-	for (var i = 0; i < input.length; i++)
-	{
-		if (i == 3 && /\//.test(input[3]) )
-		{
-			cidr = input[3].split("/")[1];
-			if ( !( cidr >= 1 && cidr <= 32) )			return false; //console.log("fail cidr");
-			input[3] = input[3].split("/")[0];
-		}
-		if(!(input[i] >= 0 && input[i] <= 255))			return false; //console.log("fail range");
-	}
-
-	return 1;
-}
-
-function validate_port(input)
-{
-	if (!(input))								 return 1;			//is blank
-
-	input = input.replace(/^\!/,"");
-	if (/[^0-9\:\,]/.test(input)) 					 	return false; //console.log("fail character");
-
-	if ( input.includes(",") && input.includes(":") )	return false; //console.log("fail combination of delimiters");
-
-	if ( input.includes(":") )
-	{
-		split = input.split(":");
-		if (split.length > 2 )							return false;	//console.log("fail quantity of delimiters");
-		if (!(split[0] > 0 && split[0] <= 65535))		return false;	//console.log("fail port range XXXXX:");
-		if (!(split[1] > 0 && split[1] <= 65535))		return false;	//console.log("fail port range"     :XXXXX);
-		if ( split[0] > split[1] )						return false;	//console.log("fail not in ascending order")
-	}
-	else if ( input.includes(",") )
-	{
-		split = input.split(",");
-		for (var i = 0; i < split.length; i++)
-		{
-			if (!(split[i] > 0 && split[i] <= 65535))	return false;			//console.log("fail port range (,) " + split[i] );
-		}
-	}
-	else if (!(input > 0 && input <= 65535))			return false; //console.log("fail port range");
-	return 1;
-}
-
 function validate_mark(input)
 {
+	document.getElementById('appdb_desc_x').innerHTML="";
+
 	if (!(input)) 								return 1;				//is blank
 
 	if (input.length != 6 )								return false;	//console.log("fail length");
@@ -1669,8 +1547,12 @@ function validate_mark(input)
 	{
 		if ( /[^0-9a-fA-F]/.test(input) ) 				return false;	//console.log("fail character");
 	}
+	var mark_desc=catdb_label_array[catdb_mark_array.indexOf(input.toUpperCase())];
+	if ( mark_desc != undefined)
+		document.getElementById('appdb_desc_x').innerHTML=mark_desc;
+	else
+		document.getElementById('appdb_desc_x').innerHTML="Unknown Mark";
 	return 1;
-
 }
 
 function validate_percent(input)
@@ -1726,56 +1608,6 @@ function SetCurrentPage() {
 <div id="FreshJR_mod" style="display:none;">
 <div style="display:inline-block; margin:0px 0px 10px 5px; font-size:14px; text-shadow: 1px 1px 0px black;"><b>QoS Modification</b></div>
 <div style="display:inline-block; margin:-2px 5px 0px 0px; height:22px; width:136px; float:right; font-weight:bold;" class="titlebtn" onclick="FreshJR_mod_apply();"><span style="margin-left:10px; padding:0 0 0" align="center">Apply</span></div>
-<!-- <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" class="FormTable_table">
-	<thead>
-		<tr>
-			<td colspan="8">iptables Rules&nbsp;(Max Limit : 99)</td>
-		</tr>
-	</thead>
-	<tbody>
-	<tr>
-		<th width="19%"><a href="javascript:void(0);" onClick="overlib(ipsyntaxL, 500, 500);" onmouseout="nd();"><div class="table_text">Local IP/CIDR</div></a></th>
-		<th width="19%"><a href="javascript:void(0);" onClick="overlib(ipsyntaxR, 500, 500);" onmouseout="nd();"><div class="table_text">Remote IP/CIDR</div></a></th>
-		<th width="9%"><a href="javascript:void(0);" onClick="overlib(protosyntax, 300, 500);" onmouseout="nd();"><div class="table_text">Protocol</div></a></th>
-		<th width="9%"><a href="javascript:void(0);" onClick="overlib(portsyntax, 300, 500);" onmouseout="nd();"><div class="table_text">Local Port</div></a></th>
-		<th width="9%"><a href="javascript:void(0);" onClick="overlib(portsyntax, 300, 500);" onmouseout="nd();"><div class="table_text">Remote Port</div></a></th>
-		<th width="9%"><a href="javascript:void(0);" onClick="overlib(marksyntax, 500, 500);" onmouseout="nd();"><div class="table_text">Mark</div></a></th>
-		<th width="20%"><a href="javascript:void(0);" onClick="overlib(classsyntax, 300, 500);" onmouseout="nd();"><div class="table_text">Class</div></a></th>
-		<th width="6%">Add / Del</th>
-	</tr>
-	<tr>
-		<td width="19%">
-			<input type="text" maxlength="18" class="input_15_table" name="ipt_local_ip_x" onfocusout='validate_ipv4(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' autocorrect="off" autocapitalize="off"/>
-		</td>
-		<td width="19%">
-			<input type="text" maxlength="18" class="input_15_table" name="ipt_remote_ip_x" onfocusout='validate_ipv4(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' autocorrect="off" autocapitalize="off"/>
-		</td>
-		<td width="9%">
-			<select name="ipt_proto_x" class="input_option">
-				<option value="both">BOTH</option>
-				<option value="tcp">TCP</option>
-				<option value="udp">UDP</option>
-			</select>
-		</td>
-		<td width="9%">
-			<input type="text" maxlength="36" class="input_6_table" name="ipt_local_port_x" onfocusout='validate_port(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' autocomplete="off" autocorrect="off" autocapitalize="off">
-		</td>
-		<td width="9%">
-			<input type="text" maxlength="36" class="input_6_table" name="ipt_remote_port_x" onfocusout='validate_port(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' autocomplete="off" autocorrect="off" autocapitalize="off">
-		</td>
-		<td width="9%">
-			<input type="text" maxlength="6" class="input_6_table" name="ipt_mark_x" onfocusout='validate_mark(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' autocomplete="off" autocorrect="off" autocapitalize="off">
-		</td>
-		<td width="20%">
-			<select name="ipt_class_x" id="ipt_class_x" class="input_option">
-			</select>
-		</td>
-		<td width="6%">
-			<div><input type="button" class="add_btn" onClick="addRow_ipt_Group(99);" value=""></div>
-		</td>
-	</tr>
-</tbody>
-</table> -->
 <div id="iptables_rules_block" style=""></div>
 
 <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" class="FormTable_table">
@@ -1792,7 +1624,8 @@ function SetCurrentPage() {
 		<th width="12%">Add / Del</th>
 	</tr>
 	<tr>
-		<td width="auto"></td>
+		<td width="auto" class="appdb_desc"><div id="appdb_desc_x"></div>
+		</td>
 		<td width="9%">
 			<input type="text" maxlength="6" class="input_6_table" name="appdb_mark_x" onfocusout='validate_mark(this.value)?this.style.removeProperty("background-color"):this.style.backgroundColor="#A86262"' autocomplete="off" autocorrect="off" autocapitalize="off">
 		</td>

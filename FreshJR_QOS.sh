@@ -32,110 +32,47 @@ release=12/31/2020
 ##  FlexQoS is free to use under the GNU General Public License, version 3 (GPL-3.0).
 ##  https://opensource.org/licenses/GPL-3.0
 
+# Global variables
+FQ_ADDON_DIR="/jffs/addons/flexqos"
+SCRIPTPATH="$FQ_ADDON_DIR/flexqos.sh"
+WEBPATH="$FQ_ADDON_DIR/flexqos.asp"
 
-iptable_down_rules() {
-		echo "Applying - Iptable Down Rules"
-		##DOWNLOAD (INCOMMING TRAFFIC) CUSTOM RULES START HERE  -- legacy method
+iptables_static_rules() {
+	echo "Applying - Iptable Down Rules"
+	##DOWNLOAD (INCOMING TRAFFIC) CUSTOM RULES START HERE  -- legacy method
+	iptables -D POSTROUTING -t mangle -o br0 -m mark --mark 0x40000000/0xc0000000 -j MARK --set-xmark 0x80000000/0xC0000000 > /dev/null 2>&1			#VPN Fix -		(Fixes download traffic showing up in upload section when router is acting as a VPN Client)
+	iptables -A POSTROUTING -t mangle -o br0 -m mark --mark 0x40000000/0xc0000000 -j MARK --set-xmark 0x80000000/0xC0000000
+	if [ "$ipv6_enabled" != "disabled" ] ; then
+		ip6tables -D POSTROUTING -t mangle -o br0 -m mark --mark 0x40000000/0xc0000000 -j MARK --set-xmark 0x80000000/0xC0000000 > /dev/null 2>&1			#VPN Fix -		(Fixes download traffic showing up in upload section when router is acting as a VPN Client)
+		ip6tables -A POSTROUTING -t mangle -o br0 -m mark --mark 0x40000000/0xc0000000 -j MARK --set-xmark 0x80000000/0xC0000000
+	fi
+	##DOWNLOAD (INCOMING TRAFFIC) CUSTOM RULES END HERE  -- legacy method
+	echo "Applying - Iptable Up   Rules ($wan)"
+	iptables -D OUTPUT -t mangle -o $wan -p udp -m multiport ! --dports 53,123 -j MARK --set-mark ${Downloads_mark_up} > /dev/null 2>&1					#VPN Fix -		(Fixes upload traffic not detected when the router is acting as a VPN Client)
+	iptables -A OUTPUT -t mangle -o $wan -p udp -m multiport ! --dports 53,123 -j MARK --set-mark ${Downloads_mark_up}
 
-			iptables -D POSTROUTING -t mangle -o br0 -m mark --mark 0x40000000/0xc0000000 -j MARK --set-xmark 0x80000000/0xC0000000 > /dev/null 2>&1			#VPN Fix -		(Fixes download traffic showing up in upload section when router is acting as a VPN Client)
-			iptables -A POSTROUTING -t mangle -o br0 -m mark --mark 0x40000000/0xc0000000 -j MARK --set-xmark 0x80000000/0xC0000000
+	iptables -D OUTPUT -t mangle -o $wan -p tcp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up} > /dev/null 2>&1					#VPN Fix -		(Fixes upload traffic not detected when the router is acting as a VPN Client)
+	iptables -A OUTPUT -t mangle -o $wan -p tcp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up}
 
-			if [ "$(nvram get ipv6_service)" != "disabled" ] ; then
-				ip6tables -D POSTROUTING -t mangle -o br0 -m mark --mark 0x40000000/0xc0000000 -j MARK --set-xmark 0x80000000/0xC0000000 > /dev/null 2>&1			#VPN Fix -		(Fixes download traffic showing up in upload section when router is acting as a VPN Client)
-				ip6tables -A POSTROUTING -t mangle -o br0 -m mark --mark 0x40000000/0xc0000000 -j MARK --set-xmark 0x80000000/0xC0000000
-			fi
+	if [ "$ipv6_enabled" != "disabled" ]; then
+		ip6tables -D OUTPUT -t mangle -o $wan -p udp -m multiport ! --dports 53,123 -j MARK --set-mark ${Downloads_mark_up} > /dev/null 2>&1					#VPN Fix -		(Fixes upload traffic not detected when the router is acting as a VPN Client)
+		ip6tables -A OUTPUT -t mangle -o $wan -p udp -m multiport ! --dports 53,123 -j MARK --set-mark ${Downloads_mark_up}
 
-		##DOWNLOAD (INCOMMING TRAFFIC) CUSTOM RULES END HERE  -- legacy method
+		ip6tables -D OUTPUT -t mangle -o $wan -p tcp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up} > /dev/null 2>&1					#VPN Fix -		(Fixes upload traffic not detected when the router is acting as a VPN Client)
+		ip6tables -A OUTPUT -t mangle -o $wan -p tcp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up}
+	fi
+}
 
-		if [ "$( echo "$gameCIDR" | tr -cd '.' | wc -c )" -eq "3" ] ; then
-			iptables -D POSTROUTING -t mangle -o br0 -d "$gameCIDR" -m mark --mark 0x80000000/0x8000ffff -p tcp -m multiport ! --sports 80,443  -j MARK --set-mark ${Gaming_mark_down} > /dev/null 2>&1    	#Gaming - (Incoming "Unidentified" TCP traffic, for devices specified, not from WAN source ports 80 & 443 -->  Gaming)
-			iptables -A POSTROUTING -t mangle -o br0 -d "$gameCIDR" -m mark --mark 0x80000000/0x8000ffff -p tcp -m multiport ! --sports 80,443  -j MARK --set-mark ${Gaming_mark_down}
-
-			iptables -D POSTROUTING -t mangle -o br0 -d "$gameCIDR" -m mark --mark 0x80000000/0x8000ffff -p udp -m multiport ! --sports 80,443  -j MARK --set-mark ${Gaming_mark_down} > /dev/null 2>&1    	#Gaming - (Incoming "Unidentified" UDP traffic, for devices specified, not from WAN source ports 80 & 443 -->  Gaming)
-			iptables -A POSTROUTING -t mangle -o br0 -d "$gameCIDR" -m mark --mark 0x80000000/0x8000ffff -p udp -m multiport ! --sports 80,443  -j MARK --set-mark ${Gaming_mark_down}
-		fi
-	}
-
-iptable_up_rules(){
-
-		#wan="ppp0"				## WAN interface over-ride for upload traffic if automatic detection is not working properly
-
-		echo "Applying - Iptable Up   Rules ($wan)"
-
-		##UPLOAD (OUTGOING TRAFFIC) CUSTOM RULES START HERE  -- legacy method
-
-			iptables -D OUTPUT -t mangle -o $wan -p udp -m multiport ! --dports 53,123 -j MARK --set-mark ${Downloads_mark_up} > /dev/null 2>&1					#VPN Fix -		(Fixes upload traffic not detected when the router is acting as a VPN Client)
-			iptables -A OUTPUT -t mangle -o $wan -p udp -m multiport ! --dports 53,123 -j MARK --set-mark ${Downloads_mark_up}
-
-			iptables -D OUTPUT -t mangle -o $wan -p tcp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up} > /dev/null 2>&1					#VPN Fix -		(Fixes upload traffic not detected when the router is acting as a VPN Client)
-			iptables -A OUTPUT -t mangle -o $wan -p tcp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up}
-
-			if [ "$(nvram get ipv6_service)" != "disabled" ]; then
-				ip6tables -D OUTPUT -t mangle -o $wan -p udp -m multiport ! --dports 53,123 -j MARK --set-mark ${Downloads_mark_up} > /dev/null 2>&1					#VPN Fix -		(Fixes upload traffic not detected when the router is acting as a VPN Client)
-				ip6tables -A OUTPUT -t mangle -o $wan -p udp -m multiport ! --dports 53,123 -j MARK --set-mark ${Downloads_mark_up}
-
-				ip6tables -D OUTPUT -t mangle -o $wan -p tcp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up} > /dev/null 2>&1					#VPN Fix -		(Fixes upload traffic not detected when the router is acting as a VPN Client)
-				ip6tables -A OUTPUT -t mangle -o $wan -p tcp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up}
-			fi
-		##UPLOAD (OUTGOING TRAFFIC) CUSTOM RULES END HERE  -- legacy method
-
-		if [ "$( echo "$gameCIDR" | tr -cd '.' | wc -c )" -eq "3" ] ; then
-			iptables -D POSTROUTING -t mangle -o $wan -s "$gameCIDR" -m mark --mark 0x40000000/0x4000ffff -p tcp -m multiport ! --dports 80,443 -j MARK --set-mark ${Gaming_mark_up} > /dev/null 2>&1 	#Gaming - (Outgoing "Unidentified" TCP traffic, for devices specified, not to WAN destination ports 80 & 443 -->  Gaming)
-			iptables -A POSTROUTING -t mangle -o $wan -s "$gameCIDR" -m mark --mark 0x40000000/0x4000ffff -p tcp -m multiport ! --dports 80,443 -j MARK --set-mark ${Gaming_mark_up}
-
-			iptables -D POSTROUTING -t mangle -o $wan -s "$gameCIDR" -m mark --mark 0x40000000/0x4000ffff -p udp -m multiport ! --dports 80,443 -j MARK --set-mark ${Gaming_mark_up} > /dev/null 2>&1 	#Gaming - (Outgoing "Unidentified" UDP traffic, for devices specified, not to WAN destination ports 80 & 443 -->  Gaming)
-			iptables -A POSTROUTING -t mangle -o $wan -s "$gameCIDR" -m mark --mark 0x40000000/0x4000ffff -p udp -m multiport ! --dports 80,443 -j MARK --set-mark ${Gaming_mark_up}
-		fi
-	}
-
-tc_redirection_down_rules() {
+tc_redirection_static_rules() {
 		echo "Applying  TC Down Rules"
-		${tc} filter del dev br0 parent 1: prio $1 > /dev/null 2>&1																		#remove original unidentified traffic rule
-		${tc} filter del dev br0 parent 1: prio 22 > /dev/null 2>&1																		#remove original HTTPS rule
-		${tc} filter del dev br0 parent 1: prio 23 > /dev/null 2>&1																		#remove original HTTPS rule
-		[ -n "$tc4_down" ] && ${tc} filter add dev br0 protocol all ${tc4_down}													#Script Interactively Defined Rule 4
-		[ -n "$tc3_down" ] && ${tc} filter add dev br0 protocol all ${tc3_down}													#Script Interactively Defined Rule 3
-		[ -n "$tc2_down" ] && ${tc} filter add dev br0 protocol all ${tc2_down}													#Script Interactively Defined Rule 2
-		[ -n "$tc1_down" ] && ${tc} filter add dev br0 protocol all ${tc1_down}													#Script Interactively Defined Rule 1
-		${tc} filter add dev br0 protocol all prio 20 u32 match mark 0x8012003F 0xc03fffff flowid ${Web}							#         HTTP  rule with different destination
-		${tc} filter add dev br0 protocol all prio 22 u32 match mark 0x80130000 0xc03f0000 flowid ${Web}							#recreate HTTPS rule with different destination
-		${tc} filter add dev br0 protocol all prio 23 u32 match mark 0x80140000 0xc03f0000 flowid ${Web}							#recreate HTTPS rule with different destination
 		##DOWNLOAD APP_DB TRAFFIC REDIRECTION RULES START HERE  -- legacy method
 
-			${tc} filter add dev br0 protocol all prio 2 u32 match mark 0x8000006B 0xc03fffff flowid ${Others}							#Snapchat
-			${tc} filter add dev br0 protocol all prio 15 u32 match mark 0x800D0007 0xc03fffff flowid ${Downloads}						#Speedtest.net
-			${tc} filter add dev br0 protocol all prio 15 u32 match mark 0x800D0086 0xc03fffff flowid ${Downloads}						#Google Play
-			${tc} filter add dev br0 protocol all prio 15 u32 match mark 0x800D00A0 0xc03fffff flowid ${Downloads}						#Apple AppStore
-			${tc} filter add dev br0 protocol all prio 50 u32 match mark 0x801A0000 0xc03f0000 flowid ${Downloads}						#Advertisement
-
 		##DOWNLOAD APP_DB TRAFFIC REDIRECTION RULES END HERE  -- legacy method
-
-		${tc} filter add dev br0 protocol all prio $1 u32 match mark 0x80000000 0x8000ffff flowid ${Others}							#recreate unidentified traffic rule with different destination - Routes Unidentified Traffic into webUI adjustable "Others" traffic container instead of "Defaults"
 		${tc} filter add dev br0 protocol all prio 10 u32 match mark 0x803f0001 0xc03fffff flowid ${Defaults}						#Used for iptables Default_mark_down functionality
-	}
-
-tc_redirection_up_rules() {
 		echo "Applying  TC Up   Rules"
-		${tc} filter del dev eth0 parent 1: prio $1 > /dev/null 2>&1																	#remove original unidentified traffic rule
-		${tc} filter del dev eth0 parent 1: prio 22 > /dev/null 2>&1																	#remove original HTTPS rule
-		${tc} filter del dev eth0 parent 1: prio 23 > /dev/null 2>&1																	#remove original HTTPS rule
-		[ -n "$tc4_up" ] && ${tc} filter add dev eth0 protocol all ${tc4_up}														#Script Interactively Defined Rule 4
-		[ -n "$tc3_up" ] && ${tc} filter add dev eth0 protocol all ${tc3_up}														#Script Interactively Defined Rule 3
-		[ -n "$tc2_up" ] && ${tc} filter add dev eth0 protocol all ${tc2_up}														#Script Interactively Defined Rule 2
-		[ -n "$tc1_up" ] && ${tc} filter add dev eth0 protocol all ${tc1_up}														#Script Interactively Defined Rule 1
-		${tc} filter add dev eth0 protocol all prio 20 u32 match mark 0x4012003F 0xc03fffff flowid ${Web}							#         HTTP  rule with different destination
-		${tc} filter add dev eth0 protocol all prio 22 u32 match mark 0x40130000 0xc03f0000 flowid ${Web}							#recreate HTTPS rule with different destination
-		${tc} filter add dev eth0 protocol all prio 23 u32 match mark 0x40140000 0xc03f0000 flowid ${Web}							#recreate HTTPS rule with different destination
 		##UPLOAD APP_DB TRAFFIC REDIRECTION RULES START HERE  -- legacy method
 
-			${tc} filter add dev eth0 protocol all prio 2 u32 match mark 0x4000006B 0xc03fffff flowid ${Others}							#Snapchat
-			${tc} filter add dev eth0 protocol all prio 15 u32 match mark 0x400D0007 0xc03fffff flowid ${Downloads}						#Speedtest.net
-			${tc} filter add dev eth0 protocol all prio 15 u32 match mark 0x400D0086 0xc03fffff flowid ${Downloads}						#Google Play
-			${tc} filter add dev eth0 protocol all prio 15 u32 match mark 0x400D00A0 0xc03fffff flowid ${Downloads}						#Apple AppStore
-			${tc} filter add dev eth0 protocol all prio 50 u32 match mark 0x401A0000 0xc03f0000 flowid ${Downloads}						#Advertisement
-
 		##UPLOAD APP_DB TRAFFIC REDIRECTION RULES END HERE  -- legacy method
-		${tc} filter add dev eth0 protocol all prio $1 u32 match mark 0x40000000 0x4000ffff flowid ${Others}						#recreate unidentified traffic rule with different destination - Routes Unidentified Traffic into webUI adjustable "Others" traffic container, instead of "Default" traffic container
 		${tc} filter add dev eth0 protocol all prio 10 u32 match mark 0x403f0001 0xc03fffff flowid ${Defaults}						#Used for iptables Default_mark_up functionality
 	}
 
@@ -413,7 +350,7 @@ EOF
 	#read parameters for fakeTC
 	PARMS=""
 	OVERHEAD=$(nvram get qos_overhead)
-	if [ ! -z "$OVERHEAD" ] && [ "$OVERHEAD" -gt "0" ] ; then
+	if [ -n "$OVERHEAD" ] && [ "$OVERHEAD" -gt "0" ] ; then
 		ATM=$(nvram get qos_atm)
 		if [ "$ATM" = "1" ] ; then
 			PARMS="overhead $OVERHEAD linklayer atm "
@@ -421,8 +358,6 @@ EOF
 			PARMS="overhead $OVERHEAD linklayer ethernet "
 		fi
 	fi
-
-
 }
 
 ## Main Menu -appdb function
@@ -472,8 +407,6 @@ appdb(){
 
 ## Main Menu -debug function
 debug(){
-	echo -en "\033c\e[3J"		#clear screen
-	echo -en '\033[?7l'			#disable line wrap
 	echo -e  "\033[1;32mFreshJR QOS v${version}\033[0m"
 	echo "Debug:"
 	echo ""
@@ -512,82 +445,12 @@ debug(){
 	logger -t "adaptive QOS" -s "Upceils -- $UpCeil0, $UpCeil1, $UpCeil2, $UpCeil3, $UpCeil4, $UpCeil5, $UpCeil6, $UpCeil7"
 	logger -t "adaptive QOS" -s "Upbursts -- $UpBurst0, $UpBurst1, $UpBurst2, $UpBurst3, $UpBurst4, $UpBurst5, $UpBurst6, $UpBurst7"
 	logger -t "adaptive QOS" -s "UpCbursts -- $UpCburst0, $UpCburst1, $UpCburst2, $UpCburst3, $UpCburst4, $UpCburst5, $UpCburst6, $UpCburst7"
-	echo -en '\033[?7h'			#enable line wrap
-}
-
-debug2(){
-	echo -en "\033c\e[3J"		#clear screen
-	echo -en '\033[?7l'			#disable line wrap
-	echo -e  "\033[1;32mFreshJR QOS v${version}\033[0m"
-	echo "Debug2:"
-	echo ""
-	read_nvram
-	set_tc_variables
-	parse_iptablerule "${e1}" "${e2}" "${e3}" "${e4}" "${e5}" "${e6}" "${e7}" ip1_down ip1_up
-	parse_iptablerule "${f1}" "${f2}" "${f3}" "${f4}" "${f5}" "${f6}" "${f7}" ip2_down ip2_up
-	parse_iptablerule "${g1}" "${g2}" "${g3}" "${g4}" "${g5}" "${g6}" "${g7}" ip3_down ip3_up
-	parse_iptablerule "${h1}" "${h2}" "${h3}" "${h4}" "${h5}" "${h6}" "${h7}" ip4_down ip4_up
+	write_iptables_rules
+	cat /tmp/flexqos_iprules | logger -t "adaptive QOS"
 	parse_tcrule "${r1}" "${d1}" tc1_down tc1_up
 	parse_tcrule "${r2}" "${d2}" tc2_down tc2_up
 	parse_tcrule "${r3}" "${d3}" tc3_down tc3_up
 	parse_tcrule "${r4}" "${d4}" tc4_down tc4_up
-	echo -en '\033[?7l'			#disable line wrap
-
-	echo "Game CIDR: ${gameCIDR}"
-	echo ""
-	if [ "$(echo ${ip1_down} | grep -c "both")" -ge "1" ] ; then
-		echo "Rule1 Down: ${ip1_down//both/tcp}"
-		echo "          : ${ip1_down//both/udp}"
-		echo "Rule1 Up  : ${ip1_up//both/tcp}"
-		echo "          : ${ip1_up//both/udp}"
-	else
-		echo "Rule1 Down: ${ip1_down}"
-		echo "Rule1 Up  : ${ip1_up}"
-	fi
-	echo ""
-	if [ "$(echo ${ip2_down} | grep -c "both")" -ge "1" ] ; then
-		echo "Rule2 Down: ${ip2_down//both/tcp}"
-		echo "            ${ip2_down//both/udp}"
-		echo "Rule2 Up  : ${ip2_up//both/tcp}"
-		echo "            ${ip2_up//both/udp}"
-	else
-		echo "Rule2 Down: ${ip2_down}"
-		echo "Rule2 Up  : ${ip2_up}"
-	fi
-	echo ""
-	if [ "$(echo ${ip3_down} | grep -c "both")" -ge "1" ] ; then
-		echo "Rule3 Down: ${ip3_down//both/tcp}"
-		echo "          : ${ip3_down//both/udp}"
-		echo "Rule3 Up  : ${ip3_up//both/tcp}"
-		echo "          : ${ip3_up//both/udp}"
-	else
-		echo "Rule3 Down: ${ip3_down}"
-		echo "Rule3 Up  : ${ip3_up}"
-	fi
-	echo ""
-	if [ "$(echo ${ip4_down} | grep -c "both")" -ge "1" ] ; then
-		echo "Rule4 Down: ${ip4_down//both/tcp}"
-		echo "            ${ip4_down//both/udp}"
-		echo "Rule4 Up  : ${ip4_up//both/tcp}"
-		echo "            ${ip4_up//both/udp}"
-	else
-		echo "Rule4 Down: ${ip4_down}"
-		echo "Rule4 Up  : ${ip4_up}"
-	fi
-	echo ""
-	echo "AppDB1 Down:  ${tc1_down}"
-	echo "AppDB1 Up  :  ${tc1_up}"
-	echo ""
-	echo "AppDB2 Down:  ${tc2_down}"
-	echo "AppDB2 Up  :  ${tc2_up}"
-	echo ""
-	echo "AppDB3 Down:  ${tc3_down}"
-	echo "AppDB3 Up  :  ${tc3_up}"
-	echo ""
-	echo "AppDB4 Down:  ${tc4_down}"
-	echo "AppDB4 Up  :  ${tc4_up}"
-
-	echo -en '\033[?7h'			#enable line wrap
 }
 
 ## helper function to parse csv nvram variables
@@ -625,13 +488,18 @@ EOF
 	IFS=$OLDIFS
 
 	if [ -z "$(am_settings_get freshjr_iptables)" ]; then
-		tmp_iptables_rules="<${e1}>${e2}>${e3}>${e4}>${e5}>${e6}>${e7}<${f1}>${f2}>${f3}>${f4}>${f5}>${f6}>${f7}<${g1}>${g2}>${g3}>${g4}>${g5}>${g6}>${g7}<${h1}>${h2}>${h3}>${h4}>${h5}>${h6}>${h7}"
+		if [ "$gameCIDR" ]; then
+			tmp_iptables_rules="<${gameCIDR}>>both>>!80,443>000000>1"
+		fi
+		tmp_iptables_rules="${tmp_iptables_rules}<>>udp>>500,4500>>3<>>udp>16384:16415>>>3<>>tcp>>119,563>>5<>>tcp>>80,443>08****>7"
+		tmp_iptables_rules="${tmp_iptables_rules}<${e1}>${e2}>${e3}>${e4}>${e5}>${e6}>${e7}<${f1}>${f2}>${f3}>${f4}>${f5}>${f6}>${f7}<${g1}>${g2}>${g3}>${g4}>${g5}>${g6}>${g7}<${h1}>${h2}>${h3}>${h4}>${h5}>${h6}>${h7}"
 		tmp_iptables_rules=$(echo "$tmp_iptables_rules" | sed 's/<>>>>>>//g')
 		am_settings_set freshjr_iptables "$tmp_iptables_rules"
 	fi
 
 	if [ -z "$(am_settings_get freshjr_appdb)" ]; then
-		tmp_appdb_rules="<${r1}>${d1}<${r2}>${d2}<${r3}>${d3}<${r4}>${d4}"
+		tmp_appdb_rules="<000000>6<00006B>6<0D0007>5<0D0086>5<0D00A0>5<12003F>4<13****>4<14****>4<1A****>5"
+		tmp_appdb_rules="${tmp_appdb_rules}<${r1}>${d1}<${r2}>${d2}<${r3}>${d3}<${r4}>${d4}"
 		tmp_appdb_rules=$(echo "$tmp_appdb_rules" | sed 's/<>//g')
 		am_settings_set freshjr_appdb "$tmp_appdb_rules"
 	fi
@@ -676,21 +544,22 @@ parse_tcrule() {
 	##----------input-----------
 	##$1 = mark
 	##$2 = dst
-	##----------output-----------
-	##byref sets $3
-	##byref sets $4
 
-	cat="$( echo ${1} | head -c2 )"
-	id="$( echo ${1} | tail -c -5 )"
+	cat="${1:0:2}"
+	id="${1:2:4}"
 
 	#filter field
-	if [ "$( echo ${1} | wc -c )" -eq "7" ] ; then
+	if [ "${#1}" -eq "6" ] ; then
 		if [ "${id}" = "****" ] ; then
 			DOWN_mark="0x80${1//\*/0} 0xc03f0000"
 			UP_mark="0x40${1//\*/0} 0xc03f0000"
+		elif [ "$1" = "000000" ] ; then
+			# unidentified traffic has special mask
+			DOWN_mark="0x80${1} 0xc000ffff"
+			UP_mark="0x40${1} 0xc000ffff"
 		else
-			DOWN_mark="0x80${1//!/} 0xc03fffff"
-			UP_mark="0x40${1//!/} 0xc03fffff"
+			DOWN_mark="0x80${1} 0xc03fffff"
+			UP_mark="0x40${1} 0xc03fffff"
 		fi
 	else
 		##return early if mark is less than 6 digits
@@ -712,19 +581,35 @@ parse_tcrule() {
 	esac
 
 	#prio field
-	prio="$(tc filter show dev br0 | grep ${cat}0000 -B1 | tail -2 | cut -d " " -f7 | head -1)"
+	if [ "$1" = "000000" ]; then
+		# special unidentified traffic rule
+		prio="$undf_prio"
+	else
+		# normal traffic redirection rule
+		prio="$(tc filter show dev br0 | grep -i ${cat}0000 -B1 | grep 3f0000 -B1 | head -1 | cut -d " " -f7)"
+	fi
+	currprio=$prio
 	if [ -z "${prio}" ] ; then
 		prio="${undf_prio}"
 	else
 		prio="$(expr ${prio} - 1)"
 	fi
 
-	down_rule="prio $prio u32 match mark $DOWN_mark flowid $flowid"
-	up_rule="prio $prio u32 match mark $UP_mark flowid $flowid"
-	eval "$3=\$down_rule"
-	eval "$4=\$up_rule"
+	{
+		if [ "${id}" = "****" ] || [ "$1" = "000000" ]; then
+			# delete existing rule
+			echo "${tc} filter del dev br0 parent 1: prio $currprio > /dev/null 2>&1"
+			echo "${tc} filter del dev eth0 parent 1: prio $currprio > /dev/null 2>&1"
+			# add new rule at same priority
+			echo "${tc} filter add dev br0 protocol all prio $currprio u32 match mark $DOWN_mark flowid $flowid"
+			echo "${tc} filter add dev eth0 protocol all prio $currprio u32 match mark $UP_mark flowid $flowid"
+		else
+			# add new rule for individual app one priority level higher (-1)
+			echo "${tc} filter add dev br0 protocol all prio $prio u32 match mark $DOWN_mark flowid $flowid"
+			echo "${tc} filter add dev eth0 protocol all prio $prio u32 match mark $UP_mark flowid $flowid"
+		fi
+	} >> /tmp/flexqos_tcrules
 }
-
 
 ## helper function - parse parameters into iptable syntax
 parse_iptablerule() {
@@ -738,7 +623,7 @@ parse_iptablerule() {
 	#$7=qos destination		accepted 0-7
 
 	#local IP
-	if [ "$( echo ${1} | wc -c )" -gt "1" ] ; then
+	if [ "${#1}" -ge "7" ] ; then
 		DOWN_Lip="${1//[^!]*/} -d ${1//!/}"
 		UP_Lip="${1//[^!]*/} -s ${1//!/}"
 	else
@@ -747,7 +632,7 @@ parse_iptablerule() {
 	fi
 
 	#remote IP
-	if [ "$( echo ${2} | wc -c )" -gt "1" ] ; then
+	if [ "${#2}" -ge "7" ] ; then
 		DOWN_Rip="${2//[^!]*/} -s ${2//!/}"
 		UP_Rip="${2//[^!]*/} -d ${2//!/}"
 	else
@@ -759,7 +644,7 @@ parse_iptablerule() {
 	if [ "${3}" = 'tcp' ] || [ "${3}" = 'udp' ] ; then													#if tcp/udp
 		PROTO="-p ${3}"
 	else
-		if [ "$( echo ${4} | wc -c )" -gt "1" ] || [ "$( echo ${5} | wc -c )" -gt "1" ] ; then			#if both & port rules defined
+		if [ "${#4}" -gt "1" ] || [ "${#5}" -gt "1" ] ; then			#if both & port rules defined
 			PROTO="-p both"			#"BOTH" gets replaced with tcp & udp during later prior to rule execution
 		else																							#if both & port rules not defined
 			PROTO=""
@@ -767,7 +652,7 @@ parse_iptablerule() {
 	fi
 
 	#local port
-	if [ "$( echo ${4} | wc -c )" -gt "1" ] ; then
+	if [ "${#4}" -gt "1" ] ; then
 		if [ "$( echo ${4} | tr -cd ',' | wc -c )" -ge "1" ] ; then
 			#multiport XXX,YYY,ZZZ
 			DOWN_Lport="-m multiport ${4//[^!]*/} --dports ${4//!/}"
@@ -783,7 +668,7 @@ parse_iptablerule() {
 	fi
 
 	#remote port
-	if [ "$( echo ${5} | wc -c )" -gt "1" ] ; then
+	if [ "${#5}" -gt "1" ] ; then
 		if [ "$( echo ${5} | tr -cd ',' | wc -c )" -ge "1" ] ; then
 			#multiport XXX,YYY,ZZZ
 			DOWN_Rport="-m multiport ${5//[^!]*/} --sports ${5//!/}"
@@ -799,13 +684,13 @@ parse_iptablerule() {
 	fi
 
 	#match mark
-	if [ "$( echo ${6} | wc -c )" -eq "7" ] ; then
-		if [ "$( echo ${6} | tail -c -5 )" = "****" ] ; then
+	if [ "${#6}" -eq "6" ] ; then
+		if [ "${6:2:4}" = "****" ] ; then
 			DOWN_mark="-m mark --mark 0x80${6//\*/0}/0xc03f0000"
 			UP_mark="-m mark --mark 0x40${6//\*/0}/0xc03f0000"
 		else
-			DOWN_mark="-m mark --mark 0x80${6//!/}/0xc03fffff"
-			UP_mark="-m mark --mark 0x40${6//!/}/0xc03fffff"
+			DOWN_mark="-m mark --mark 0x80${6}/0xc03fffff"
+			UP_mark="-m mark --mark 0x40${6}/0xc03fffff"
 		fi
 	else
 		DOWN_mark=""
@@ -860,44 +745,44 @@ parse_iptablerule() {
 	{
 		if [ "$PROTO" = "both" ]; then
 			# download ipv4
-			echo "iptables -D POSTROUTING -t mangle -o br0 ${DOWN_Lip} ${DOWN_Rip} ${PROTO//both/tcp} ${DOWN_Lport} ${DOWN_Rport} ${DOWN_mark} ${DOWN_dst}" | sed 's/  */ /g'
+			echo "iptables -D POSTROUTING -t mangle -o br0 ${DOWN_Lip} ${DOWN_Rip} ${PROTO//both/tcp} ${DOWN_Lport} ${DOWN_Rport} ${DOWN_mark} ${DOWN_dst} >/dev/null 2>&1" | sed 's/  */ /g'
 			echo "iptables -A POSTROUTING -t mangle -o br0 ${DOWN_Lip} ${DOWN_Rip} ${PROTO//both/tcp} ${DOWN_Lport} ${DOWN_Rport} ${DOWN_mark} ${DOWN_dst}" | sed 's/  */ /g'
-			echo "iptables -D POSTROUTING -t mangle -o br0 ${DOWN_Lip} ${DOWN_Rip} ${PROTO//both/udp} ${DOWN_Lport} ${DOWN_Rport} ${DOWN_mark} ${DOWN_dst}" | sed 's/  */ /g'
+			echo "iptables -D POSTROUTING -t mangle -o br0 ${DOWN_Lip} ${DOWN_Rip} ${PROTO//both/udp} ${DOWN_Lport} ${DOWN_Rport} ${DOWN_mark} ${DOWN_dst} >/dev/null 2>&1" | sed 's/  */ /g'
 			echo "iptables -A POSTROUTING -t mangle -o br0 ${DOWN_Lip} ${DOWN_Rip} ${PROTO//both/udp} ${DOWN_Lport} ${DOWN_Rport} ${DOWN_mark} ${DOWN_dst}" | sed 's/  */ /g'
 			# upload ipv4
-			echo "iptables -D POSTROUTING -t mangle -o ${wan} ${UP_Lip} ${UP_Rip} ${PROTO//both/tcp} ${UP_Lport} ${UP_Rport} ${UP_mark} ${UP_dst}" | sed 's/  */ /g'
+			echo "iptables -D POSTROUTING -t mangle -o ${wan} ${UP_Lip} ${UP_Rip} ${PROTO//both/tcp} ${UP_Lport} ${UP_Rport} ${UP_mark} ${UP_dst} >/dev/null 2>&1" | sed 's/  */ /g'
 			echo "iptables -A POSTROUTING -t mangle -o ${wan} ${UP_Lip} ${UP_Rip} ${PROTO//both/tcp} ${UP_Lport} ${UP_Rport} ${UP_mark} ${UP_dst}" | sed 's/  */ /g'
-			echo "iptables -D POSTROUTING -t mangle -o ${wan} ${UP_Lip} ${UP_Rip} ${PROTO//both/udp} ${UP_Lport} ${UP_Rport} ${UP_mark} ${UP_dst}" | sed 's/  */ /g'
+			echo "iptables -D POSTROUTING -t mangle -o ${wan} ${UP_Lip} ${UP_Rip} ${PROTO//both/udp} ${UP_Lport} ${UP_Rport} ${UP_mark} ${UP_dst} >/dev/null 2>&1" | sed 's/  */ /g'
 			echo "iptables -A POSTROUTING -t mangle -o ${wan} ${UP_Lip} ${UP_Rip} ${PROTO//both/udp} ${UP_Lport} ${UP_Rport} ${UP_mark} ${UP_dst}" | sed 's/  */ /g'
-			if [ -n "$DOWN_Lip" ] && [ -n "$DOWN_Rip" ] && [ "$(nvram get ipv6_service)" != "disabled" ]; then
+			if [ -z "$DOWN_Lip" ] && [ -z "$DOWN_Rip" ] && [ "$ipv6_enabled" != "disabled" ]; then
 				# download ipv6
-				echo "ip6tables -D POSTROUTING -t mangle -o br0 ${PROTO//both/tcp} ${DOWN_Lport} ${DOWN_Rport} ${DOWN_mark} ${DOWN_dst}" | sed 's/  */ /g'
+				echo "ip6tables -D POSTROUTING -t mangle -o br0 ${PROTO//both/tcp} ${DOWN_Lport} ${DOWN_Rport} ${DOWN_mark} ${DOWN_dst} >/dev/null 2>&1" | sed 's/  */ /g'
 				echo "ip6tables -A POSTROUTING -t mangle -o br0 ${PROTO//both/tcp} ${DOWN_Lport} ${DOWN_Rport} ${DOWN_mark} ${DOWN_dst}" | sed 's/  */ /g'
-				echo "ip6tables -D POSTROUTING -t mangle -o br0 ${PROTO//both/udp} ${DOWN_Lport} ${DOWN_Rport} ${DOWN_mark} ${DOWN_dst}" | sed 's/  */ /g'
+				echo "ip6tables -D POSTROUTING -t mangle -o br0 ${PROTO//both/udp} ${DOWN_Lport} ${DOWN_Rport} ${DOWN_mark} ${DOWN_dst} >/dev/null 2>&1" | sed 's/  */ /g'
 				echo "ip6tables -A POSTROUTING -t mangle -o br0 ${PROTO//both/udp} ${DOWN_Lport} ${DOWN_Rport} ${DOWN_mark} ${DOWN_dst}" | sed 's/  */ /g'
 				# upload ipv6
-				echo "ip6tables -D POSTROUTING -t mangle -o ${wan} ${PROTO//both/tcp} ${UP_Lport} ${UP_Rport} ${UP_mark} ${UP_dst}" | sed 's/  */ /g'
+				echo "ip6tables -D POSTROUTING -t mangle -o ${wan} ${PROTO//both/tcp} ${UP_Lport} ${UP_Rport} ${UP_mark} ${UP_dst} >/dev/null 2>&1" | sed 's/  */ /g'
 				echo "ip6tables -A POSTROUTING -t mangle -o ${wan} ${PROTO//both/tcp} ${UP_Lport} ${UP_Rport} ${UP_mark} ${UP_dst}" | sed 's/  */ /g'
-				echo "ip6tables -D POSTROUTING -t mangle -o ${wan} ${PROTO//both/udp} ${UP_Lport} ${UP_Rport} ${UP_mark} ${UP_dst}" | sed 's/  */ /g'
+				echo "ip6tables -D POSTROUTING -t mangle -o ${wan} ${PROTO//both/udp} ${UP_Lport} ${UP_Rport} ${UP_mark} ${UP_dst} >/dev/null 2>&1" | sed 's/  */ /g'
 				echo "ip6tables -A POSTROUTING -t mangle -o ${wan} ${PROTO//both/udp} ${UP_Lport} ${UP_Rport} ${UP_mark} ${UP_dst}" | sed 's/  */ /g'
 			fi
 		else
 			# download ipv4
-			echo "iptables -D POSTROUTING -t mangle -o br0 ${DOWN_Lip} ${DOWN_Rip} ${PROTO} ${DOWN_Lport} ${DOWN_Rport} ${DOWN_mark} ${DOWN_dst}" | sed 's/  */ /g'
+			echo "iptables -D POSTROUTING -t mangle -o br0 ${DOWN_Lip} ${DOWN_Rip} ${PROTO} ${DOWN_Lport} ${DOWN_Rport} ${DOWN_mark} ${DOWN_dst} >/dev/null 2>&1" | sed 's/  */ /g'
 			echo "iptables -A POSTROUTING -t mangle -o br0 ${DOWN_Lip} ${DOWN_Rip} ${PROTO} ${DOWN_Lport} ${DOWN_Rport} ${DOWN_mark} ${DOWN_dst}" | sed 's/  */ /g'
 			# upload ipv4
-			echo "iptables -D POSTROUTING -t mangle -o ${wan} ${UP_Lip} ${UP_Rip} ${PROTO} ${UP_Lport} ${UP_Rport} ${UP_mark} ${UP_dst}" | sed 's/  */ /g'
+			echo "iptables -D POSTROUTING -t mangle -o ${wan} ${UP_Lip} ${UP_Rip} ${PROTO} ${UP_Lport} ${UP_Rport} ${UP_mark} ${UP_dst} >/dev/null 2>&1" | sed 's/  */ /g'
 			echo "iptables -A POSTROUTING -t mangle -o ${wan} ${UP_Lip} ${UP_Rip} ${PROTO} ${UP_Lport} ${UP_Rport} ${UP_mark} ${UP_dst}" | sed 's/  */ /g'
-			if [ -n "$DOWN_Lip" ] && [ -n "$DOWN_Rip" ] && [ "$(nvram get ipv6_service)" != "disabled" ]; then
+			if [ -z "$DOWN_Lip" ] && [ -z "$DOWN_Rip" ] && [ "$ipv6_enabled" != "disabled" ]; then
 				# download ipv6
-				echo "ip6tables -D POSTROUTING -t mangle -o br0 ${PROTO} ${DOWN_Lport} ${DOWN_Rport} ${DOWN_mark} ${DOWN_dst}" | sed 's/  */ /g'
+				echo "ip6tables -D POSTROUTING -t mangle -o br0 ${PROTO} ${DOWN_Lport} ${DOWN_Rport} ${DOWN_mark} ${DOWN_dst} >/dev/null 2>&1" | sed 's/  */ /g'
 				echo "ip6tables -A POSTROUTING -t mangle -o br0 ${PROTO} ${DOWN_Lport} ${DOWN_Rport} ${DOWN_mark} ${DOWN_dst}" | sed 's/  */ /g'
 				# upload ipv6
-				echo "ip6tables -D POSTROUTING -t mangle -o ${wan} ${PROTO} ${UP_Lport} ${UP_Rport} ${UP_mark} ${UP_dst}" | sed 's/  */ /g'
+				echo "ip6tables -D POSTROUTING -t mangle -o ${wan} ${PROTO} ${UP_Lport} ${UP_Rport} ${UP_mark} ${UP_dst} >/dev/null 2>&1" | sed 's/  */ /g'
 				echo "ip6tables -A POSTROUTING -t mangle -o ${wan} ${PROTO} ${UP_Lport} ${UP_Rport} ${UP_mark} ${UP_dst}" | sed 's/  */ /g'
 			fi
 		fi
-	} >> /tmp/freshjr_rules
+	} >> /tmp/flexqos_iprules
 }
 
 about() {
@@ -1229,36 +1114,50 @@ get_config() {
 } # get_config
 
 write_iptables_rules() {
-	# loop through default rules and write an iptables command to a temp file
+	# loop through iptables rules and write an iptables command to a temporary script file
 	OLDIFS="$IFS"
 	IFS=">"
-	if [ -f "/tmp/freshjr_rules" ]; then
-		rm -f "/tmp/freshjr_rules"
+	if [ -f "/tmp/flexqos_iprules" ]; then
+		rm -f "/tmp/flexqos_iprules"
 	fi
 
-	echo $iptables_def_rules | sed 's/</\n/g' | while read -r localip remoteip proto lport rport mask class
+	echo "$iptables_rules" | sed 's/</\n/g' | while read -r localip remoteip proto lport rport mark class
 	do
-		parse_iptablerule "$localip" "$remoteip" "$proto" "$lport" "$rport" "$mask" "$class"
+		if [ -n "${localip}${remoteip}${proto}${lport}${rport}${mark}" ] ; then
+			parse_iptablerule "$localip" "$remoteip" "$proto" "$lport" "$rport" "$mark" "$class"
+		fi
 	done
-	echo $iptables_rules | sed 's/</\n/g' | while read -r localip remoteip proto lport rport mask class
-	do
-		parse_iptablerule "$localip" "$remoteip" "$proto" "$lport" "$rport" "$mask" "$class"
-	done
-	# [ -f "/tmp/freshjr_rules" ] && . /tmp/freshjr_rules
 	IFS="$OLDIFS"
+	# [ -f "/tmp/flexqos_iprules" ] && . /tmp/flexqos_iprules
 } # write_iptables_rules
 
+write_appdb_rules() {
+	# loop through appdb rules and write a tc command to a temporary script file
+	OLDIFS="$IFS"
+	IFS=">"
+	if [ -f "/tmp/flexqos_tcrules" ]; then
+		rm -f "/tmp/flexqos_tcrules"
+	fi
+
+	echo "$appdb_rules" | sed 's/</\n/g' | while read -r mark class
+	do
+		if [ -n "${mark}" ] ; then
+			parse_tcrule "$mark" "$class"
+		fi
+	done
+	IFS="$OLDIFS"
+} # write_appdb_rules
+
 check_qos_tc() {
-	dlclasscnt="$(tc class show dev br0 | grep "parent 1:1 " | wc -l)"
-	ulclasscnt="$(tc class show dev eth0 | grep "parent 1:1 " | wc -l)"
-	dlfiltercnt="$(tc filter show dev br0 | grep -E "flowid 1:1[0-7] $" | wc -l)"
-	ulfiltercnt="$(tc filter show dev eth0 | grep -E "flowid 1:1[0-7] $" | wc -l)"
+	dlclasscnt="$(tc class show dev br0 | grep -c "parent 1:1 ")"
+	ulclasscnt="$(tc class show dev eth0 | grep -c "parent 1:1 ")"
+	dlfiltercnt="$(tc filter show dev br0 | grep -cE "flowid 1:1[0-7] $")"
+	ulfiltercnt="$(tc filter show dev eth0 | grep -cE "flowid 1:1[0-7] $")"
   # return ${dlclasscnt}+${ulclasscnt}+${dlfiltercnt}+${ulfiltercnt}
 } # check_qos_tc
 
 start() {
 	cru a FreshJR_QOS "30 3 * * * /jffs/scripts/FreshJR_QOS -check"			#makes sure daily check if active
-	cru d FreshJR_QOS_run_once												#(used for stock firmware to trigger script and have it run after terminal is closed when making changes)
 
 	if [ "$(nvram get qos_enable)" = "1" ] && [ "$(nvram get qos_type)" = "1" ]; then
 		for pid in $(pidof FreshJR_QOS); do
@@ -1276,25 +1175,33 @@ start() {
 		read_nvram	#needs to be set before parse_iptablerule or custom rates
 		get_config
 
-		if [ "$1" = "start" ] ; then
+		if [ -n "$1" ] ; then
 			##iptables rules will only be reapplied on firewall "start" due to receiving interface name
 
 			write_iptables_rules
-			iptable_down_rules 2>&1 | logger -t "adaptive QOS"
-			iptable_up_rules 2>&1 | logger -t "adaptive QOS"
+			exit
+			iptables_static_rules 2>&1 | logger -t "adaptive QOS"
+			if [ -s "/tmp/flexqos_iprules" ]; then
+				logger -t "adaptive QOS" "Applying custom user rules"
+				. /tmp/flexqos_iprules | logger -t "adaptive QOS"
+				logger -t "adaptive QOS" "Finished applying custom user rules"
+			fi
 
-			logger -t "adaptive QOS" -s -- "TC Modification Delayed Start"
-			#sleep 300s
 			sleepdelay=0
-			while [ "$(tc class show dev br0 | grep "parent 1:1 " | wc -l)" -lt 8 ] && [ "$(tc class show dev eth0 | grep "parent 1:1 " | wc -l)" -lt 8 ];
+			while [ "$(tc class show dev br0 | grep -c "parent 1:1 ")" -lt 8 ] && [ "$(tc class show dev eth0 | grep -c "parent 1:1 ")" -lt 8 ];
 			do
+				[ "$sleepdelay" = "0" ] && logger -t "adaptive QOS" -s "TC Modification Delayed Start"
 				sleep 10s
-				sleepdelay=$(($sleepdelay+10))
+				if [ "$sleepdelay" -gt 300 ]; then
+					logger -t "adaptive QOS" -s "TC Modification Delay reached maximum 300 seconds"
+					break
+				fi
+				sleepdelay=$((sleepdelay+10))
 			done
-			logger -t "adaptive QOS" -s -- "TC Modification Delay ended after $sleepdelay seconds"
+			logger -t "adaptive QOS" -s "TC Modification Delay ended after $sleepdelay seconds"
 		fi
 
-		current_undf_rule="$(tc filter show dev br0 | grep -v "/" | grep "000ffff" -B1)"
+		current_undf_rule="$(tc filter show dev br0 | grep "00ffff" -B1)"
 		if [ -n "$current_undf_rule" ]; then
 			undf_flowid=$(echo $current_undf_rule | grep -o "flowid.*" | cut -d" " -f2 | head -1)
 			undf_prio=$(echo $current_undf_rule | grep -o "pref.*" | cut -d" " -f2 | head -1)
@@ -1302,21 +1209,18 @@ start() {
 			undf_flowid=""
 			undf_prio=2
 		fi
-		#if TC modifcations have no been applied then run modification script
+		#if TC modifcations have not been applied then run modification script
 		#eg (if rule setting unidentified traffic to 1:17 exists) --> run modification script
 		if [ "${undf_flowid}" = "1:17" ] || [ -z "${undf_flowid}" ]; then
-			if [ "$1" = "check" ] ; then
+			if [ -z "$1" ] ; then
+				# check action was called without a WAN interface passed
 				logger -t "adaptive QOS" -s "Scheduled Persistence Check -> Reapplying Changes"
 			fi # check
 
 			set_tc_variables 	#needs to be set before parse_tcrule
 			##last two arguments are variables that get set "ByRef"
-			parse_tcrule "${r1}" "${d1}" tc1_down tc1_up
-			parse_tcrule "${r2}" "${d2}" tc2_down tc2_up
-			parse_tcrule "${r3}" "${d3}" tc3_down tc3_up
-			parse_tcrule "${r4}" "${d4}" tc4_down tc4_up
-			tc_redirection_down_rules "$undf_prio"  2>&1 | logger -t "adaptive QOS"		#forwards terminal output & errors to logger
-			tc_redirection_up_rules "$undf_prio"  2>&1 | logger -t "adaptive QOS"		#forwards terminal output & errors to logger
+			write_appdb_rules
+			tc_redirection_static_rules 2>&1 | logger -t "adaptive QOS"		#forwards terminal output & errors to logger
 
 			if [ "$ClassesPresent" -lt "8" ] ; then
 				logger -t "adaptive QOS" -s "Adaptive QOS not fully done setting up prior to modification script"
@@ -1326,7 +1230,6 @@ start() {
 					custom_rates 2>&1 | logger -t "adaptive QOS"		#forwards terminal output & errors to logger
 				fi
 			fi # Classes less than 8
-
 		else # 1:17
 			if [ "$1" = "check" ] ; then
 				logger -t "adaptive QOS" -s "Scheduled Persistence Check -> No modifications necessary"
@@ -1365,31 +1268,35 @@ show_help() {
 generate_bwdpi_arrays() {
 	# generate if not exist, plus after wrs restart (signature update)
 	if ! [ -f /www/user/ext/flexqos_arrays.js ] || [ /tmp/bwdpi.app.db -nt /www/user/ext/flexqos_arrays.js ]; then
-		awk -F, 'BEGIN { printf "var catdb_mark_array = [ \"000000\", "} { printf("\"%02X****\", ",$1) }' /tmp/bwdpi/bwdpi.cat.db > /www/ext/flexqos_arrays.js
-		awk -F, '{ printf("\"%02X%04X\", ",$1,$2) } END { printf "\"\" ]\;" }' /tmp/bwdpi/bwdpi.app.db >> /www/ext/flexqos_arrays.js
-		awk -F, 'BEGIN { printf "var catdb_label_array = [ \"Untracked\", "} { printf("\"%s\", ",$2) }' /tmp/bwdpi/bwdpi.cat.db >> /www/ext/flexqos_arrays.js
-		awk -F, '{ printf("\"%s\", ",$4) } END { printf "\"\" ]\;" }' /tmp/bwdpi/bwdpi.app.db >> /www/ext/flexqos_arrays.js
+	{
+		awk -F, 'BEGIN { printf "var catdb_mark_array = [ \"000000\", "} { printf("\"%02X****\", ",$1) }' /tmp/bwdpi/bwdpi.cat.db
+		awk -F, '{ printf("\"%02X%04X\", ",$1,$2) } END { printf "\"\" ]\;" }' /tmp/bwdpi/bwdpi.app.db
+		awk -F, 'BEGIN { printf "var catdb_label_array = [ \"Untracked\", "} { printf("\"%s\", ",$2) }' /tmp/bwdpi/bwdpi.cat.db
+		awk -F, '{ printf("\"%s\", ",$4) } END { printf "\"\" ]\;" }' /tmp/bwdpi/bwdpi.app.db
+	} > /www/ext/flexqos_arrays.js
 	fi
 }
 
 ################################################################################
-# Main program here, will execute different things depending on arguments
+# Main program
 ################################################################################
 . /usr/sbin/helper.sh  # initialize Merlin Addon API helper functions
 
 arg1="$(echo "$1" | tr -d "-")"
-wan="${2}"
-if [ -z "$wan" ] ; then
+if [ -z "$2" ] ; then
 	wan="$(nvram get wan0_ifname)"
+else
+	wan="$2"
 fi
+ipv6_enabled="$(nvram get ipv6_service)"
 
 case "$arg1" in
  'start')
  		# triggered from firewall-start with wan iface passed
-		start "$2"
+		start "$wan"
 		;;
 	'check')
-		# triggered from cron or service-event without wan iface
+		# triggered from cron or service-event-end without wan iface
 		start
 		;;
  'install'|'enable')															## INSTALLS AND TURNS ON SCRIPT
@@ -1400,15 +1307,12 @@ case "$arg1" in
 		;;
  'disable')																		## TURNS OFF SCRIPT BUT KEEP FILES
 		sed -i '/FreshJR_QOS/d' /jffs/scripts/firewall-start  2>/dev/null
-		sed -i '/FreshJR_QOS/d' /jffs/scripts/script_usbmount 2>/dev/null
+		sed -i '/FreshJR_QOS/d' /jffs/scripts/service-event-end  2>/dev/null
 		cru d FreshJR_QOS
 		remove_webui
 		;;
- 'debug')
+ 'debug*')
 		debug
-		;;
- 'debug2')
-		debug2
 		;;
   'about')
     about
