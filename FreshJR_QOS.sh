@@ -645,14 +645,6 @@ EOF
 	# nvram commit
 }
 
-## helper function to save nvram variables in csv format
-save_nvram(){
-	# nvram set fb_comment="${e1};${e2};${e3};${e4};${e5};${e6};${e7}>${f1};${f2};${f3};${f4};${f5};${f6};${f7}>${g1};${g2};${g3};${g4};${g5};${g6};${g7}"
-	# nvram set fb_email_dbg="${h1};${h2};${h3};${h4};${h5};${h6};${h7}>${r1};${d1}>${r2};${d2}>${r3};${d3}>${r4};${d4}>${gameCIDR}>${ruleFLAG}>${drp0};${drp1};${drp2};${drp3};${drp4};${drp5};${drp6};${drp7}>${dcp0};${dcp1};${dcp2};${dcp3};${dcp4};${dcp5};${dcp6};${dcp7}>${urp0};${urp1};${urp2};${urp3};${urp4};${urp5};${urp6};${urp7}>${ucp0};${ucp1};${ucp2};${ucp3};${ucp4};${ucp5};${ucp6};${ucp7}"
-	# nvram commit
-	true
-}
-
 ## helper function for interactive menu mode
 dst_2_name() {
 	case "$1" in
