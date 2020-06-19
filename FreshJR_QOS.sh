@@ -626,31 +626,23 @@ EOF
 
 	if [ -z "$(am_settings_get freshjr_iptables)" ]; then
 		tmp_iptables_rules="<${e1}>${e2}>${e3}>${e4}>${e5}>${e6}>${e7}<${f1}>${f2}>${f3}>${f4}>${f5}>${f6}>${f7}<${g1}>${g2}>${g3}>${g4}>${g5}>${g6}>${g7}<${h1}>${h2}>${h3}>${h4}>${h5}>${h6}>${h7}"
-		tmp_iptables_rules=$(echo "$tmp_iptables_rules" | sed 's/<>>>>>>//g' | openssl enc -a)
+		tmp_iptables_rules=$(echo "$tmp_iptables_rules" | sed 's/<>>>>>>//g')
 		am_settings_set freshjr_iptables "$tmp_iptables_rules"
 	fi
 
 	if [ -z "$(am_settings_get freshjr_appdb)" ]; then
 		tmp_appdb_rules="<${r1}>${d1}<${r2}>${d2}<${r3}>${d3}<${r4}>${d4}"
-		tmp_appdb_rules=$(echo "$tmp_appdb_rules" | sed 's/<>//g' | openssl enc -a)
+		tmp_appdb_rules=$(echo "$tmp_appdb_rules" | sed 's/<>//g')
 		am_settings_set freshjr_appdb "$tmp_appdb_rules"
-	fi
-
-	if [ -z "$(am_settings_get freshjr_gamecidr)" ]; then
-		am_settings_set freshjr_gamecidr "$gameCIDR"
-	fi
-
-	if [ -z "$(am_settings_get freshjr_ruleflag)" ]; then
-		am_settings_set freshjr_ruleflag "$ruleFLAG"
 	fi
 
 	if [ -z "$(am_settings_get freshjr_bandwidth)" ]; then
 		am_settings_set freshjr_bandwidth "<${drp0}>${drp1}>${drp2}>${drp3}>${drp4}>${drp5}>${drp6}>${drp7}<${dcp0}>${dcp1}>${dcp2}>${dcp3}>${dcp4}>${dcp5}>${dcp6}>${dcp7}<${urp0}>${urp1}>${urp2}>${urp3}>${urp4}>${urp5}>${urp6}>${urp7}<${ucp0}>${ucp1}>${ucp2}>${ucp3}>${ucp4}>${ucp5}>${ucp6}>${ucp7}"
 	fi
 
-	nvram set fb_comment=""
-	nvram set fb_email_dbg=""
-	nvram commit
+	# nvram set fb_comment=""
+	# nvram set fb_email_dbg=""
+	# nvram commit
 }
 
 ## helper function to save nvram variables in csv format
@@ -1246,10 +1238,8 @@ uninstall() {
 } # uninstall
 
 get_config() {
-	iptables_def_rules="$(am_settings_get freshjr_defiptables | openssl enc -a -d)"
-	iptables_rules="$(am_settings_get freshjr_iptables | openssl enc -a -d)"
-	appdb_def_rules="$(am_settings_get freshjr_defappdb | openssl enc -a -d)"
-	appdb_rules="$(am_settings_get freshjr_appdb | openssl enc -a -d)"
+	iptables_rules="$(am_settings_get freshjr_iptables)"
+	appdb_rules="$(am_settings_get freshjr_appdb)"
 	bandwidth_rules="$(am_settings_get freshjr_bandwidth)"
 } # get_config
 
