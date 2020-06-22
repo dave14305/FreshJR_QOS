@@ -1005,7 +1005,6 @@ install_webui() {
 				mount -o bind /tmp/menuTree.js /www/require/modules/menuTree.js
 			fi
 			if ! /bin/grep "{url: \"$am_webui_page\", tabName: \"FreshJR QoS\"}," /tmp/menuTree.js >/dev/null 2>&1; then
-				# Insert link at the end of the Tools menu.  Match partial string, since tabname can change between builds (if using an AS tag)
 				umount /www/require/modules/menuTree.js 2>/dev/null
 				sed -i "\~tabName: \"FreshJR QoS\"},~d" /tmp/menuTree.js
 				sed -i "/url: \"QoS_Stats.asp\", tabName:/a {url: \"$am_webui_page\", tabName: \"FreshJR QoS\"}," /tmp/menuTree.js
@@ -1111,6 +1110,14 @@ get_config() {
 	iptables_rules="$(am_settings_get freshjr_iptables)"
 	appdb_rules="$(am_settings_get freshjr_appdb)"
 	bandwidth_rules="$(am_settings_get freshjr_bandwidth)"
+	read \
+		drp0 drp1 drp2 drp3 drp4 drp5 drp6 drp7 \
+		dcp0 dcp1 dcp2 dcp3 dcp4 dcp5 dcp6 dcp7 \
+		urp0 urp1 urp2 urp3 urp4 urp5 urp6 urp7 \
+		ucp0 ucp1 ucp2 ucp3 ucp4 ucp5 ucp6 ucp7 \
+<<EOF
+$(am_settings_get freshjr_bandwidth | sed 's/^<//g;s/[<>]/ /g')
+EOF
 } # get_config
 
 write_iptables_rules() {
