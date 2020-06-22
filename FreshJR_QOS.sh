@@ -38,8 +38,8 @@ ipv6_enabled="$(nvram get ipv6_service)"
 
 #marks for iptable rules
 Net_mark_down="0x80090001"
-VOIP_mark_down="0x80060001"			# Marks for iptables variant of download rules
-Gaming_mark_down="0x80080001"		    # Note these marks are same as filter match/mask combo but have a 1 at the end.  That trailing 1 prevents them from being caught by unidentified mask
+VOIP_mark_down="0x80060001"		# Marks for iptables variant of download rules
+Gaming_mark_down="0x80080001"		# Note these marks are same as filter match/mask combo but have a 1 at the end.  That trailing 1 prevents them from being caught by unidentified mask
 Others_mark_down="0x800a0001"
 Web_mark_down="0x80180001"
 Streaming_mark_down="0x80040001"
@@ -47,8 +47,8 @@ Downloads_mark_down="0x80030001"
 Default_mark_down="0x803f0001"
 
 Net_mark_up="0x40090001"
-VOIP_mark_up="0x40060001"			# Marks for iptables variant of upload rules
-Gaming_mark_up="0x40080001"		    # Note these marks are same as filter match/mask combo but have a 1 at the end.  That trailing 1 prevents them from being caught by unidentified mask
+VOIP_mark_up="0x40060001"		# Marks for iptables variant of upload rules
+Gaming_mark_up="0x40080001"		# Note these marks are same as filter match/mask combo but have a 1 at the end.  That trailing 1 prevents them from being caught by unidentified mask
 Others_mark_up="0x400a0001"
 Web_mark_up="0x40180001"
 Streaming_mark_up="0x40040001"
@@ -58,68 +58,68 @@ Default_mark_up="0x403f0001"
 iptables_static_rules() {
 	echo "Applying - Iptable Down Rules"
 	##DOWNLOAD (INCOMING TRAFFIC) CUSTOM RULES START HERE  -- legacy method
-	iptables -D POSTROUTING -t mangle -o br0 -m mark --mark 0x40000000/0xc0000000 -j MARK --set-xmark 0x80000000/0xC0000000 > /dev/null 2>&1			#VPN Fix -		(Fixes download traffic showing up in upload section when router is acting as a VPN Client)
+	iptables -D POSTROUTING -t mangle -o br0 -m mark --mark 0x40000000/0xc0000000 -j MARK --set-xmark 0x80000000/0xC0000000 > /dev/null 2>&1		#VPN Fix - (Fixes download traffic showing up in upload section when router is acting as a VPN Client)
 	iptables -A POSTROUTING -t mangle -o br0 -m mark --mark 0x40000000/0xc0000000 -j MARK --set-xmark 0x80000000/0xC0000000
-	if [ "$ipv6_enabled" != "disabled" ] ; then
-		ip6tables -D POSTROUTING -t mangle -o br0 -m mark --mark 0x40000000/0xc0000000 -j MARK --set-xmark 0x80000000/0xC0000000 > /dev/null 2>&1			#VPN Fix -		(Fixes download traffic showing up in upload section when router is acting as a VPN Client)
+	if [ "$ipv6_enabled" != "disabled" ]; then
+		ip6tables -D POSTROUTING -t mangle -o br0 -m mark --mark 0x40000000/0xc0000000 -j MARK --set-xmark 0x80000000/0xC0000000 > /dev/null 2>&1		#VPN Fix - (Fixes download traffic showing up in upload section when router is acting as a VPN Client)
 		ip6tables -A POSTROUTING -t mangle -o br0 -m mark --mark 0x40000000/0xc0000000 -j MARK --set-xmark 0x80000000/0xC0000000
 	fi
 	##DOWNLOAD (INCOMING TRAFFIC) CUSTOM RULES END HERE  -- legacy method
 	echo "Applying - Iptable Up   Rules ($wan)"
-	iptables -D OUTPUT -t mangle -o $wan -p udp -m multiport ! --dports 53,123 -j MARK --set-mark ${Downloads_mark_up} > /dev/null 2>&1					#VPN Fix -		(Fixes upload traffic not detected when the router is acting as a VPN Client)
-	iptables -A OUTPUT -t mangle -o $wan -p udp -m multiport ! --dports 53,123 -j MARK --set-mark ${Downloads_mark_up}
+	iptables -D OUTPUT -t mangle -o "$wan" -p udp -m multiport ! --dports 53,123 -j MARK --set-mark ${Downloads_mark_up} > /dev/null 2>&1		#VPN Fix - (Fixes upload traffic not detected when the router is acting as a VPN Client)
+	iptables -A OUTPUT -t mangle -o "$wan" -p udp -m multiport ! --dports 53,123 -j MARK --set-mark ${Downloads_mark_up}
 
-	iptables -D OUTPUT -t mangle -o $wan -p tcp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up} > /dev/null 2>&1					#VPN Fix -		(Fixes upload traffic not detected when the router is acting as a VPN Client)
-	iptables -A OUTPUT -t mangle -o $wan -p tcp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up}
+	iptables -D OUTPUT -t mangle -o "$wan" -p tcp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up} > /dev/null 2>&1		#VPN Fix - (Fixes upload traffic not detected when the router is acting as a VPN Client)
+	iptables -A OUTPUT -t mangle -o "$wan" -p tcp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up}
 
 	if [ "$ipv6_enabled" != "disabled" ]; then
-		ip6tables -D OUTPUT -t mangle -o $wan -p udp -m multiport ! --dports 53,123 -j MARK --set-mark ${Downloads_mark_up} > /dev/null 2>&1					#VPN Fix -		(Fixes upload traffic not detected when the router is acting as a VPN Client)
-		ip6tables -A OUTPUT -t mangle -o $wan -p udp -m multiport ! --dports 53,123 -j MARK --set-mark ${Downloads_mark_up}
+		ip6tables -D OUTPUT -t mangle -o "$wan" -p udp -m multiport ! --dports 53,123 -j MARK --set-mark ${Downloads_mark_up} > /dev/null 2>&1		#VPN Fix - (Fixes upload traffic not detected when the router is acting as a VPN Client)
+		ip6tables -A OUTPUT -t mangle -o "$wan" -p udp -m multiport ! --dports 53,123 -j MARK --set-mark ${Downloads_mark_up}
 
-		ip6tables -D OUTPUT -t mangle -o $wan -p tcp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up} > /dev/null 2>&1					#VPN Fix -		(Fixes upload traffic not detected when the router is acting as a VPN Client)
-		ip6tables -A OUTPUT -t mangle -o $wan -p tcp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up}
+		ip6tables -D OUTPUT -t mangle -o "$wan" -p tcp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up} > /dev/null 2>&1		#VPN Fix - (Fixes upload traffic not detected when the router is acting as a VPN Client)
+		ip6tables -A OUTPUT -t mangle -o "$wan" -p tcp -m multiport ! --dports 53,123,853 -j MARK --set-mark ${Downloads_mark_up}
 	fi
 }
 
 tc_redirection_static_rules() {
-		echo "Applying  TC Down Rules"
-		##DOWNLOAD APP_DB TRAFFIC REDIRECTION RULES START HERE  -- legacy method
+	echo "Applying  TC Down Rules"
+	##DOWNLOAD APP_DB TRAFFIC REDIRECTION RULES START HERE  -- legacy method
 
-		##DOWNLOAD APP_DB TRAFFIC REDIRECTION RULES END HERE  -- legacy method
-		${tc} filter add dev br0 protocol all prio 10 u32 match mark 0x803f0001 0xc03fffff flowid ${Defaults}						#Used for iptables Default_mark_down functionality
-		echo "Applying  TC Up   Rules"
-		##UPLOAD APP_DB TRAFFIC REDIRECTION RULES START HERE  -- legacy method
+	##DOWNLOAD APP_DB TRAFFIC REDIRECTION RULES END HERE  -- legacy method
+	${tc} filter add dev br0 protocol all prio 10 u32 match mark 0x803f0001 0xc03fffff flowid "${Defaults}"		#Used for iptables Default_mark_down functionality
+	echo "Applying  TC Up   Rules"
+	##UPLOAD APP_DB TRAFFIC REDIRECTION RULES START HERE  -- legacy method
 
-		##UPLOAD APP_DB TRAFFIC REDIRECTION RULES END HERE  -- legacy method
-		${tc} filter add dev eth0 protocol all prio 10 u32 match mark 0x403f0001 0xc03fffff flowid ${Defaults}						#Used for iptables Default_mark_up functionality
-	}
+	##UPLOAD APP_DB TRAFFIC REDIRECTION RULES END HERE  -- legacy method
+	${tc} filter add dev eth0 protocol all prio 10 u32 match mark 0x403f0001 0xc03fffff flowid "${Defaults}"		#Used for iptables Default_mark_up functionality
+} # tc_redirection_static_rules
 
 custom_rates() {
-		echo "Modifying TC Class Rates"
-		${tc} class change dev br0 parent 1:1 classid 1:10 htb ${PARMS}prio 0 rate ${DownRate0}Kbit ceil ${DownCeil0}Kbit burst ${DownBurst0} cburst ${DownCburst0}
-		${tc} class change dev br0 parent 1:1 classid 1:11 htb ${PARMS}prio 1 rate ${DownRate1}Kbit ceil ${DownCeil1}Kbit burst ${DownBurst1} cburst ${DownCburst1}
-		${tc} class change dev br0 parent 1:1 classid 1:12 htb ${PARMS}prio 2 rate ${DownRate2}Kbit ceil ${DownCeil2}Kbit burst ${DownBurst2} cburst ${DownCburst2}
-		${tc} class change dev br0 parent 1:1 classid 1:13 htb ${PARMS}prio 3 rate ${DownRate3}Kbit ceil ${DownCeil3}Kbit burst ${DownBurst3} cburst ${DownCburst3}
-		${tc} class change dev br0 parent 1:1 classid 1:14 htb ${PARMS}prio 4 rate ${DownRate4}Kbit ceil ${DownCeil4}Kbit burst ${DownBurst4} cburst ${DownCburst4}
-		${tc} class change dev br0 parent 1:1 classid 1:15 htb ${PARMS}prio 5 rate ${DownRate5}Kbit ceil ${DownCeil5}Kbit burst ${DownBurst5} cburst ${DownCburst5}
-		${tc} class change dev br0 parent 1:1 classid 1:16 htb ${PARMS}prio 6 rate ${DownRate6}Kbit ceil ${DownCeil6}Kbit burst ${DownBurst6} cburst ${DownCburst6}
-		${tc} class change dev br0 parent 1:1 classid 1:17 htb ${PARMS}prio 7 rate ${DownRate7}Kbit ceil ${DownCeil7}Kbit burst ${DownBurst7} cburst ${DownCburst7}
+	echo "Modifying TC Class Rates"
+	${tc} class change dev br0 parent 1:1 classid 1:10 htb "${PARMS}"prio 0 rate "${DownRate0}"Kbit ceil "${DownCeil0}"Kbit burst "${DownBurst0}" cburst "${DownCburst0}"
+	${tc} class change dev br0 parent 1:1 classid 1:11 htb "${PARMS}"prio 1 rate "${DownRate1}"Kbit ceil "${DownCeil1}"Kbit burst "${DownBurst1}" cburst "${DownCburst1}"
+	${tc} class change dev br0 parent 1:1 classid 1:12 htb "${PARMS}"prio 2 rate "${DownRate2}"Kbit ceil "${DownCeil2}"Kbit burst "${DownBurst2}" cburst "${DownCburst2}"
+	${tc} class change dev br0 parent 1:1 classid 1:13 htb "${PARMS}"prio 3 rate "${DownRate3}"Kbit ceil "${DownCeil3}"Kbit burst "${DownBurst3}" cburst "${DownCburst3}"
+	${tc} class change dev br0 parent 1:1 classid 1:14 htb "${PARMS}"prio 4 rate "${DownRate4}"Kbit ceil "${DownCeil4}"Kbit burst "${DownBurst4}" cburst "${DownCburst4}"
+	${tc} class change dev br0 parent 1:1 classid 1:15 htb "${PARMS}"prio 5 rate "${DownRate5}"Kbit ceil "${DownCeil5}"Kbit burst "${DownBurst5}" cburst "${DownCburst5}"
+	${tc} class change dev br0 parent 1:1 classid 1:16 htb "${PARMS}"prio 6 rate "${DownRate6}"Kbit ceil "${DownCeil6}"Kbit burst "${DownBurst6}" cburst "${DownCburst6}"
+	${tc} class change dev br0 parent 1:1 classid 1:17 htb "${PARMS}"prio 7 rate "${DownRate7}"Kbit ceil "${DownCeil7}"Kbit burst "${DownBurst7}" cburst "${DownCburst7}"
 
-		${tc} class change dev eth0 parent 1:1 classid 1:10 htb ${PARMS}prio 0 rate ${UpRate0}Kbit ceil ${UpCeil0}Kbit burst ${UpBurst0} cburst ${UpCburst0}
-		${tc} class change dev eth0 parent 1:1 classid 1:11 htb ${PARMS}prio 1 rate ${UpRate1}Kbit ceil ${UpCeil1}Kbit burst ${UpBurst1} cburst ${UpCburst1}
-		${tc} class change dev eth0 parent 1:1 classid 1:12 htb ${PARMS}prio 2 rate ${UpRate2}Kbit ceil ${UpCeil2}Kbit burst ${UpBurst2} cburst ${UpCburst2}
-		${tc} class change dev eth0 parent 1:1 classid 1:13 htb ${PARMS}prio 3 rate ${UpRate3}Kbit ceil ${UpCeil3}Kbit burst ${UpBurst3} cburst ${UpCburst3}
-		${tc} class change dev eth0 parent 1:1 classid 1:14 htb ${PARMS}prio 4 rate ${UpRate4}Kbit ceil ${UpCeil4}Kbit burst ${UpBurst4} cburst ${UpCburst4}
-		${tc} class change dev eth0 parent 1:1 classid 1:15 htb ${PARMS}prio 5 rate ${UpRate5}Kbit ceil ${UpCeil5}Kbit burst ${UpBurst5} cburst ${UpCburst5}
-		${tc} class change dev eth0 parent 1:1 classid 1:16 htb ${PARMS}prio 6 rate ${UpRate6}Kbit ceil ${UpCeil6}Kbit burst ${UpBurst6} cburst ${UpCburst6}
-		${tc} class change dev eth0 parent 1:1 classid 1:17 htb ${PARMS}prio 7 rate ${UpRate7}Kbit ceil ${UpCeil7}Kbit burst ${UpBurst7} cburst ${UpCburst7}
+	${tc} class change dev eth0 parent 1:1 classid 1:10 htb "${PARMS}"prio 0 rate "${UpRate0}"Kbit ceil "${UpCeil0}"Kbit burst "${UpBurst0}" cburst "${UpCburst0}"
+	${tc} class change dev eth0 parent 1:1 classid 1:11 htb "${PARMS}"prio 1 rate "${UpRate1}"Kbit ceil "${UpCeil1}"Kbit burst "${UpBurst1}" cburst "${UpCburst1}"
+	${tc} class change dev eth0 parent 1:1 classid 1:12 htb "${PARMS}"prio 2 rate "${UpRate2}"Kbit ceil "${UpCeil2}"Kbit burst "${UpBurst2}" cburst "${UpCburst2}"
+	${tc} class change dev eth0 parent 1:1 classid 1:13 htb "${PARMS}"prio 3 rate "${UpRate3}"Kbit ceil "${UpCeil3}"Kbit burst "${UpBurst3}" cburst "${UpCburst3}"
+	${tc} class change dev eth0 parent 1:1 classid 1:14 htb "${PARMS}"prio 4 rate "${UpRate4}"Kbit ceil "${UpCeil4}"Kbit burst "${UpBurst4}" cburst "${UpCburst4}"
+	${tc} class change dev eth0 parent 1:1 classid 1:15 htb "${PARMS}"prio 5 rate "${UpRate5}"Kbit ceil "${UpCeil5}"Kbit burst "${UpBurst5}" cburst "${UpCburst5}"
+	${tc} class change dev eth0 parent 1:1 classid 1:16 htb "${PARMS}"prio 6 rate "${UpRate6}"Kbit ceil "${UpCeil6}"Kbit burst "${UpBurst6}" cburst "${UpCburst6}"
+	${tc} class change dev eth0 parent 1:1 classid 1:17 htb "${PARMS}"prio 7 rate "${UpRate7}"Kbit ceil "${UpCeil7}"Kbit burst "${UpBurst7}" cburst "${UpCburst7}"
 } # custom_rates
 
 ####################  DO NOT MODIFY BELOW  #####################
 
 set_tc_variables(){
 
-	if [ -e "/usr/sbin/realtc" ] ; then
+	if [ -e "/usr/sbin/realtc" ]; then
 		tc="realtc"
 	else
 		tc="tc"
@@ -127,64 +127,64 @@ set_tc_variables(){
 
 	#read order of QOS categories
 	flowid=0
-	while read -r line;				# reads users order of QOS categories
+	while read -r line;		# reads users order of QOS categories
 	do
 		if [ "${line:0:1}" = '[' ]; then
 			flowid="${line:1:1}"
 		fi
 		#logger -s "${line}    ${flowid}"
 		case ${line} in
-		 '0')
+		'0')
 			VOIP="1:1${flowid}"
 			eval "Cat${flowid}DownBandPercent=${drp1}"
 			eval "Cat${flowid}UpBandPercent=${urp1}"
 			eval "Cat${flowid}DownCeilPercent=${dcp1}"
 			eval "Cat${flowid}UpCeilPercent=${ucp1}"
 			;;
-		 '1')
+		'1')
 			Downloads="1:1${flowid}"
 			eval "Cat${flowid}DownBandPercent=${drp7}"
 			eval "Cat${flowid}UpBandPercent=${urp7}"
 			eval "Cat${flowid}DownCeilPercent=${dcp7}"
 			eval "Cat${flowid}UpCeilPercent=${ucp7}"
 			;;
-		 '4')
-		 if [ -z "$Streaming" ]; then   # only process 4 if streaming not done (only process it once)
-			 Streaming="1:1${flowid}"
-			 eval "Cat${flowid}DownBandPercent=${drp5}"
-			 eval "Cat${flowid}UpBandPercent=${urp5}"
-			 eval "Cat${flowid}DownCeilPercent=${dcp5}"
-			 eval "Cat${flowid}UpCeilPercent=${ucp5}"
-		 else
-			 Defaults="1:1${flowid}"
-			 eval "Cat${flowid}DownBandPercent=${drp6}"
-			 eval "Cat${flowid}UpBandPercent=${urp6}"
-			 eval "Cat${flowid}DownCeilPercent=${dcp6}"
-			 eval "Cat${flowid}UpCeilPercent=${ucp6}"
-		 fi
+		'4')
+		if [ -z "$Streaming" ]; then   # only process 4 if streaming not done (only process it once)
+			Streaming="1:1${flowid}"
+			eval "Cat${flowid}DownBandPercent=${drp5}"
+			eval "Cat${flowid}UpBandPercent=${urp5}"
+			eval "Cat${flowid}DownCeilPercent=${dcp5}"
+			eval "Cat${flowid}UpCeilPercent=${ucp5}"
+		else
+			Defaults="1:1${flowid}"
+			eval "Cat${flowid}DownBandPercent=${drp6}"
+			eval "Cat${flowid}UpBandPercent=${urp6}"
+			eval "Cat${flowid}DownCeilPercent=${dcp6}"
+			eval "Cat${flowid}UpCeilPercent=${ucp6}"
+		fi
 			;;
-		 '7')
+		'7')
 			Others="1:1${flowid}"
 			eval "Cat${flowid}DownBandPercent=${drp3}"
 			eval "Cat${flowid}UpBandPercent=${urp3}"
 			eval "Cat${flowid}DownCeilPercent=${dcp3}"
 			eval "Cat${flowid}UpCeilPercent=${ucp3}"
 			;;
-		 '8')
+		'8')
 			Gaming="1:1${flowid}"
 			eval "Cat${flowid}DownBandPercent=${drp2}"
 			eval "Cat${flowid}UpBandPercent=${urp2}"
 			eval "Cat${flowid}DownCeilPercent=${dcp2}"
 			eval "Cat${flowid}UpCeilPercent=${ucp2}"
 			;;
-		 '9')
-			 Net="1:1${flowid}"
-			 eval "Cat${flowid}DownBandPercent=${drp0}"
-			 eval "Cat${flowid}UpBandPercent=${urp0}"
-			 eval "Cat${flowid}DownCeilPercent=${dcp0}"
-			 eval "Cat${flowid}UpCeilPercent=${ucp0}"
-			 ;;
-		 '24')
+		'9')
+			Net="1:1${flowid}"
+			eval "Cat${flowid}DownBandPercent=${drp0}"
+			eval "Cat${flowid}UpBandPercent=${urp0}"
+			eval "Cat${flowid}DownCeilPercent=${dcp0}"
+			eval "Cat${flowid}UpCeilPercent=${ucp0}"
+			;;
+		'24')
 			Web="1:1${flowid}"
 			eval "Cat${flowid}DownBandPercent=${drp4}"
 			eval "Cat${flowid}UpBandPercent=${urp4}"
@@ -211,10 +211,10 @@ EOF
 	i=0
 	while [ $i -lt 8 ]
 	do
-		eval "DownRate$i=$((DownCeil*Cat${i}DownBandPercent/100))"
-		eval "UpRate$i=$((UpCeil*Cat${i}UpBandPercent}/100))"
-		eval "DownCeil$i=$((DownCeil*Cat${i}DownCeilPercent/100))"
-		eval "UpCeil$i=$((UpCeil*Cat${i}UpCeilPercent}/100))"
+		eval "DownRate$i=$((DownCeil\*Cat${i}DownBandPercent/100))"
+		eval "UpRate$i=$((UpCeil\*Cat${i}UpBandPercent/100))"
+		eval "DownCeil$i=$((DownCeil\*Cat${i}DownCeilPercent/100))"
+		eval "UpCeil$i=$((UpCeil\*Cat${i}UpCeilPercent/100))"
 		i="$((i+1))"
 	done
 
@@ -222,98 +222,98 @@ EOF
 	#read existing burst/cburst per download class
 	while read -r line;
 	do
-		ClassesPresent=$(($ClassesPresent+1))
-		if [ "$( echo ${line} | sed -n -e 's/.*1:10 //p' )" != "" ] ; then
-			DownBurst0=$( echo ${line} | sed -n -e 's/.* burst \([a-zA-z0-9]*\).*/\1/p' )
-			DownCburst0=$( echo ${line} | sed -n -e 's/.*cburst \([a-zA-z0-9]*\).*/\1/p' )
+		ClassesPresent=$((ClassesPresent+1))
+		if [ "$( echo "${line}" | sed -n -e 's/.*1:10 //p' )" != "" ]; then
+			DownBurst0=$( echo "${line}" | sed -n -e 's/.* burst \([a-zA-z0-9]*\).*/\1/p' )
+			DownCburst0=$( echo "${line}" | sed -n -e 's/.*cburst \([a-zA-z0-9]*\).*/\1/p' )
 		fi
 
-		if [ "$( echo ${line} | sed -n -e 's/.*1:11 //p' )" != "" ] ; then
-			DownBurst1=$( echo ${line} | sed -n -e 's/.* burst \([a-zA-z0-9]*\).*/\1/p' )
-			DownCburst1=$( echo ${line} | sed -n -e 's/.*cburst \([a-zA-z0-9]*\).*/\1/p' )
+		if [ "$( echo "${line}" | sed -n -e 's/.*1:11 //p' )" != "" ]; then
+			DownBurst1=$( echo "${line}" | sed -n -e 's/.* burst \([a-zA-z0-9]*\).*/\1/p' )
+			DownCburst1=$( echo "${line}" | sed -n -e 's/.*cburst \([a-zA-z0-9]*\).*/\1/p' )
 		fi
 
-		if [ "$( echo ${line} | sed -n -e 's/.*1:12 //p' )" != "" ] ; then
-			DownBurst2=$( echo ${line} | sed -n -e 's/.* burst \([a-zA-z0-9]*\).*/\1/p' )
-			DownCburst2=$( echo ${line} | sed -n -e 's/.*cburst \([a-zA-z0-9]*\).*/\1/p' )
+		if [ "$( echo "${line}" | sed -n -e 's/.*1:12 //p' )" != "" ]; then
+			DownBurst2=$( echo "${line}" | sed -n -e 's/.* burst \([a-zA-z0-9]*\).*/\1/p' )
+			DownCburst2=$( echo "${line}" | sed -n -e 's/.*cburst \([a-zA-z0-9]*\).*/\1/p' )
 		fi
 
-		if [ "$( echo ${line} | sed -n -e 's/.*1:13 //p' )" != "" ] ; then
-			DownBurst3=$( echo ${line} | sed -n -e 's/.* burst \([a-zA-z0-9]*\).*/\1/p' )
-			DownCburst3=$( echo ${line} | sed -n -e 's/.*cburst \([a-zA-z0-9]*\).*/\1/p' )
+		if [ "$( echo "${line}" | sed -n -e 's/.*1:13 //p' )" != "" ]; then
+			DownBurst3=$( echo "${line}" | sed -n -e 's/.* burst \([a-zA-z0-9]*\).*/\1/p' )
+			DownCburst3=$( echo "${line}" | sed -n -e 's/.*cburst \([a-zA-z0-9]*\).*/\1/p' )
 		fi
 
-		if [ "$( echo ${line} | sed -n -e 's/.*1:14 //p' )" != "" ] ; then
-			DownBurst4=$( echo ${line} | sed -n -e 's/.* burst \([a-zA-z0-9]*\).*/\1/p' )
-			DownCburst4=$( echo ${line} | sed -n -e 's/.*cburst \([a-zA-z0-9]*\).*/\1/p' )
+		if [ "$( echo "${line}" | sed -n -e 's/.*1:14 //p' )" != "" ]; then
+			DownBurst4=$( echo "${line}" | sed -n -e 's/.* burst \([a-zA-z0-9]*\).*/\1/p' )
+			DownCburst4=$( echo "${line}" | sed -n -e 's/.*cburst \([a-zA-z0-9]*\).*/\1/p' )
 		fi
 
-		if [ "$( echo ${line} | sed -n -e 's/.*1:15 //p' )" != "" ] ; then
-			DownBurst5=$( echo ${line} | sed -n -e 's/.* burst \([a-zA-z0-9]*\).*/\1/p' )
-			DownCburst5=$( echo ${line} | sed -n -e 's/.*cburst \([a-zA-z0-9]*\).*/\1/p' )
+		if [ "$( echo "${line}" | sed -n -e 's/.*1:15 //p' )" != "" ]; then
+			DownBurst5=$( echo "${line}" | sed -n -e 's/.* burst \([a-zA-z0-9]*\).*/\1/p' )
+			DownCburst5=$( echo "${line}" | sed -n -e 's/.*cburst \([a-zA-z0-9]*\).*/\1/p' )
 		fi
 
-		if [ "$( echo ${line} | sed -n -e 's/.*1:16 //p' )" != "" ] ; then
-			DownBurst6=$( echo ${line} | sed -n -e 's/.* burst \([a-zA-z0-9]*\).*/\1/p' )
-			DownCburst6=$( echo ${line} | sed -n -e 's/.*cburst \([a-zA-z0-9]*\).*/\1/p' )
+		if [ "$( echo "${line}" | sed -n -e 's/.*1:16 //p' )" != "" ]; then
+			DownBurst6=$( echo "${line}" | sed -n -e 's/.* burst \([a-zA-z0-9]*\).*/\1/p' )
+			DownCburst6=$( echo "${line}" | sed -n -e 's/.*cburst \([a-zA-z0-9]*\).*/\1/p' )
 		fi
 
-		if [ "$( echo ${line} | sed -n -e 's/.*1:17 //p' )" != "" ] ; then
-			DownBurst7=$( echo ${line} | sed -n -e 's/.* burst \([a-zA-z0-9]*\).*/\1/p' )
-			DownCburst7=$( echo ${line} | sed -n -e 's/.*cburst \([a-zA-z0-9]*\).*/\1/p' )
+		if [ "$( echo "${line}" | sed -n -e 's/.*1:17 //p' )" != "" ]; then
+			DownBurst7=$( echo "${line}" | sed -n -e 's/.* burst \([a-zA-z0-9]*\).*/\1/p' )
+			DownCburst7=$( echo "${line}" | sed -n -e 's/.*cburst \([a-zA-z0-9]*\).*/\1/p' )
 		fi
 	done < $( tc class show dev br0 | grep "parent 1:1 " )
 
 	#read existing burst/cburst per upload class
 	while read -r line;
 	do
-		if [ "$( echo ${line} | sed -n -e 's/.*1:10 //p' )" != "" ] ; then
-			UpBurst0=$( echo ${line} | sed -n -e 's/.* burst \([a-zA-z0-9]*\).*/\1/p' )
-			UpCburst0=$( echo ${line} | sed -n -e 's/.*cburst \([a-zA-z0-9]*\).*/\1/p' )
+		if [ "$( echo "${line}" | sed -n -e 's/.*1:10 //p' )" != "" ]; then
+			UpBurst0=$( echo "${line}" | sed -n -e 's/.* burst \([a-zA-z0-9]*\).*/\1/p' )
+			UpCburst0=$( echo "${line}" | sed -n -e 's/.*cburst \([a-zA-z0-9]*\).*/\1/p' )
 		fi
 
-		if [ "$( echo ${line} | sed -n -e 's/.*1:11 //p' )" != "" ] ; then
-			UpBurst1=$( echo ${line} | sed -n -e 's/.* burst \([a-zA-z0-9]*\).*/\1/p' )
-			UpCburst1=$( echo ${line} | sed -n -e 's/.*cburst \([a-zA-z0-9]*\).*/\1/p' )
+		if [ "$( echo "${line}" | sed -n -e 's/.*1:11 //p' )" != "" ]; then
+			UpBurst1=$( echo "${line}" | sed -n -e 's/.* burst \([a-zA-z0-9]*\).*/\1/p' )
+			UpCburst1=$( echo "${line}" | sed -n -e 's/.*cburst \([a-zA-z0-9]*\).*/\1/p' )
 		fi
 
-		if [ "$( echo ${line} | sed -n -e 's/.*1:12 //p' )" != "" ] ; then
-			UpBurst2=$( echo ${line} | sed -n -e 's/.* burst \([a-zA-z0-9]*\).*/\1/p' )
-			UpCburst2=$( echo ${line} | sed -n -e 's/.*cburst \([a-zA-z0-9]*\).*/\1/p' )
+		if [ "$( echo "${line}" | sed -n -e 's/.*1:12 //p' )" != "" ]; then
+			UpBurst2=$( echo "${line}" | sed -n -e 's/.* burst \([a-zA-z0-9]*\).*/\1/p' )
+			UpCburst2=$( echo "${line}" | sed -n -e 's/.*cburst \([a-zA-z0-9]*\).*/\1/p' )
 		fi
 
-		if [ "$( echo ${line} | sed -n -e 's/.*1:13 //p' )" != "" ] ; then
-			UpBurst3=$( echo ${line} | sed -n -e 's/.* burst \([a-zA-z0-9]*\).*/\1/p' )
-			UpCburst3=$( echo ${line} | sed -n -e 's/.*cburst \([a-zA-z0-9]*\).*/\1/p' )
+		if [ "$( echo "${line}" | sed -n -e 's/.*1:13 //p' )" != "" ]; then
+			UpBurst3=$( echo "${line}" | sed -n -e 's/.* burst \([a-zA-z0-9]*\).*/\1/p' )
+			UpCburst3=$( echo "${line}" | sed -n -e 's/.*cburst \([a-zA-z0-9]*\).*/\1/p' )
 		fi
 
-		if [ "$( echo ${line} | sed -n -e 's/.*1:14 //p' )" != "" ] ; then
-			UpBurst4=$( echo ${line} | sed -n -e 's/.* burst \([a-zA-z0-9]*\).*/\1/p' )
-			UpCburst4=$( echo ${line} | sed -n -e 's/.*cburst \([a-zA-z0-9]*\).*/\1/p' )
+		if [ "$( echo "${line}" | sed -n -e 's/.*1:14 //p' )" != "" ]; then
+			UpBurst4=$( echo "${line}" | sed -n -e 's/.* burst \([a-zA-z0-9]*\).*/\1/p' )
+			UpCburst4=$( echo "${line}" | sed -n -e 's/.*cburst \([a-zA-z0-9]*\).*/\1/p' )
 		fi
 
-		if [ "$( echo ${line} | sed -n -e 's/.*1:15 //p' )" != "" ] ; then
-			UpBurst5=$( echo ${line} | sed -n -e 's/.* burst \([a-zA-z0-9]*\).*/\1/p' )
-			UpCburst5=$( echo ${line} | sed -n -e 's/.*cburst \([a-zA-z0-9]*\).*/\1/p' )
+		if [ "$( echo "${line}" | sed -n -e 's/.*1:15 //p' )" != "" ]; then
+			UpBurst5=$( echo "${line}" | sed -n -e 's/.* burst \([a-zA-z0-9]*\).*/\1/p' )
+			UpCburst5=$( echo "${line}" | sed -n -e 's/.*cburst \([a-zA-z0-9]*\).*/\1/p' )
 		fi
 
-		if [ "$( echo ${line} | sed -n -e 's/.*1:16 //p' )" != "" ] ; then
-			UpBurst6=$( echo ${line} | sed -n -e 's/.* burst \([a-zA-z0-9]*\).*/\1/p' )
-			UpCburst6=$( echo ${line} | sed -n -e 's/.*cburst \([a-zA-z0-9]*\).*/\1/p' )
+		if [ "$( echo "${line}" | sed -n -e 's/.*1:16 //p' )" != "" ]; then
+			UpBurst6=$( echo "${line}" | sed -n -e 's/.* burst \([a-zA-z0-9]*\).*/\1/p' )
+			UpCburst6=$( echo "${line}" | sed -n -e 's/.*cburst \([a-zA-z0-9]*\).*/\1/p' )
 		fi
 
-		if [ "$( echo ${line} | sed -n -e 's/.*1:17 //p' )" != "" ] ; then
-			UpBurst7=$( echo ${line} | sed -n -e 's/.* burst \([a-zA-z0-9]*\).*/\1/p' )
-			UpCburst7=$( echo ${line} | sed -n -e 's/.*cburst \([a-zA-z0-9]*\).*/\1/p' )
+		if [ "$( echo "${line}" | sed -n -e 's/.*1:17 //p' )" != "" ]; then
+			UpBurst7=$( echo "${line}" | sed -n -e 's/.* burst \([a-zA-z0-9]*\).*/\1/p' )
+			UpCburst7=$( echo "${line}" | sed -n -e 's/.*cburst \([a-zA-z0-9]*\).*/\1/p' )
 		fi
-	done < $( tc class show dev $wan | grep "parent 1:1 " )
+	done < $( tc class show dev "$wan" | grep "parent 1:1 " )
 
 	#read parameters for fakeTC
 	PARMS=""
 	OVERHEAD=$(nvram get qos_overhead)
-	if [ -n "$OVERHEAD" ] && [ "$OVERHEAD" -gt "0" ] ; then
+	if [ -n "$OVERHEAD" ] && [ "$OVERHEAD" -gt "0" ]; then
 		ATM=$(nvram get qos_atm)
-		if [ "$ATM" = "1" ] ; then
+		if [ "$ATM" = "1" ]; then
 			PARMS="overhead $OVERHEAD linklayer atm "
 		else
 			PARMS="overhead $OVERHEAD linklayer ethernet "
@@ -325,43 +325,43 @@ EOF
 appdb(){
 
 		grep -m 25 -i "${1}" /tmp/bwdpi/bwdpi.app.db | while read -r line ; do
-			echo $line | cut -f 4 -d ","
+			echo "$line" | cut -f 4 -d ","
 
-			cat_decimal=$(echo $line | cut -f 1 -d "," )
-			cat_hex=$( printf "%02x" $cat_decimal )
+			cat_decimal=$(echo "$line" | cut -f 1 -d "," )
+			cat_hex=$( printf "%02x" "$cat_decimal" )
 			case "$cat_decimal" in
-			 '9'|'18'|'19'|'20')
-			   echo " Originally:  Net Control"
-			   ;;
-			 '0'|'5'|'6'|'15'|'17')
-			   echo " Originally:  VoIP"
-			   ;;
-			 '8')
-			   echo " Originally:  Gaming"
-			   ;;
-			 '7'|'10'|'11'|'21'|'23')
-			   echo " Originally:  Others"
-			   ;;
-			 '13'|'24')
-			   echo " Originally:  Web"
-			   ;;
-			 '4')
-			   echo " Originally:  Streaming"
-			   ;;
-			 '1'|'3'|'14')
-			   echo " Originally:  Downloads"
-			   ;;
+			'9'|'18'|'19'|'20')
+				echo " Originally:  Net Control"
+				;;
+			'0'|'5'|'6'|'15'|'17')
+				echo " Originally:  VoIP"
+				;;
+			'8')
+				echo " Originally:  Gaming"
+				;;
+			'7'|'10'|'11'|'21'|'23')
+				echo " Originally:  Others"
+				;;
+			'13'|'24')
+				echo " Originally:  Web"
+				;;
+			'4')
+				echo " Originally:  Streaming"
+				;;
+			'1'|'3'|'14')
+				echo " Originally:  Downloads"
+				;;
 			esac
 
 			echo -n  " Mark:        ${cat_hex}"
-			echo $line | cut -f 2 -d "," | awk '{printf("%04x \n",$1)}'
+			echo "$line" | cut -f 2 -d "," | awk '{printf("%04x \n",$1)}'
 
 			#parameters required for manually creating TC rules
-			  #echo " TC Prio   : $(expr $(tc filter show dev br0 | grep "${cat_hex}0000" -B1 | tail -2 | cut -d " " -f7 | head -1) - 1)"
-			  #printf " Down Mark : 0x80${cat_hex}"
-			  #echo $line | cut -f 2 -d "," | awk '{printf("%04x 0xc03fffff\n",$1)}'
-			  #printf " UP   Mark : 0x40${cat_hex}"
-			  #echo $line | cut -f 2 -d "," | awk '{printf("%04x 0xc03fffff\n",$1)}'
+			#echo " TC Prio   : $(expr $(tc filter show dev br0 | grep "${cat_hex}0000" -B1 | tail -2 | cut -d " " -f7 | head -1) - 1)"
+			#printf " Down Mark : 0x80${cat_hex}"
+			#echo $line | cut -f 2 -d "," | awk '{printf("%04x 0xc03fffff\n",$1)}'
+			#printf " UP   Mark : 0x40${cat_hex}"
+			#echo $line | cut -f 2 -d "," | awk '{printf("%04x 0xc03fffff\n",$1)}'
 			echo ""
 		done
 }
@@ -375,8 +375,8 @@ debug(){
 	set_tc_variables
 	current_undf_rule="$(tc filter show dev br0 | grep -v "/" | grep "000ffff" -B1)"
 	if [ -n "$current_undf_rule" ]; then
-		undf_flowid=$(echo $current_undf_rule | grep -o "flowid.*" | cut -d" " -f2 | head -1)
-		undf_prio=$(echo $current_undf_rule | grep -o "pref.*" | cut -d" " -f2 | head -1)
+		undf_flowid=$(echo "$current_undf_rule" | grep -o "flowid.*" | cut -d" " -f2 | head -1)
+		undf_prio=$(echo "$current_undf_rule" | grep -o "pref.*" | cut -d" " -f2 | head -1)
 	else
 		undf_flowid=""
 		undf_prio=2
@@ -428,7 +428,7 @@ read_nvram(){
 "$(nvram get fb_comment | sed 's/>/;/g' )"
 EOF
 	fi
-	if [ $(nvram get fb_email_dbg | sed 's/>/;/g' | tr -cd ';' | wc -c) -eq 48 ] ; then
+	if [ $(nvram get fb_email_dbg | sed 's/>/;/g' | tr -cd ';' | wc -c) -eq 48 ]; then
 		read \
 			h1 h2 h3 h4 h5 h6 h7 \
 			r1 d1 \
@@ -510,11 +510,11 @@ parse_tcrule() {
 	id="${1:2:4}"
 
 	#filter field
-	if [ "${#1}" -eq "6" ] ; then
-		if [ "${id}" = "****" ] ; then
+	if [ "${#1}" -eq "6" ]; then
+		if [ "${id}" = "****" ]; then
 			DOWN_mark="0x80${1//\*/0} 0xc03f0000"
 			UP_mark="0x40${1//\*/0} 0xc03f0000"
-		elif [ "$1" = "000000" ] ; then
+		elif [ "$1" = "000000" ]; then
 			# unidentified traffic has special mask
 			DOWN_mark="0x80${1} 0xc000ffff"
 			UP_mark="0x40${1} 0xc000ffff"
@@ -550,10 +550,10 @@ parse_tcrule() {
 		prio="$(tc filter show dev br0 | grep -i ${cat}0000 -B1 | grep 3f0000 -B1 | head -1 | cut -d " " -f7)"
 	fi
 	currprio=$prio
-	if [ -z "${prio}" ] ; then
+	if [ -z "${prio}" ]; then
 		prio="${undf_prio}"
 	else
-		prio="$(expr ${prio} - 1)"
+		prio="$((prio-1))"
 	fi
 
 	{
@@ -584,7 +584,7 @@ parse_iptablerule() {
 	#$7=qos destination		accepted 0-7
 
 	#local IP
-	if [ "${#1}" -ge "7" ] ; then
+	if [ "${#1}" -ge "7" ]; then
 		DOWN_Lip="${1//[^!]*/} -d ${1//!/}"
 		UP_Lip="${1//[^!]*/} -s ${1//!/}"
 	else
@@ -593,7 +593,7 @@ parse_iptablerule() {
 	fi
 
 	#remote IP
-	if [ "${#2}" -ge "7" ] ; then
+	if [ "${#2}" -ge "7" ]; then
 		DOWN_Rip="${2//[^!]*/} -s ${2//!/}"
 		UP_Rip="${2//[^!]*/} -d ${2//!/}"
 	else
@@ -602,19 +602,19 @@ parse_iptablerule() {
 	fi
 
 	#protocol (required for port rules)
-	if [ "${3}" = 'tcp' ] || [ "${3}" = 'udp' ] ; then													#if tcp/udp
+	if [ "${3}" = 'tcp' ] || [ "${3}" = 'udp' ]; then		#if tcp/udp
 		PROTO="-p ${3}"
 	else
-		if [ "${#4}" -gt "1" ] || [ "${#5}" -gt "1" ] ; then			#if both & port rules defined
-			PROTO="-p both"			#"BOTH" gets replaced with tcp & udp during later prior to rule execution
-		else																							#if both & port rules not defined
+		if [ "${#4}" -gt "1" ] || [ "${#5}" -gt "1" ]; then		#if both & port rules defined
+			PROTO="-p both"		#"BOTH" gets replaced with tcp & udp during later prior to rule execution
+		else		#if both & port rules not defined
 			PROTO=""
 		fi
 	fi
 
 	#local port
-	if [ "${#4}" -gt "1" ] ; then
-		if [ "$( echo ${4} | tr -cd ',' | wc -c )" -ge "1" ] ; then
+	if [ "${#4}" -gt "1" ]; then
+		if [ "$( echo "${4}" | tr -cd ',' | wc -c )" -ge "1" ]; then
 			#multiport XXX,YYY,ZZZ
 			DOWN_Lport="-m multiport ${4//[^!]*/} --dports ${4//!/}"
 			UP_Lport="-m multiport ${4//[^!]*/} --sports ${4//!/}"
@@ -629,8 +629,8 @@ parse_iptablerule() {
 	fi
 
 	#remote port
-	if [ "${#5}" -gt "1" ] ; then
-		if [ "$( echo ${5} | tr -cd ',' | wc -c )" -ge "1" ] ; then
+	if [ "${#5}" -gt "1" ]; then
+		if [ "$( echo "${5}" | tr -cd ',' | wc -c )" -ge "1" ]; then
 			#multiport XXX,YYY,ZZZ
 			DOWN_Rport="-m multiport ${5//[^!]*/} --sports ${5//!/}"
 			UP_Rport="-m multiport ${5//[^!]*/} --dports ${5//!/}"
@@ -645,8 +645,8 @@ parse_iptablerule() {
 	fi
 
 	#match mark
-	if [ "${#6}" -eq "6" ] ; then
-		if [ "${6:2:4}" = "****" ] ; then
+	if [ "${#6}" -eq "6" ]; then
+		if [ "${6:2:4}" = "****" ]; then
 			DOWN_mark="-m mark --mark 0x80${6//\*/0}/0xc03f0000"
 			UP_mark="-m mark --mark 0x40${6//\*/0}/0xc03f0000"
 		else
@@ -659,7 +659,7 @@ parse_iptablerule() {
 	fi
 
 	##if parameters are empty return early
-	if [ -z "${DOWN_Lip}${DOWN_Rip}${DOWN_Lport}${DOWN_Rport}${DOWN_mark}" ] ; then
+	if [ -z "${DOWN_Lip}${DOWN_Rip}${DOWN_Lport}${DOWN_Rport}${DOWN_mark}" ]; then
 		return
 	fi
 
@@ -794,12 +794,12 @@ about() {
 	echo 'Development'
 	echo '  Tested with ASUS AC-68U, FW384.9, using Adaptive QOS with Manual Bandwidth Settings'
 	echo '  Copyright (C) 2017-2019 FreshJR - All Rights Reserved '
-	echo -en '\033[?7h'			#enable line wrap
+	echo -en '\033[?7h'		#enable line wrap
 }
 
 update() {
 	echo -en "\033c\e[3J"		#clear screen
-	echo -en '\033[?7l'			#disable line wrap
+	echo -en '\033[?7l'		#disable line wrap
 	printf '\e[8;30;120t'		#set height/width of terminal
 	echo -e  "\033[1;32mFreshJR QOS v${version} \033[0m"
 	echo "Checking for updates"
@@ -811,9 +811,9 @@ update() {
 		echo " FreshJR QOS v${remotever} is now available!"
 		echo ""
 		echo -n " Would you like to update now? [1=Yes 2=No] : "
-		read yn
+		read -r yn
 		echo ""
-		if ! [ "${yn}" = "1" ] ; then
+		if ! [ "${yn}" = "1" ]; then
 			echo -e "\033[1;31;7m  No Changes have been made \033[0m"
 			echo ""
 			return 0
@@ -821,9 +821,9 @@ update() {
 	else
 		echo    " You have the latest version installed"
 		echo -n " Would you like to overwrite your existing installation anyway? [1=Yes 2=No] : "
-		read yn
+		read -r yn
 		echo ""
-		if ! [ "${yn}" = "1"  ] ; then
+		if ! [ "${yn}" = "1"  ]; then
 			echo -e "\033[1;31;7m  No Changes have been made \033[0m"
 			echo ""
 			return 0
@@ -840,15 +840,15 @@ update() {
 prompt_restart() {
 	echo ""
 	echo -en " Would you like to \033[1;32m[Restart QoS]\033[0m for modifications to take effect? [1=Yes 2=No] : "
-	read yn
-	if [ "${yn}" = "1" ] ; then
-		if grep -q -x '/jffs/scripts/FreshJR_QOS -start $1 & ' /jffs/scripts/firewall-start ; then			#RMerlin install
+	read -r yn
+	if [ "${yn}" = "1" ]; then
+		if grep -q -x '/jffs/scripts/FreshJR_QOS -start $1 & ' /jffs/scripts/firewall-start ; then		#RMerlin install
 			service "restart_qos;restart_firewall"
 		fi
 		echo ""
 	else
 		echo ""
-		if grep -q -x '/jffs/scripts/FreshJR_QOS -start $1 & ' /jffs/scripts/firewall-start ; then			#RMerlin install
+		if grep -q -x '/jffs/scripts/FreshJR_QOS -start $1 & ' /jffs/scripts/firewall-start ; then		#RMerlin install
 			echo -e  "\033[1;31;7m  Remember: [ Restart QOS ] for modifications to take effect \033[0m"
 			echo ""
 		fi
@@ -856,7 +856,7 @@ prompt_restart() {
 } # prompt_restart
 
 menu() {
-  read_nvram
+	read_nvram
 	echo -en "\033c\e[3J"		#clear screen
 	echo -e  "\033[1;32mFreshJR QOS v${version} released ${release} \033[0m"
 	echo "  (1) about               explain functionality"
@@ -867,7 +867,7 @@ menu() {
 	echo "  (e) exit"
 	echo ""
 	echo -n "Make a selection: "
-	read input
+	read -r input
 	case $input in
 			'1')
 				about
@@ -875,7 +875,7 @@ menu() {
 				echo -en "\033c"		#clear screen
 				;;
 			'2')
-			    update
+				update
 				read -n 1 -s -r -p "(Press any key to return)"
 				echo -en "\033c"		#clear screen
 				;;
@@ -896,8 +896,8 @@ menu() {
 				echo -e  "\033[1;32mFreshJR QOS v${version} released ${release} \033[0m"
 				echo ""
 				echo -en " Confirm you want to \033[1;32m[uninstall]\033[0m FreshJR_QOS [1=Yes 2=No] : "
-				read yn
-				if [ "${yn}" = "1" ] ; then
+				read -r yn
+				if [ "${yn}" = "1" ]; then
 					echo ""
 					sh /jffs/scripts/FreshJR_QOS -uninstall
 					echo ""
@@ -921,27 +921,27 @@ menu() {
 remove_webui() {
 	if nvram get rc_support | /bin/grep -q am_addons; then
 
-	  am_get_webui_page ${webpath}
+		am_get_webui_page ${webpath}
 
-	  if [ -n "$am_webui_page" ] && [ "$am_webui_page" != "none" ]; then
-	    if [ -f /tmp/menuTree.js ]; then
-	      # Merlin
-	      sed -i "\~tabName: \"FreshJR QoS\"},~d" /tmp/menuTree.js
-	      umount /www/require/modules/menuTree.js 2>/dev/null
-	      if diff /tmp/menuTree.js /www/require/modules/menuTree.js; then
-	        rm /tmp/menuTree.js
-	      else
-	        # Still some modifications from another script so remount
-	        mount -o bind /tmp/menuTree.js /www/require/modules/menuTree.js
-	      fi
-		    if [ -f /www/user/"$am_webui_page" ]; then
-		        rm /www/user/"$am_webui_page"
-		    fi
-		  fi
-		  for i in $(/bin/grep -l FreshJR_QOS /www/user/user*.asp 2>/dev/null)
-		  do
-		    rm "$i"
-		  done
+		if [ -n "$am_webui_page" ] && [ "$am_webui_page" != "none" ]; then
+			if [ -f /tmp/menuTree.js ]; then
+				#Merlin
+				sed -i "\~tabName: \"FreshJR QoS\"},~d" /tmp/menuTree.js
+				umount /www/require/modules/menuTree.js 2>/dev/null
+				if diff /tmp/menuTree.js /www/require/modules/menuTree.js; then
+					rm /tmp/menuTree.js
+				else
+					# Still some modifications from another script so remount
+					mount -o bind /tmp/menuTree.js /www/require/modules/menuTree.js
+				fi
+				if [ -f /www/user/"$am_webui_page" ]; then
+					rm /www/user/"$am_webui_page"
+				fi
+			fi
+			for i in $(/bin/grep -l FreshJR_QOS /www/user/user*.asp 2>/dev/null)
+			do
+				rm "$i"
+			done
 		fi
 	fi
 }
@@ -998,26 +998,26 @@ Auto_ServiceEventEnd() {
 }
 
 Auto_FirewallStart() {
-	if [ -f /jffs/scripts/firewall-start ] ; then									   #check if firewall-start exists
-		 if ! grep -q "#!/bin/sh" /jffs/scripts/firewall-start ; then							#check if firewall-start header is correct
+	if [ -f /jffs/scripts/firewall-start ]; then		#check if firewall-start exists
+		if ! grep -q "#!/bin/sh" /jffs/scripts/firewall-start ; then		#check if firewall-start header is correct
 			#if header is incorrect, fix header
 			echo "Detected improper header in firewall-start, fixing header"
 			sed -i "1i #!/bin/sh" /jffs/scripts/firewall-start
 			chmod 0755 /jffs/scripts/firewall-start
-		 fi
+		fi
 
-		 if ! grep -q -x '/jffs/scripts/FreshJR_QOS -start $1 & ' /jffs/scripts/firewall-start ; then	  #check if FreshJR_QOS is present as item in firewall start
+		if ! grep -q -x '/jffs/scripts/FreshJR_QOS -start $1 & ' /jffs/scripts/firewall-start ; then		#check if FreshJR_QOS is present as item in firewall start
 			#if not, appened it to the last line (also delete any previously formated entry)
 			echo "Placing FreshJR_QOS entry into firewall-start"
 			sed -i '/FreshJR_QOS/d' /jffs/scripts/firewall-start
 			echo '/jffs/scripts/FreshJR_QOS -start $1 & # FreshJR_QOS Addition' >> /jffs/scripts/firewall-start
-		 fi
-	else																			   #if firewall-start does not exist then set it up entirely
-		 echo "Firewall-start not detected, creating firewall-start"
-		 echo "Placing FreshJR_QOS entry into firewall-start"
-		 echo "#!/bin/sh" > /jffs/scripts/firewall-start
-		 echo '/jffs/scripts/FreshJR_QOS -start $1 & # FreshJR_QOS Addition' >> /jffs/scripts/firewall-start
-		 chmod 0755 /jffs/scripts/firewall-start
+		fi
+	else		#if firewall-start does not exist then set it up entirely
+		echo "Firewall-start not detected, creating firewall-start"
+		echo "Placing FreshJR_QOS entry into firewall-start"
+		echo "#!/bin/sh" > /jffs/scripts/firewall-start
+		echo '/jffs/scripts/FreshJR_QOS -start $1 & # FreshJR_QOS Addition' >> /jffs/scripts/firewall-start
+		chmod 0755 /jffs/scripts/firewall-start
 	fi
 } # Auto_FirewallStart
 
@@ -1054,8 +1054,8 @@ install() {
 } # install
 
 uninstall() {
-	sed -i '/FreshJR_QOS/d' /jffs/scripts/firewall-start 2>/dev/null						#remove FreshJR_QOS from firewall start
-	sed -i '/freshjr/d' /jffs/configs/profile.add 2>/dev/null								#remove aliases used to launch interactive mode
+	sed -i '/FreshJR_QOS/d' /jffs/scripts/firewall-start 2>/dev/null		#remove FreshJR_QOS from firewall start
+	sed -i '/freshjr/d' /jffs/configs/profile.add 2>/dev/null		#remove aliases used to launch interactive mode
 	sed -i '/FreshJR/d' /jffs/configs/profile.add 2>/dev/null
 	cru d FreshJR_QOS
 	rm -f /jffs/scripts/FreshJR_QOS
@@ -1090,7 +1090,7 @@ write_iptables_rules() {
 
 	echo "$iptables_rules" | sed 's/</\n/g' | while read -r localip remoteip proto lport rport mark class
 	do
-		if [ -n "${localip}${remoteip}${proto}${lport}${rport}${mark}" ] ; then
+		if [ -n "${localip}${remoteip}${proto}${lport}${rport}${mark}" ]; then
 			parse_iptablerule "$localip" "$remoteip" "$proto" "$lport" "$rport" "$mark" "$class"
 		fi
 	done
@@ -1108,7 +1108,7 @@ write_appdb_rules() {
 
 	echo "$appdb_rules" | sed 's/</\n/g' | while read -r mark class
 	do
-		if [ -n "${mark}" ] ; then
+		if [ -n "${mark}" ]; then
 			parse_tcrule "$mark" "$class"
 		fi
 	done
@@ -1120,17 +1120,17 @@ check_qos_tc() {
 	ulclasscnt="$(tc class show dev eth0 | grep -c "parent 1:1 ")"
 	dlfiltercnt="$(tc filter show dev br0 | grep -cE "flowid 1:1[0-7] $")"
 	ulfiltercnt="$(tc filter show dev eth0 | grep -cE "flowid 1:1[0-7] $")"
-  # return ${dlclasscnt}+${ulclasscnt}+${dlfiltercnt}+${ulfiltercnt}
+	#return ${dlclasscnt}+${ulclasscnt}+${dlfiltercnt}+${ulfiltercnt}
 } # check_qos_tc
 
 start() {
-	cru a FreshJR_QOS "30 3 * * * /jffs/scripts/FreshJR_QOS -check"			#makes sure daily check if active
+	cru a FreshJR_QOS "30 3 * * * /jffs/scripts/FreshJR_QOS -check"		#makes sure daily check if active
 
 	if [ "$(nvram get qos_enable)" = "1" ] && [ "$(nvram get qos_type)" = "1" ]; then
 		for pid in $(pidof FreshJR_QOS); do
-			if [ $pid != $$ ]; then
-				if ! [ "$(ps -w | grep "^\s${pid}\s.*\(install\|menu\|rules\|rates\)" | grep -v "grep")" ] ; then		#kill all previous instances of FreshJR_QOS (-install, -menu, -rules, -rates instances are whitelisted)
-					kill $pid
+			if [ "$pid" != $$ ]; then
+				if ! ps -w | grep -q "^\s*${pid}\s.*\(install\|menu\)"; then		#kill all previous instances of FreshJR_QOS (-install, -menu instances are whitelisted)
+					kill "$pid"
 					logger -t "adaptive QOS" -s "Delayed Start Canceled (${pid})"
 				fi
 			fi
@@ -1142,7 +1142,7 @@ start() {
 		read_nvram	#needs to be set before parse_iptablerule or custom rates
 		get_config
 
-		if [ -n "$1" ] ; then
+		if [ -n "$1" ]; then
 			##iptables rules will only be reapplied on firewall "start" due to receiving interface name
 
 			write_iptables_rules
@@ -1170,8 +1170,8 @@ start() {
 
 		current_undf_rule="$(tc filter show dev br0 | grep "00ffff" -B1)"
 		if [ -n "$current_undf_rule" ]; then
-			undf_flowid=$(echo $current_undf_rule | grep -o "flowid.*" | cut -d" " -f2 | head -1)
-			undf_prio=$(echo $current_undf_rule | grep -o "pref.*" | cut -d" " -f2 | head -1)
+			undf_flowid=$(echo "$current_undf_rule" | grep -o "flowid.*" | cut -d" " -f2 | head -1)
+			undf_prio=$(echo "$current_undf_rule" | grep -o "pref.*" | cut -d" " -f2 | head -1)
 		else
 			undf_flowid=""
 			undf_prio=2
@@ -1179,7 +1179,7 @@ start() {
 		#if TC modifcations have not been applied then run modification script
 		#eg (if rule setting unidentified traffic to 1:17 exists) --> run modification script
 		if [ "${undf_flowid}" = "1:17" ] || [ -z "${undf_flowid}" ]; then
-			if [ -z "$1" ] ; then
+			if [ -z "$1" ]; then
 				# check action was called without a WAN interface passed
 				logger -t "adaptive QOS" -s "Scheduled Persistence Check -> Reapplying Changes"
 			fi # check
@@ -1189,16 +1189,16 @@ start() {
 			write_appdb_rules
 			tc_redirection_static_rules 2>&1 | logger -t "adaptive QOS"		#forwards terminal output & errors to logger
 
-			if [ "$ClassesPresent" -lt "8" ] ; then
+			if [ "$ClassesPresent" -lt "8" ]; then
 				logger -t "adaptive QOS" -s "Adaptive QOS not fully done setting up prior to modification script"
 				logger -t "adaptive QOS" -s "(Skipping class modification, delay trigger time period needs increase)"
 			else
-				if [ "$DownCeil" -gt "500" ] && [ "$UpCeil" -gt "500" ] ; then
+				if [ "$DownCeil" -gt "500" ] && [ "$UpCeil" -gt "500" ]; then
 					custom_rates 2>&1 | logger -t "adaptive QOS"		#forwards terminal output & errors to logger
 				fi
 			fi # Classes less than 8
 		else # 1:17
-			if [ "$1" = "check" ] ; then
+			if [ "$1" = "check" ]; then
 				logger -t "adaptive QOS" -s "Scheduled Persistence Check -> No modifications necessary"
 			else
 				logger -t "adaptive QOS" -s "No modifications necessary"
@@ -1249,43 +1249,43 @@ generate_bwdpi_arrays() {
 ################################################################################
 
 arg1="$(echo "$1" | tr -d "-")"
-if [ -z "$2" ] ; then
+if [ -z "$2" ]; then
 	wan="$(nvram get wan0_ifname)"
 else
 	wan="$2"
 fi
 
 case "$arg1" in
- 'start')
- 		# triggered from firewall-start with wan iface passed
+	'start')
+		# triggered from firewall-start with wan iface passed
 		start "$wan"
 		;;
 	'check')
 		# triggered from cron or service-event-end without wan iface
 		start
 		;;
- 'install'|'enable')															## INSTALLS AND TURNS ON SCRIPT
- 		install
+	'install'|'enable')		# INSTALLS AND TURNS ON SCRIPT
+		install
 		;;
- 'uninstall')																		## UNINSTALLS SCRIPT AND DELETES FILES
- 		uninstall
+	'uninstall')		# UNINSTALLS SCRIPT AND DELETES FILES
+		uninstall
 		;;
- 'disable')																		## TURNS OFF SCRIPT BUT KEEP FILES
+	'disable')		# TURNS OFF SCRIPT BUT KEEP FILES
 		sed -i '/FreshJR_QOS/d' /jffs/scripts/firewall-start  2>/dev/null
 		sed -i '/FreshJR_QOS/d' /jffs/scripts/service-event-end  2>/dev/null
 		cru d FreshJR_QOS
 		remove_webui
 		;;
- 'debug*')
+	'debug*')
 		debug
 		;;
-  'about')
-    about
+	'about')
+		about
 		;;
-  'update')
-    update
+	'update')
+		update
 		;;
-  'menu')
+	'menu')
 		menu
 		;;
 	*)
