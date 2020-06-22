@@ -33,7 +33,12 @@ release=12/31/2020
 . /usr/sbin/helper.sh
 
 # Global variables
-webpath='/jffs/scripts/www_FreshJR_QoS_Stats.asp'		#path of FreshJR_QoS_Stats.asp
+GIT_REPO="https://raw.githubusercontent.com/dave14305/FreshJR_QOS"
+GIT_BRANCH="dev"
+GIT_URL="${GIT_REPO}/${GIT_BRANCH}"
+ADDON_DIR="/jffs/addons/flexqos"
+WEBUIPATH="${ADDON_DIR}/flexqos.asp"
+SCRIPTPATH="${ADDON_DIR}/flexqos.sh"
 ipv6_enabled="$(nvram get ipv6_service)"
 
 #marks for iptable rules
@@ -359,7 +364,7 @@ appdb(){
 
 ## Main Menu -debug function
 debug(){
-	echo -e "\033[1;32mFreshJR QOS v${version}\033[0m"
+	echo "FreshJR QOS v${version}"
 	echo "Debug:"
 	echo ""
 	read_nvram
@@ -738,7 +743,7 @@ parse_iptablerule() {
 }
 
 about() {
-	echo -en "\033c\e[3J"		#clear screen
+	# clear
 	echo "FreshJR_QOS v${version} released ${release}"
 	echo ""
 	echo 'License'
@@ -749,7 +754,7 @@ about() {
 	echo '  https://www.snbforums.com/threads/release-freshjr-adaptive-qos-improvements-custom-rules-and-inner-workings.36836/'
 	echo "  https://github.com/FreshJR07/FreshJR_QOS (Source Code)"
 	echo ""
-	echo -e  "\033[1;32mFreshJR QOS v${version} \033[0m"
+	echo "FreshJR QOS v${version}"
 	echo "About"
 	echo '  Script Changes Unidentified traffic destination away from "Defaults" into "Others"'
 	echo '  Script Changes HTTPS traffic destination away from "Net Control" into "Web Surfing" '
@@ -785,17 +790,43 @@ about() {
 	echo 'Development'
 	echo '  Tested with ASUS AC-68U, FW384.9, using Adaptive QOS with Manual Bandwidth Settings'
 	echo '  Copyright (C) 2017-2019 FreshJR - All Rights Reserved '
-	echo -en '\033[?7h'		#enable line wrap
 }
 
+# From Adamm00
+check_connection() {
+	livecheck="0"
+	while [ "$livecheck" != "2" ]; do
+		if ping -q -w3 -c1 raw.githubusercontent.com >/dev/null 2>&1; then
+			break
+		else
+			livecheck="$((livecheck + 1))"
+			if [ "$livecheck" != "2" ]; then
+				sleep 3
+			else
+				return "1"
+			fi
+		fi
+	done
+} # check_connection
+
+download_file() {
+	if [ "$(curl -fsL --retry 3 --connect-timeout 3 "${GIT_URL}/${1}" | md5sum | awk '{print $1}')" != "$(md5sum "$2" 2>/dev/null | awk '{print $1}')" ]; then
+		if curl -fsL --retry 3 --connect-timeout 3 "${GIT_URL}/${1}" -o "$2"; then
+			logger -t "adaptive QoS" "Updated $(echo "$1" | awk -F / '{print $NF}')"
+		else
+			logger -t "adaptive QoS" "Updating $(echo "$1" | awk -F / '{print $NF}') failed"
+		fi
+	else
+		logger -t "adaptive QoS" "File $(echo $2 | awk -F / '{print $NF}') is already up-to-date"
+	fi
+} # download_file
+
 update() {
-	echo -en "\033c\e[3J"		#clear screen
-	echo -en '\033[?7l'		#disable line wrap
-	printf '\e[8;30;120t'		#set height/width of terminal
-	echo -e  "\033[1;32mFreshJR QOS v${version} \033[0m"
+	# clear
+	echo "FreshJR QOS v${version}"
 	echo "Checking for updates"
 	echo ""
-	url="https://raw.githubusercontent.com/dave14305/FreshJR_QOS/master/FreshJR_QOS.sh"
+	url="${GIT_URL}/FreshJR_QOS.sh"
 	remotever=$(curl -fsN --retry 3 ${url} | /bin/grep "^version=" | sed -e s/version=//)
 
 	if [ "$version" != "$remotever" ]; then
@@ -805,7 +836,7 @@ update() {
 		read -r yn
 		echo ""
 		if ! [ "${yn}" = "1" ]; then
-			echo -e "\033[1;31;7m  No Changes have been made \033[0m"
+			echo " No Changes have been made"
 			echo ""
 			return 0
 		fi
@@ -815,32 +846,32 @@ update() {
 		read -r yn
 		echo ""
 		if ! [ "${yn}" = "1"  ]; then
-			echo -e "\033[1;31;7m  No Changes have been made \033[0m"
+			echo " No Changes have been made"
 			echo ""
 			return 0
 		fi
 	fi
 
-	echo -e "Installing: FreshJR_QOS_v${remotever}"
+	echo "Installing: FreshJR_QOS_v${remotever}"
 	echo ""
 	echo "Curl Output:"
-	curl "https://raw.githubusercontent.com/dave14305/FreshJR_QOS/master/FreshJR_QOS.sh" -o /jffs/scripts/FreshJR_QOS --create-dirs && curl "https://raw.githubusercontent.com/dave14305/FreshJR_QOS/master/FreshJR_QoS_Stats.asp" -o "${webpath}" && sh /jffs/scripts/FreshJR_QOS -install
+	curl "${GIT_URL}/FreshJR_QOS.sh" -o ${SCRIPTPATH} --create-dirs && curl "${GIT_URL}/FreshJR_QoS_Stats.asp" -o "${WEBUIPATH}" && sh ${SCRIPTPATH} -install
 	exit
 }
 
 prompt_restart() {
 	echo ""
-	echo -en " Would you like to \033[1;32m[Restart QoS]\033[0m for modifications to take effect? [1=Yes 2=No] : "
+	echo -n " Would you like to [Restart QoS] for modifications to take effect? [1=Yes 2=No] : "
 	read -r yn
 	if [ "${yn}" = "1" ]; then
-		if /bin/grep -q -x '/jffs/scripts/FreshJR_QOS -start $1 & ' /jffs/scripts/firewall-start ; then		#RMerlin install
+		if /bin/grep -q -x "${SCRIPTPATH} -start \$1 & " /jffs/scripts/firewall-start ; then		#RMerlin install
 			service "restart_qos;restart_firewall"
 		fi
 		echo ""
 	else
 		echo ""
-		if /bin/grep -q -x '/jffs/scripts/FreshJR_QOS -start $1 & ' /jffs/scripts/firewall-start ; then		#RMerlin install
-			echo -e  "\033[1;31;7m  Remember: [ Restart QOS ] for modifications to take effect \033[0m"
+		if /bin/grep -q -x "${SCRIPTPATH} -start \$1 & " /jffs/scripts/firewall-start ; then		#RMerlin install
+			echo "  Remember: [ Restart QOS ] for modifications to take effect"
 			echo ""
 		fi
 	fi
@@ -848,8 +879,8 @@ prompt_restart() {
 
 menu() {
 	read_nvram
-	echo -en "\033c\e[3J"		#clear screen
-	echo -e  "\033[1;32mFreshJR QOS v${version} released ${release} \033[0m"
+	# clear
+	echo "FreshJR QOS v${version} released ${release}"
 	echo "  (1) about               explain functionality"
 	echo "  (2) update              check for updates "
 	echo "  (5) debug               traffic control parameters"
@@ -862,46 +893,32 @@ menu() {
 	case $input in
 		'1')
 			about
-			read -n 1 -s -r -p "(Press any key to return)"
-			echo -en "\033c"		#clear screen
 			;;
 		'2')
 			update
-			read -n 1 -s -r -p "(Press any key to return)"
-			echo -en "\033c"		#clear screen
 			;;
 		'5')
 			debug
-			echo ""
-			read -n 1 -s -r -p "(Press any key to return)"
-			echo -en "\033c"		#clear screen
 			;;
 		'6')
 			debug2
-			echo ""
-			read -n 1 -s -r -p "(Press any key to return)"
-			echo -en "\033c"		#clear screen
 			;;
 		'u'|'U')
-			clear
-			echo -e  "\033[1;32mFreshJR QOS v${version} released ${release} \033[0m"
+			# clear
+			echo "FreshJR QOS v${version} released ${release}"
 			echo ""
-			echo -en " Confirm you want to \033[1;32m[uninstall]\033[0m FreshJR_QOS [1=Yes 2=No] : "
+			echo -n " Confirm you want to [uninstall] FreshJR_QOS [1=Yes 2=No] : "
 			read -r yn
 			if [ "${yn}" = "1" ]; then
 				echo ""
-				sh /jffs/scripts/FreshJR_QOS -uninstall
+				sh ${SCRIPTPATH} -uninstall
 				echo ""
 				exit
 			fi
 			echo ""
-			echo -e "\033[1;31;7m  FreshJR QOS has NOT been uninstalled \033[0m"
-			echo ""
-			read -n 1 -s -r -p "(Press any key to return)"
-			echo -en "\033c"		#clear screen
+			echo "FreshJR QOS has NOT been uninstalled"
 			;;
 		'e'|'E')
-			echo -en "\033[1A\r\033[0K"
 			return
 			;;
 	esac
@@ -911,7 +928,7 @@ menu() {
 remove_webui() {
 	if nvram get rc_support | /bin/grep -q am_addons; then
 
-		am_get_webui_page ${webpath}
+		am_get_webui_page ${WEBUIPATH}
 
 		if [ -n "$am_webui_page" ] && [ "$am_webui_page" != "none" ]; then
 			if [ -f /tmp/menuTree.js ]; then
@@ -938,24 +955,20 @@ remove_webui() {
 
 install_webui() {
 	if nvram get rc_support | /bin/grep -q am_addons; then
-		if ! [ -f "$webpath" ]; then
-			curl "https://raw.githubusercontent.com/dave14305/FreshJR_QOS/master/FreshJR_QoS_Stats.asp" -o "$webpath"
+		if ! [ -f "$WEBUIPATH" ]; then
+			curl "${GIT_URL}/FreshJR_QoS_Stats.asp" -o "$WEBUIPATH"
 		fi
-		# if old bind mount exists, remove it
-		if mount | /bin/grep -q www_FreshJR_QoS_Stats.asp; then
-			umount /www/QoS_Stats.asp
-		fi
-		am_get_webui_page ${webpath}
+		am_get_webui_page ${WEBUIPATH}
 		if [ "$am_webui_page" = "none" ]
 		then
-				logger -t "adaptive QOS" -s "No slots to install web page"
+			logger -t "adaptive QOS" -s "No slots to install web page"
 		elif [ ! -f /www/user/"$am_webui_page" ]; then
-			cp ${webpath} /www/user/"$am_webui_page"
+			cp ${WEBUIPATH} /www/user/"$am_webui_page"
 			if [ ! -f /tmp/menuTree.js ]; then
 				cp /www/require/modules/menuTree.js /tmp/
 				mount -o bind /tmp/menuTree.js /www/require/modules/menuTree.js
 			fi
-			if ! /bin/grep "{url: \"$am_webui_page\", tabName: \"FreshJR QoS\"}," /tmp/menuTree.js >/dev/null 2>&1; then
+			if ! /bin/grep -q "{url: \"$am_webui_page\", tabName: \"FreshJR QoS\"}," /tmp/menuTree.js; then
 				umount /www/require/modules/menuTree.js 2>/dev/null
 				sed -i "\~tabName: \"FreshJR QoS\"},~d" /tmp/menuTree.js
 				sed -i "/url: \"QoS_Stats.asp\", tabName:/a {url: \"$am_webui_page\", tabName: \"FreshJR QoS\"}," /tmp/menuTree.js
@@ -964,7 +977,7 @@ install_webui() {
 		fi
 	else
 		echo "This firmware version does not support the Addon API"
-		return 1
+		exit 1
 	fi # rc_support
 }
 
@@ -980,9 +993,9 @@ Auto_ServiceEventEnd() {
 	if [ ! -x "/jffs/scripts/service-event-end" ]; then
 		chmod 755 /jffs/scripts/service-event-end
 	fi
-	if ! /bin/grep -vE "^#" /jffs/scripts/service-event-end | /bin/grep -qE "restart.*wrs.*sh /jffs/scripts/FreshJR_QOS.sh"; then
-		cmdline="if [ \"\$1\" = \"restart\" ] && [ \"\$2\" = \"wrs\" ]; then sh /jffs/scripts/FreshJR_QOS.sh -check; fi # FreshJR_QOS Addition"
-		sed -i '\~\"wrs\".*# FreshJR_QOS Addition~d' /jffs/scripts/service-event-end
+	if ! /bin/grep -vE "^#" /jffs/scripts/service-event-end | /bin/grep -qE "restart.*wrs.*sh ${SCRIPTPATH}"; then
+		cmdline="if [ \"\$1\" = \"restart\" ] && [ \"\$2\" = \"wrs\" ]; then sh ${SCRIPTPATH} -check; fi # FlexQoS Addition"
+		sed -i '\~\"wrs\".*# FlexQoS Addition~d' /jffs/scripts/service-event-end
 		echo "$cmdline" >> /jffs/scripts/service-event-end
 	fi
 }
@@ -996,50 +1009,106 @@ Auto_FirewallStart() {
 			chmod 0755 /jffs/scripts/firewall-start
 		fi
 
-		if ! /bin/grep -q -x '/jffs/scripts/FreshJR_QOS -start $1 & ' /jffs/scripts/firewall-start ; then		#check if FreshJR_QOS is present as item in firewall start
+		if ! /bin/grep -q -x "${SCRIPTPATH} -start \$1 & " /jffs/scripts/firewall-start ; then		#check if FlexQoS is present as item in firewall start
 			#if not, appened it to the last line (also delete any previously formated entry)
-			echo "Placing FreshJR_QOS entry into firewall-start"
-			sed -i '/FreshJR_QOS/d' /jffs/scripts/firewall-start
-			echo '/jffs/scripts/FreshJR_QOS -start $1 & # FreshJR_QOS Addition' >> /jffs/scripts/firewall-start
+			echo "Placing FlexQoS entry into firewall-start"
+			sed -i '/flexqos/d' /jffs/scripts/firewall-start
+			echo "${SCRIPTPATH} -start \$1 & # FlexQoS Addition" >> /jffs/scripts/firewall-start
 		fi
 	else		#if firewall-start does not exist then set it up entirely
 		echo "Firewall-start not detected, creating firewall-start"
-		echo "Placing FreshJR_QOS entry into firewall-start"
+		echo "Placing FlexQoS entry into firewall-start"
 		echo "#!/bin/sh" > /jffs/scripts/firewall-start
-		echo '/jffs/scripts/FreshJR_QOS -start $1 & # FreshJR_QOS Addition' >> /jffs/scripts/firewall-start
+		echo "${SCRIPTPATH} -start \$1 & # FlexQoS Addition" >> /jffs/scripts/firewall-start
 		chmod 0755 /jffs/scripts/firewall-start
 	fi
 } # Auto_FirewallStart
 
 Auto_Crontab() {
-	cru a FreshJR_QOS "30 3 * * * /jffs/scripts/FreshJR_QOS -check"
+	cru a FlexQoS "30 3 * * * ${SCRIPTPATH} -check"
 } # Auto_Crontab
 
 setup_aliases() {
-	#shortcut to launching FreshJR_QOS  (/usr/bin was readonly)
-	alias freshjrqos="sh /jffs/scripts/FreshJR_QOS -menu"
-	sed -i '/FreshJR/d' /jffs/configs/profile.add 2>/dev/null
+	# shortcuts to launching FlexQoS
 	sed -i '/flexqos/d' /jffs/configs/profile.add 2>/dev/null
-	echo 'alias freshjrqos="sh /jffs/scripts/FreshJR_QOS -menu"' >> /jffs/configs/profile.add
+	if [ -d /opt/bin ]; then
+		ln -sf "$SCRIPTPATH" /opt/bin/flexqos
+	else
+		alias flexqos="sh ${SCRIPTPATH} -menu"
+		echo "alias flexqos=\"sh ${SCRIPTPATH} -menu\"" >> /jffs/configs/profile.add
+	fi
 } # setup_aliases
 
+Uninstall_FreshJR() {
+	echo "Removing old FreshJR_QOS files. Reinstall with amtm if necessary."
+	# Remove profile aliases
+	echo -n "Removing profile aliases..."
+	sed -i '/FreshJR_QOS/d' /jffs/configs/profile.add 2>/dev/null && echo "Done." || echo "Failed!"
+	# Remove cron
+	echo -n "Removing cron job..."
+	cru d FreshJR_QOS 2>/dev/null && echo "Done." || echo "Failed!"
+	# Remove mount
+	if mount | /bin/grep -q www_FreshJR_QoS_Stats.asp; then
+		echo -n "Removing old webui mount..."
+		umount /www/QoS_Stats.asp 2>/dev/null && echo "Done." || echo "Failed!"
+	fi
+	# Remove entries from scripts
+	echo -n "Removing firewall-start entry..."
+	sed -i '/FreshJR_QOS/d' /jffs/scripts/firewall-start 2>/dev/null && echo "Done." || echo "Failed!"
+	# Remove script file
+	if [ -f /jffs/scripts/FreshJR_QOS ]; then
+		echo -n "Removing FreshJR_QOS script..."
+		rm -f /jffs/scripts/FreshJR_QOS 2>/dev/null && echo "Done." || echo "Failed!"
+	fi
+	# Remove asp file
+	if [ -f /jffs/scripts/www_FreshJR_QoS_Stats.asp ]; then
+		echo -n "Removing FreshJR_QOS webpage..."
+		rm -f /jffs/scripts/www_FreshJR_QoS_Stats.asp 2>/dev/null && echo "Done." || echo "Failed!"
+	fi
+	# leave NVRAM var for now, or convert to settings?
+} # Uninstall_FreshJR
+
+Firmware_Check() {
+	local fwplatform="$(uname -o)"
+	local fwver="$(nvram get buildno)"
+	local fwmaj="$(echo "$fwver" | cut -d. -f1)"
+	local fwmin="$(echo "$fwver" | cut -d. -f2)"
+	if [ "$fwplatform" != "ASUSWRT-Merlin" ]; then
+		echo "This version of FlexQoS requires ASUSWRT-Merlin. Stock firmware is no longer supported."
+		exit 3
+	fi
+	if [ "$fwmaj" -ge "384" ] && [ "$fwmin" -ge "18" ]; then
+		true
+	else
+		echo "FlexQoS requires ASUSWRT-Merlin 384.18 or higher. Installation aborted"
+		exit 5
+	fi
+} # Firmware_Check
+
 install() {
-	clear
-	chmod 0755 /jffs/scripts/FreshJR_QOS
+	# clear
+	Firmware_Check
+	Uninstall_FreshJR
+	if ! [ -d "$ADDON_DIR" ]; then
+		mkdir -p "$ADDON_DIR"
+		chmod 755 "$ADDON_DIR"
+	fi
+	if ! [ -f "$SCRIPTPATH" ]; then
+		download_file "flexqos.sh" "$SCRIPTPATH"
+	fi
+	if ! [ -x "$SCRIPTPATH" ]; then
+		chmod 0755 "$SCRIPTPATH"
+	fi
 	Auto_Crontab
 	Auto_FirewallStart
+	Auto_ServiceEventEnd
 	install_webui
 	setup_aliases
 
-	echo -e  "\033[1;32mFreshJR QOS v${version} has been installed \033[0m"
+	echo "FreshJR QOS v${version} has been installed \033[0m"
 	echo ""
 	echo -n " Advanced configuration available via: "
-	if [ -e "/jffs/scripts/amtm" ] || [ -e "/usr/sbin/amtm" ]; then
-		echo -e  "\033[1;32m[ WebUI ]\033[0m or \033[1;32m[ /jffs/scripts/FreshJR_QOS -menu ]\033[0m or \033[1;32m[ amtm ]\033[0m "
-	else
-		echo -e  "\033[1;32m[ WebUI ]\033[0m or \033[1;32m[ /jffs/scripts/FreshJR_QOS -menu ]\033[0m "
-	fi
-
+	echo "http://$(nvram get lan_ipaddr_rt):$(nvram get http_lanport)/$am_webui_page"		# TODO add logic to detect https only
 	[ "$(nvram get qos_enable)" = "1" ] && prompt_restart
 } # install
 
@@ -1048,13 +1117,13 @@ uninstall() {
 	sed -i '/freshjr/d' /jffs/configs/profile.add 2>/dev/null		#remove aliases used to launch interactive mode
 	sed -i '/FreshJR/d' /jffs/configs/profile.add 2>/dev/null
 	cru d FreshJR_QOS
-	rm -f /jffs/scripts/FreshJR_QOS
+	rm -f ${SCRIPTPATH}
 
 	remove_webui
-	rm -f "${webpath}"
+	rm -f "${WEBUIPATH}"
 
 	sed -i '/^freshjr_/d' /jffs/addons/custom_settings.txt
-	echo -e  "\033[1;32m FreshJR QOS has been uninstalled \033[0m"
+	echo "FreshJR QOS has been uninstalled"
 } # uninstall
 
 get_config() {
@@ -1114,7 +1183,7 @@ check_qos_tc() {
 } # check_qos_tc
 
 start() {
-	cru a FreshJR_QOS "30 3 * * * /jffs/scripts/FreshJR_QOS -check"		#makes sure daily check if active
+	cru a FreshJR_QOS "30 3 * * * ${SCRIPTPATH} -check"		#makes sure daily check if active
 
 	if [ "$(nvram get qos_enable)" = "1" ] && [ "$(nvram get qos_type)" = "1" ]; then
 		for pid in $(pidof FreshJR_QOS); do
@@ -1198,9 +1267,9 @@ start() {
 } # start
 
 show_help() {
-	echo -en "\033c\e[3J"		#clear screen
-	echo -e  "\033[1;32mFreshJR QOS v${version} \033[0m"
-	echo -e  "\033[1;32mreleased ${release} \033[0m"
+	# clear
+	echo "FreshJR QOS v${version}"
+	echo "released ${release}"
 	echo ""
 	echo "You have inputted an UNRECOGNIZED COMMAND"
 	echo ""
