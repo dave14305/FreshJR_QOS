@@ -149,7 +149,7 @@ set_tc_variables(){
 			eval "Cat${flowid}UpCeilPercent=${ucp7}"
 			;;
 		'4')
-		if [ -z "$Streaming" ]; then   # only process 4 if streaming not done (only process it once)
+		if [ -z "$Streaming" ]; then		# only process 4 if streaming not done (only process it once)
 			Streaming="1:1${flowid}"
 			eval "Cat${flowid}DownBandPercent=${drp5}"
 			eval "Cat${flowid}UpBandPercent=${urp5}"
@@ -262,7 +262,7 @@ EOF
 			DownBurst7=$( echo "${line}" | sed -n -e 's/.* burst \([a-zA-z0-9]*\).*/\1/p' )
 			DownCburst7=$( echo "${line}" | sed -n -e 's/.*cburst \([a-zA-z0-9]*\).*/\1/p' )
 		fi
-	done < $( tc class show dev br0 | grep "parent 1:1 " )
+	done < $( tc class show dev br0 | /bin/grep "parent 1:1 " )
 
 	#read existing burst/cburst per upload class
 	while read -r line;
@@ -306,7 +306,7 @@ EOF
 			UpBurst7=$( echo "${line}" | sed -n -e 's/.* burst \([a-zA-z0-9]*\).*/\1/p' )
 			UpCburst7=$( echo "${line}" | sed -n -e 's/.*cburst \([a-zA-z0-9]*\).*/\1/p' )
 		fi
-	done < $( tc class show dev "$wan" | grep "parent 1:1 " )
+	done < $( tc class show dev "$wan" | /bin/grep "parent 1:1 " )
 
 	#read parameters for fakeTC
 	PARMS=""
@@ -324,59 +324,50 @@ EOF
 ## Main Menu -appdb function
 appdb(){
 
-		grep -m 25 -i "${1}" /tmp/bwdpi/bwdpi.app.db | while read -r line ; do
-			echo "$line" | cut -f 4 -d ","
-
-			cat_decimal=$(echo "$line" | cut -f 1 -d "," )
-			cat_hex=$( printf "%02x" "$cat_decimal" )
-			case "$cat_decimal" in
-			'9'|'18'|'19'|'20')
-				echo " Originally:  Net Control"
-				;;
-			'0'|'5'|'6'|'15'|'17')
-				echo " Originally:  VoIP"
-				;;
-			'8')
-				echo " Originally:  Gaming"
-				;;
-			'7'|'10'|'11'|'21'|'23')
-				echo " Originally:  Others"
-				;;
-			'13'|'24')
-				echo " Originally:  Web"
-				;;
-			'4')
-				echo " Originally:  Streaming"
-				;;
-			'1'|'3'|'14')
-				echo " Originally:  Downloads"
-				;;
-			esac
-
-			echo -n  " Mark:        ${cat_hex}"
-			echo "$line" | cut -f 2 -d "," | awk '{printf("%04x \n",$1)}'
-
-			#parameters required for manually creating TC rules
-			#echo " TC Prio   : $(expr $(tc filter show dev br0 | grep "${cat_hex}0000" -B1 | tail -2 | cut -d " " -f7 | head -1) - 1)"
-			#printf " Down Mark : 0x80${cat_hex}"
-			#echo $line | cut -f 2 -d "," | awk '{printf("%04x 0xc03fffff\n",$1)}'
-			#printf " UP   Mark : 0x40${cat_hex}"
-			#echo $line | cut -f 2 -d "," | awk '{printf("%04x 0xc03fffff\n",$1)}'
-			echo ""
-		done
+	/bin/grep -m 25 -i "${1}" /tmp/bwdpi/bwdpi.app.db | while read -r line; do
+		echo "$line" | cut -f 4 -d ","
+		cat_decimal=$(echo "$line" | cut -f 1 -d "," )
+		cat_hex=$( printf "%02x" "$cat_decimal" )
+		case "$cat_decimal" in
+		'9'|'18'|'19'|'20')
+			echo " Originally:  Net Control"
+			;;
+		'0'|'5'|'6'|'15'|'17')
+			echo " Originally:  VoIP"
+			;;
+		'8')
+			echo " Originally:  Gaming"
+			;;
+		'7'|'10'|'11'|'21'|'23')
+			echo " Originally:  Others"
+			;;
+		'13'|'24')
+			echo " Originally:  Web"
+			;;
+		'4')
+			echo " Originally:  Streaming"
+			;;
+		'1'|'3'|'14')
+			echo " Originally:  Downloads"
+			;;
+		esac
+		echo -n " Mark:        ${cat_hex}"
+		echo "$line" | cut -f 2 -d "," | awk '{printf("%04x \n",$1)}'
+		echo ""
+	done
 }
 
 ## Main Menu -debug function
 debug(){
-	echo -e  "\033[1;32mFreshJR QOS v${version}\033[0m"
+	echo -e "\033[1;32mFreshJR QOS v${version}\033[0m"
 	echo "Debug:"
 	echo ""
 	read_nvram
 	set_tc_variables
-	current_undf_rule="$(tc filter show dev br0 | grep -v "/" | grep "000ffff" -B1)"
+	current_undf_rule="$(tc filter show dev br0 | /bin/grep -v "/" | /bin/grep "000ffff" -B1)"
 	if [ -n "$current_undf_rule" ]; then
-		undf_flowid=$(echo "$current_undf_rule" | grep -o "flowid.*" | cut -d" " -f2 | head -1)
-		undf_prio=$(echo "$current_undf_rule" | grep -o "pref.*" | cut -d" " -f2 | head -1)
+		undf_flowid=$(echo "$current_undf_rule" | /bin/grep -o "flowid.*" | cut -d" " -f2 | head -1)
+		undf_prio=$(echo "$current_undf_rule" | /bin/grep -o "pref.*" | cut -d" " -f2 | head -1)
 	else
 		undf_flowid=""
 		undf_prio=2
@@ -496,7 +487,7 @@ mark_2_name() {
 	id="${1:2:4}"
 	cat="$(printf "%d" 0x${cat})"
 	id="$(printf "%d" 0x${id})"
-	grep "^${cat},${id}," /tmp/bwdpi/bwdpi.app.db | head -n1 |  cut -d',' -f4
+	/bin/grep "^${cat},${id}," /tmp/bwdpi/bwdpi.app.db | head -n1 |  cut -d',' -f4
 }
 
 ## helper function - parse parameters into tc syntax
@@ -547,7 +538,7 @@ parse_tcrule() {
 		prio="$undf_prio"
 	else
 		# normal traffic redirection rule
-		prio="$(tc filter show dev br0 | grep -i ${cat}0000 -B1 | grep 3f0000 -B1 | head -1 | cut -d " " -f7)"
+		prio="$(tc filter show dev br0 | /bin/grep -i ${cat}0000 -B1 | /bin/grep 3f0000 -B1 | head -1 | cut -d " " -f7)"
 	fi
 	currprio=$prio
 	if [ -z "${prio}" ]; then
@@ -805,7 +796,7 @@ update() {
 	echo "Checking for updates"
 	echo ""
 	url="https://raw.githubusercontent.com/dave14305/FreshJR_QOS/master/FreshJR_QOS.sh"
-	remotever=$(curl -fsN --retry 3 ${url} | grep "^version=" | sed -e s/version=//)
+	remotever=$(curl -fsN --retry 3 ${url} | /bin/grep "^version=" | sed -e s/version=//)
 
 	if [ "$version" != "$remotever" ]; then
 		echo " FreshJR QOS v${remotever} is now available!"
@@ -819,7 +810,7 @@ update() {
 			return 0
 		fi
 	else
-		echo    " You have the latest version installed"
+		echo " You have the latest version installed"
 		echo -n " Would you like to overwrite your existing installation anyway? [1=Yes 2=No] : "
 		read -r yn
 		echo ""
@@ -842,13 +833,13 @@ prompt_restart() {
 	echo -en " Would you like to \033[1;32m[Restart QoS]\033[0m for modifications to take effect? [1=Yes 2=No] : "
 	read -r yn
 	if [ "${yn}" = "1" ]; then
-		if grep -q -x '/jffs/scripts/FreshJR_QOS -start $1 & ' /jffs/scripts/firewall-start ; then		#RMerlin install
+		if /bin/grep -q -x '/jffs/scripts/FreshJR_QOS -start $1 & ' /jffs/scripts/firewall-start ; then		#RMerlin install
 			service "restart_qos;restart_firewall"
 		fi
 		echo ""
 	else
 		echo ""
-		if grep -q -x '/jffs/scripts/FreshJR_QOS -start $1 & ' /jffs/scripts/firewall-start ; then		#RMerlin install
+		if /bin/grep -q -x '/jffs/scripts/FreshJR_QOS -start $1 & ' /jffs/scripts/firewall-start ; then		#RMerlin install
 			echo -e  "\033[1;31;7m  Remember: [ Restart QOS ] for modifications to take effect \033[0m"
 			echo ""
 		fi
@@ -869,51 +860,50 @@ menu() {
 	echo -n "Make a selection: "
 	read -r input
 	case $input in
-			'1')
-				about
-				read -n 1 -s -r -p "(Press any key to return)"
-				echo -en "\033c"		#clear screen
-				;;
-			'2')
-				update
-				read -n 1 -s -r -p "(Press any key to return)"
-				echo -en "\033c"		#clear screen
-				;;
-			'5')
-				debug
+		'1')
+			about
+			read -n 1 -s -r -p "(Press any key to return)"
+			echo -en "\033c"		#clear screen
+			;;
+		'2')
+			update
+			read -n 1 -s -r -p "(Press any key to return)"
+			echo -en "\033c"		#clear screen
+			;;
+		'5')
+			debug
+			echo ""
+			read -n 1 -s -r -p "(Press any key to return)"
+			echo -en "\033c"		#clear screen
+			;;
+		'6')
+			debug2
+			echo ""
+			read -n 1 -s -r -p "(Press any key to return)"
+			echo -en "\033c"		#clear screen
+			;;
+		'u'|'U')
+			clear
+			echo -e  "\033[1;32mFreshJR QOS v${version} released ${release} \033[0m"
+			echo ""
+			echo -en " Confirm you want to \033[1;32m[uninstall]\033[0m FreshJR_QOS [1=Yes 2=No] : "
+			read -r yn
+			if [ "${yn}" = "1" ]; then
 				echo ""
-				read -n 1 -s -r -p "(Press any key to return)"
-				echo -en "\033c"		#clear screen
-				;;
-			'6')
-				debug2
+				sh /jffs/scripts/FreshJR_QOS -uninstall
 				echo ""
-				read -n 1 -s -r -p "(Press any key to return)"
-				echo -en "\033c"		#clear screen
-				;;
-			'u'|'U')
-				clear
-				echo -e  "\033[1;32mFreshJR QOS v${version} released ${release} \033[0m"
-				echo ""
-				echo -en " Confirm you want to \033[1;32m[uninstall]\033[0m FreshJR_QOS [1=Yes 2=No] : "
-				read -r yn
-				if [ "${yn}" = "1" ]; then
-					echo ""
-					sh /jffs/scripts/FreshJR_QOS -uninstall
-					echo ""
-					exit
-				fi
-				echo ""
-				echo -e "\033[1;31;7m  FreshJR QOS has NOT been uninstalled \033[0m"
-				echo ""
-				read -n 1 -s -r -p "(Press any key to return)"
-				echo -en "\033c"		#clear screen
-				;;
-			'e'|'E')
-				echo -en "\033[1A\r\033[0K"
-				return
-				;;
-
+				exit
+			fi
+			echo ""
+			echo -e "\033[1;31;7m  FreshJR QOS has NOT been uninstalled \033[0m"
+			echo ""
+			read -n 1 -s -r -p "(Press any key to return)"
+			echo -en "\033c"		#clear screen
+			;;
+		'e'|'E')
+			echo -en "\033[1A\r\033[0K"
+			return
+			;;
 	esac
 	menu
 }
@@ -952,7 +942,7 @@ install_webui() {
 			curl "https://raw.githubusercontent.com/dave14305/FreshJR_QOS/master/FreshJR_QoS_Stats.asp" -o "$webpath"
 		fi
 		# if old bind mount exists, remove it
-		if mount | grep -q www_FreshJR_QoS_Stats.asp; then
+		if mount | /bin/grep -q www_FreshJR_QoS_Stats.asp; then
 			umount /www/QoS_Stats.asp
 		fi
 		am_get_webui_page ${webpath}
@@ -999,14 +989,14 @@ Auto_ServiceEventEnd() {
 
 Auto_FirewallStart() {
 	if [ -f /jffs/scripts/firewall-start ]; then		#check if firewall-start exists
-		if ! grep -q "#!/bin/sh" /jffs/scripts/firewall-start ; then		#check if firewall-start header is correct
+		if ! /bin/grep -q "#!/bin/sh" /jffs/scripts/firewall-start ; then		#check if firewall-start header is correct
 			#if header is incorrect, fix header
 			echo "Detected improper header in firewall-start, fixing header"
 			sed -i "1i #!/bin/sh" /jffs/scripts/firewall-start
 			chmod 0755 /jffs/scripts/firewall-start
 		fi
 
-		if ! grep -q -x '/jffs/scripts/FreshJR_QOS -start $1 & ' /jffs/scripts/firewall-start ; then		#check if FreshJR_QOS is present as item in firewall start
+		if ! /bin/grep -q -x '/jffs/scripts/FreshJR_QOS -start $1 & ' /jffs/scripts/firewall-start ; then		#check if FreshJR_QOS is present as item in firewall start
 			#if not, appened it to the last line (also delete any previously formated entry)
 			echo "Placing FreshJR_QOS entry into firewall-start"
 			sed -i '/FreshJR_QOS/d' /jffs/scripts/firewall-start
@@ -1116,10 +1106,10 @@ write_appdb_rules() {
 } # write_appdb_rules
 
 check_qos_tc() {
-	dlclasscnt="$(tc class show dev br0 | grep -c "parent 1:1 ")"
-	ulclasscnt="$(tc class show dev eth0 | grep -c "parent 1:1 ")"
-	dlfiltercnt="$(tc filter show dev br0 | grep -cE "flowid 1:1[0-7] $")"
-	ulfiltercnt="$(tc filter show dev eth0 | grep -cE "flowid 1:1[0-7] $")"
+	dlclasscnt="$(tc class show dev br0 | /bin/grep -c "parent 1:1 ")"
+	ulclasscnt="$(tc class show dev eth0 | /bin/grep -c "parent 1:1 ")"
+	dlfiltercnt="$(tc filter show dev br0 | /bin/grep -cE "flowid 1:1[0-7] $")"
+	ulfiltercnt="$(tc filter show dev eth0 | /bin/grep -cE "flowid 1:1[0-7] $")"
 	#return ${dlclasscnt}+${ulclasscnt}+${dlfiltercnt}+${ulfiltercnt}
 } # check_qos_tc
 
@@ -1129,7 +1119,7 @@ start() {
 	if [ "$(nvram get qos_enable)" = "1" ] && [ "$(nvram get qos_type)" = "1" ]; then
 		for pid in $(pidof FreshJR_QOS); do
 			if [ "$pid" != $$ ]; then
-				if ! ps -w | grep -q "^\s*${pid}\s.*\(install\|menu\)"; then		#kill all previous instances of FreshJR_QOS (-install, -menu instances are whitelisted)
+				if ! ps -w | /bin/grep -q "^\s*${pid}\s.*\(install\|menu\)"; then		#kill all previous instances of FreshJR_QOS (-install, -menu instances are whitelisted)
 					kill "$pid"
 					logger -t "adaptive QOS" -s "Delayed Start Canceled (${pid})"
 				fi
@@ -1155,7 +1145,7 @@ start() {
 			fi
 
 			sleepdelay=0
-			while [ "$(tc class show dev br0 | grep -c "parent 1:1 ")" -lt 8 ] && [ "$(tc class show dev eth0 | grep -c "parent 1:1 ")" -lt 8 ];
+			while [ "$(tc class show dev br0 | /bin/grep -c "parent 1:1 ")" -lt 8 ] && [ "$(tc class show dev eth0 | /bin/grep -c "parent 1:1 ")" -lt 8 ];
 			do
 				[ "$sleepdelay" = "0" ] && logger -t "adaptive QOS" -s "TC Modification Delayed Start"
 				sleep 10s
@@ -1168,10 +1158,10 @@ start() {
 			logger -t "adaptive QOS" -s "TC Modification Delay ended after $sleepdelay seconds"
 		fi
 
-		current_undf_rule="$(tc filter show dev br0 | grep "00ffff" -B1)"
+		current_undf_rule="$(tc filter show dev br0 | /bin/grep "00ffff" -B1)"
 		if [ -n "$current_undf_rule" ]; then
-			undf_flowid=$(echo "$current_undf_rule" | grep -o "flowid.*" | cut -d" " -f2 | head -1)
-			undf_prio=$(echo "$current_undf_rule" | grep -o "pref.*" | cut -d" " -f2 | head -1)
+			undf_flowid=$(echo "$current_undf_rule" | /bin/grep -o "flowid.*" | cut -d" " -f2 | head -1)
+			undf_prio=$(echo "$current_undf_rule" | /bin/grep -o "pref.*" | cut -d" " -f2 | head -1)
 		else
 			undf_flowid=""
 			undf_prio=2
