@@ -8,9 +8,6 @@ release=12/31/2020
 # Script Changes Unidentified traffic destination away from "Defaults" into "Others"
 # Script Changes HTTPS traffic destination away from "Net Control" into "Web Surfing"
 # Script Changes Guaranteed Bandwidth per QOS category into logical percentages of upload and download.
-# Script Repurposes "Defaults" to contain "Game Downloads"
-#  "Game Downloads" moved into 6th position
-#  "Lowest Defined" moved into 7th position
 #Script includes misc hardcoded rules
 #   (Wifi Calling)  -  UDP traffic on remote ports 500 & 4500 moved into VOIP
 #   (Facetime)      -  UDP traffic on local  ports 16384 - 16415 moved into VOIP
