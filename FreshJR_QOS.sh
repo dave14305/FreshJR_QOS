@@ -218,41 +218,15 @@ EOF
 	DownCeil="$(printf "%.0f" $(nvram get qos_ibw))"
 	UpCeil="$(printf "%.0f" $(nvram get qos_obw))"
 
-	DownRate0="$(expr ${DownCeil} \* ${Cat0DownBandPercent} / 100)"					#Minimum guaranteed Up/Down rates per QOS category corresponding to user defined percentages
-	DownRate1="$(expr ${DownCeil} \* ${Cat1DownBandPercent} / 100)"
-	DownRate2="$(expr ${DownCeil} \* ${Cat2DownBandPercent} / 100)"
-	DownRate3="$(expr ${DownCeil} \* ${Cat3DownBandPercent} / 100)"
-	DownRate4="$(expr ${DownCeil} \* ${Cat4DownBandPercent} / 100)"
-	DownRate5="$(expr ${DownCeil} \* ${Cat5DownBandPercent} / 100)"
-	DownRate6="$(expr ${DownCeil} \* ${Cat6DownBandPercent} / 100)"
-	DownRate7="$(expr ${DownCeil} \* ${Cat7DownBandPercent} / 100)"
-
-	UpRate0="$(expr ${UpCeil} \* ${Cat0UpBandPercent} / 100)"
-	UpRate1="$(expr ${UpCeil} \* ${Cat1UpBandPercent} / 100)"
-	UpRate2="$(expr ${UpCeil} \* ${Cat2UpBandPercent} / 100)"
-	UpRate3="$(expr ${UpCeil} \* ${Cat3UpBandPercent} / 100)"
-	UpRate4="$(expr ${UpCeil} \* ${Cat4UpBandPercent} / 100)"
-	UpRate5="$(expr ${UpCeil} \* ${Cat5UpBandPercent} / 100)"
-	UpRate6="$(expr ${UpCeil} \* ${Cat6UpBandPercent} / 100)"
-	UpRate7="$(expr ${UpCeil} \* ${Cat7UpBandPercent} / 100)"
-
-	DownCeil0="$(expr ${DownCeil} \* ${Cat0DownCeilPercent} / 100)"					#Minimum guaranteed Up/Down rates per QOS category corresponding to user defined percentages
-	DownCeil1="$(expr ${DownCeil} \* ${Cat1DownCeilPercent} / 100)"
-	DownCeil2="$(expr ${DownCeil} \* ${Cat2DownCeilPercent} / 100)"
-	DownCeil3="$(expr ${DownCeil} \* ${Cat3DownCeilPercent} / 100)"
-	DownCeil4="$(expr ${DownCeil} \* ${Cat4DownCeilPercent} / 100)"
-	DownCeil5="$(expr ${DownCeil} \* ${Cat5DownCeilPercent} / 100)"
-	DownCeil6="$(expr ${DownCeil} \* ${Cat6DownCeilPercent} / 100)"
-	DownCeil7="$(expr ${DownCeil} \* ${Cat7DownCeilPercent} / 100)"
-
-	UpCeil0="$(expr ${UpCeil} \* ${Cat0UpCeilPercent} / 100)"
-	UpCeil1="$(expr ${UpCeil} \* ${Cat1UpCeilPercent} / 100)"
-	UpCeil2="$(expr ${UpCeil} \* ${Cat2UpCeilPercent} / 100)"
-	UpCeil3="$(expr ${UpCeil} \* ${Cat3UpCeilPercent} / 100)"
-	UpCeil4="$(expr ${UpCeil} \* ${Cat4UpCeilPercent} / 100)"
-	UpCeil5="$(expr ${UpCeil} \* ${Cat5UpCeilPercent} / 100)"
-	UpCeil6="$(expr ${UpCeil} \* ${Cat6UpCeilPercent} / 100)"
-	UpCeil7="$(expr ${UpCeil} \* ${Cat7UpCeilPercent} / 100)"
+	i=0
+	while [ $i -lt 8 ]
+	do
+		eval "DownRate$i=$((DownCeil*Cat${i}DownBandPercent/100))"
+		eval "UpRate$i=$((UpCeil*Cat${i}UpBandPercent}/100))"
+		eval "DownCeil$i=$((DownCeil*Cat${i}DownCeilPercent/100))"
+		eval "UpCeil$i=$((UpCeil*Cat${i}UpCeilPercent}/100))"
+		i="$((i+1))"
+	done
 
 	ClassesPresent=0
 	#read existing burst/cburst per download class
