@@ -29,10 +29,31 @@ release=12/31/2020
 ##  FlexQoS is free to use under the GNU General Public License, version 3 (GPL-3.0).
 ##  https://opensource.org/licenses/GPL-3.0
 
+# initialize Merlin Addon API helper functions
+. /usr/sbin/helper.sh
+
 # Global variables
-FQ_ADDON_DIR="/jffs/addons/flexqos"
-SCRIPTPATH="$FQ_ADDON_DIR/flexqos.sh"
-WEBPATH="$FQ_ADDON_DIR/flexqos.asp"
+webpath='/jffs/scripts/www_FreshJR_QoS_Stats.asp'		#path of FreshJR_QoS_Stats.asp
+ipv6_enabled="$(nvram get ipv6_service)"
+
+#marks for iptable rules
+Net_mark_down="0x80090001"
+VOIP_mark_down="0x80060001"			# Marks for iptables variant of download rules
+Gaming_mark_down="0x80080001"		    # Note these marks are same as filter match/mask combo but have a 1 at the end.  That trailing 1 prevents them from being caught by unidentified mask
+Others_mark_down="0x800a0001"
+Web_mark_down="0x80180001"
+Streaming_mark_down="0x80040001"
+Downloads_mark_down="0x80030001"
+Default_mark_down="0x803f0001"
+
+Net_mark_up="0x40090001"
+VOIP_mark_up="0x40060001"			# Marks for iptables variant of upload rules
+Gaming_mark_up="0x40080001"		    # Note these marks are same as filter match/mask combo but have a 1 at the end.  That trailing 1 prevents them from being caught by unidentified mask
+Others_mark_up="0x400a0001"
+Web_mark_up="0x40180001"
+Streaming_mark_up="0x40040001"
+Downloads_mark_up="0x40030001"
+Default_mark_up="0x403f0001"
 
 iptables_static_rules() {
 	echo "Applying - Iptable Down Rules"
@@ -92,40 +113,9 @@ custom_rates() {
 		${tc} class change dev eth0 parent 1:1 classid 1:15 htb ${PARMS}prio 5 rate ${UpRate5}Kbit ceil ${UpCeil5}Kbit burst ${UpBurst5} cburst ${UpCburst5}
 		${tc} class change dev eth0 parent 1:1 classid 1:16 htb ${PARMS}prio 6 rate ${UpRate6}Kbit ceil ${UpCeil6}Kbit burst ${UpBurst6} cburst ${UpCburst6}
 		${tc} class change dev eth0 parent 1:1 classid 1:17 htb ${PARMS}prio 7 rate ${UpRate7}Kbit ceil ${UpCeil7}Kbit burst ${UpBurst7} cburst ${UpCburst7}
-	}
+} # custom_rates
 
 ####################  DO NOT MODIFY BELOW  #####################
-####################  DO NOT MODIFY BELOW  #####################
-####################  DO NOT MODIFY BELOW  #####################
-####################  DO NOT MODIFY BELOW  #####################
-####################  DO NOT MODIFY BELOW  #####################
-####################  DO NOT MODIFY BELOW  #####################
-####################  DO NOT MODIFY BELOW  #####################
-####################  DO NOT MODIFY BELOW  #####################
-####################  DO NOT MODIFY BELOW  #####################
-####################  DO NOT MODIFY BELOW  #####################
-####################  DO NOT MODIFY BELOW  #####################
-
-webpath='/jffs/scripts/www_FreshJR_QoS_Stats.asp'		#path of FreshJR_QoS_Stats.asp
-
-#marks for iptable rules
-	Net_mark_down="0x80090001"
-	VOIP_mark_down="0x80060001"			# Marks for iptables variant of download rules
-	Gaming_mark_down="0x80080001"		    # Note these marks are same as filter match/mask combo but have a 1 at the end.  That trailing 1 prevents them from being caught by unidentified mask
-	Others_mark_down="0x800a0001"
-	Web_mark_down="0x80180001"
-	Streaming_mark_down="0x80040001"
-	Downloads_mark_down="0x80030001"
-	Default_mark_down="0x803f0001"
-
-	Net_mark_up="0x40090001"
-	VOIP_mark_up="0x40060001"			# Marks for iptables variant of upload rules
-	Gaming_mark_up="0x40080001"		    # Note these marks are same as filter match/mask combo but have a 1 at the end.  That trailing 1 prevents them from being caught by unidentified mask
-	Others_mark_up="0x400a0001"
-	Web_mark_up="0x40180001"
-	Streaming_mark_up="0x40040001"
-	Downloads_mark_up="0x40030001"
-	Default_mark_up="0x403f0001"
 
 set_tc_variables(){
 
@@ -863,7 +853,7 @@ prompt_restart() {
 			echo ""
 		fi
 	fi
-}
+} # prompt_restart
 
 menu() {
   read_nvram
@@ -1080,7 +1070,6 @@ uninstall() {
 get_config() {
 	iptables_rules="$(am_settings_get freshjr_iptables)"
 	appdb_rules="$(am_settings_get freshjr_appdb)"
-	bandwidth_rules="$(am_settings_get freshjr_bandwidth)"
 	read \
 		drp0 drp1 drp2 drp3 drp4 drp5 drp6 drp7 \
 		dcp0 dcp1 dcp2 dcp3 dcp4 dcp5 dcp6 dcp7 \
@@ -1258,7 +1247,6 @@ generate_bwdpi_arrays() {
 ################################################################################
 # Main program
 ################################################################################
-. /usr/sbin/helper.sh  # initialize Merlin Addon API helper functions
 
 arg1="$(echo "$1" | tr -d "-")"
 if [ -z "$2" ] ; then
@@ -1266,7 +1254,6 @@ if [ -z "$2" ] ; then
 else
 	wan="$2"
 fi
-ipv6_enabled="$(nvram get ipv6_service)"
 
 case "$arg1" in
  'start')
