@@ -84,8 +84,8 @@ custom_rates() {
 		${tc} class change dev br0 parent 1:1 classid 1:13 htb ${PARMS}prio 3 rate ${DownRate3}Kbit ceil ${DownCeil3}Kbit burst ${DownBurst3} cburst ${DownCburst3}
 		${tc} class change dev br0 parent 1:1 classid 1:14 htb ${PARMS}prio 4 rate ${DownRate4}Kbit ceil ${DownCeil4}Kbit burst ${DownBurst4} cburst ${DownCburst4}
 		${tc} class change dev br0 parent 1:1 classid 1:15 htb ${PARMS}prio 5 rate ${DownRate5}Kbit ceil ${DownCeil5}Kbit burst ${DownBurst5} cburst ${DownCburst5}
-		${tc} class change dev br0 parent 1:1 classid 1:16 htb ${PARMS}prio 7 rate ${DownRate6}Kbit ceil ${DownCeil6}Kbit burst ${DownBurst6} cburst ${DownCburst6}
-		${tc} class change dev br0 parent 1:1 classid 1:17 htb ${PARMS}prio 6 rate ${DownRate7}Kbit ceil ${DownCeil7}Kbit burst ${DownBurst7} cburst ${DownCburst7}
+		${tc} class change dev br0 parent 1:1 classid 1:16 htb ${PARMS}prio 6 rate ${DownRate6}Kbit ceil ${DownCeil6}Kbit burst ${DownBurst6} cburst ${DownCburst6}
+		${tc} class change dev br0 parent 1:1 classid 1:17 htb ${PARMS}prio 7 rate ${DownRate7}Kbit ceil ${DownCeil7}Kbit burst ${DownBurst7} cburst ${DownCburst7}
 
 		${tc} class change dev eth0 parent 1:1 classid 1:10 htb ${PARMS}prio 0 rate ${UpRate0}Kbit ceil ${UpCeil0}Kbit burst ${UpBurst0} cburst ${UpCburst0}
 		${tc} class change dev eth0 parent 1:1 classid 1:11 htb ${PARMS}prio 1 rate ${UpRate1}Kbit ceil ${UpCeil1}Kbit burst ${UpBurst1} cburst ${UpCburst1}
@@ -93,8 +93,8 @@ custom_rates() {
 		${tc} class change dev eth0 parent 1:1 classid 1:13 htb ${PARMS}prio 3 rate ${UpRate3}Kbit ceil ${UpCeil3}Kbit burst ${UpBurst3} cburst ${UpCburst3}
 		${tc} class change dev eth0 parent 1:1 classid 1:14 htb ${PARMS}prio 4 rate ${UpRate4}Kbit ceil ${UpCeil4}Kbit burst ${UpBurst4} cburst ${UpCburst4}
 		${tc} class change dev eth0 parent 1:1 classid 1:15 htb ${PARMS}prio 5 rate ${UpRate5}Kbit ceil ${UpCeil5}Kbit burst ${UpBurst5} cburst ${UpCburst5}
-		${tc} class change dev eth0 parent 1:1 classid 1:16 htb ${PARMS}prio 7 rate ${UpRate6}Kbit ceil ${UpCeil6}Kbit burst ${UpBurst6} cburst ${UpCburst6}
-		${tc} class change dev eth0 parent 1:1 classid 1:17 htb ${PARMS}prio 6 rate ${UpRate7}Kbit ceil ${UpCeil7}Kbit burst ${UpBurst7} cburst ${UpCburst7}
+		${tc} class change dev eth0 parent 1:1 classid 1:16 htb ${PARMS}prio 6 rate ${UpRate6}Kbit ceil ${UpCeil6}Kbit burst ${UpBurst6} cburst ${UpCburst6}
+		${tc} class change dev eth0 parent 1:1 classid 1:17 htb ${PARMS}prio 7 rate ${UpRate7}Kbit ceil ${UpCeil7}Kbit burst ${UpBurst7} cburst ${UpCburst7}
 	}
 
 ####################  DO NOT MODIFY BELOW  #####################
