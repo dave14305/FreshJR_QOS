@@ -418,7 +418,7 @@ read_nvram(){
 	OLDIFS=$IFS
 	IFS=";"
 
-	if [ $(nvram get fb_comment | sed 's/>/;/g' | tr -cd ';' | wc -c) -eq 20 ] && [ -z "$(am_settings_get freshjr_iptables)" ]; then
+	if [ $(nvram get fb_comment | sed 's/>/;/g' | tr -cd ';' | wc -c) -eq 20 ] && [ -z "$(am_settings_get flexqos_iptables)" ]; then
 		read \
 			e1 e2 e3 e4 e5 e6 e7 \
 			f1 f2 f3 f4 f5 f6 f7 \
@@ -457,7 +457,7 @@ EOF
 		am_settings_set flexqos_iptables "$tmp_iptables_rules"
 	fi
 
-	if [ -z "$(am_settings_get freshjr_appdb)" ]; then
+	if [ -z "$(am_settings_get flexqos_appdb)" ]; then
 		tmp_appdb_rules="<000000>6<00006B>6<0D0007>5<0D0086>5<0D00A0>5<12003F>4<13****>4<14****>4<1A****>5"
 		tmp_appdb_rules="${tmp_appdb_rules}<${r1}>${d1}<${r2}>${d2}<${r3}>${d3}<${r4}>${d4}"
 		tmp_appdb_rules=$(echo "$tmp_appdb_rules" | sed 's/<>//g')
@@ -822,11 +822,11 @@ update() {
 	scriptinfo
 	echo "Checking for updates"
 	echo ""
-	url="${GIT_URL}/FreshJR_QOS.sh"
+	url="${GIT_URL}/flexqos.sh"
 	remotever=$(curl -fsN --retry 3 ${url} | /bin/grep "^version=" | sed -e s/version=//)
 
 	if [ "$version" != "$remotever" ]; then
-		echo " FreshJR QOS v${remotever} is now available!"
+		echo " FlexQoS v${remotever} is now available!"
 		echo ""
 		echo -n " Would you like to update now? [1=Yes 2=No] : "
 		read -r yn
@@ -848,10 +848,10 @@ update() {
 		fi
 	fi
 
-	echo "Installing: FreshJR_QOS_v${remotever}"
+	echo "Installing: FlexQoS v${remotever}"
 	echo ""
 	echo "Curl Output:"
-	curl "${GIT_URL}/FreshJR_QOS.sh" -o ${SCRIPTPATH} --create-dirs && curl "${GIT_URL}/FreshJR_QoS_Stats.asp" -o "${WEBUIPATH}" && sh ${SCRIPTPATH} -install
+	curl "${GIT_URL}/flexqos.sh" -o ${SCRIPTPATH} --create-dirs && curl "${GIT_URL}/flexqos.asp" -o "${WEBUIPATH}" && sh ${SCRIPTPATH} -install
 	exit
 }
 
@@ -1011,7 +1011,7 @@ Auto_FirewallStart() {
 } # Auto_FirewallStart
 
 Auto_Crontab() {
-	cru a FlexQoS "30 3 * * * ${SCRIPTPATH} -check"
+	cru a flexqos "30 3 * * * ${SCRIPTPATH} -check"
 } # Auto_Crontab
 
 setup_aliases() {
@@ -1102,7 +1102,7 @@ uninstall() {
 	sed -i '/FlexQoS/d' /jffs/scripts/firewall-start 2>/dev/null
 	sed -i '\~\"wrs\".*# FlexQoS Addition~d' /jffs/scripts/service-event-end
 	sed -i '/flexqos/d' /jffs/configs/profile.add 2>/dev/null
-	cru d FlexQoS
+	cru d flexqos
 	sed -i '/flexqos/d' /jffs/configs/profile.add
 	rm -f /opt/bin/flexqos
 	rm -f "$SCRIPTPATH"
@@ -1174,7 +1174,7 @@ start() {
 	if [ "$(nvram get qos_enable)" = "1" ] && [ "$(nvram get qos_type)" = "1" ]; then
 		for pid in $(pidof flexqos); do
 			if [ "$pid" != $$ ]; then
-				if ! ps -w | /bin/grep -q "^\s*${pid}\s.*\(install\|menu\)"; then		#kill all previous instances of FreshJR_QOS (-install, -menu instances are whitelisted)
+				if ! ps -w | /bin/grep -q "^\s*${pid}\s.*\(install\|menu\)"; then		#kill all previous instances of flexqos (-install, -menu instances are whitelisted)
 					kill "$pid"
 					logger -t "FlexQoS" -s "Delayed Start Canceled (${pid})"
 				fi
@@ -1258,19 +1258,18 @@ show_help() {
 	echo ""
 	echo "  Available commands:"
 	echo ""
-	echo "  FreshJR_QOS -about              explains functionality"
-	echo "  FreshJR_QOS -update             checks for updates "
+	echo "  flexqos -about              explains functionality"
+	echo "  flexqos -update             checks for updates "
 	echo ""
-	echo "  FreshJR_QOS -install            install   script"
-	echo "  FreshJR_QOS -uninstall          uninstall script && delete from disk "
+	echo "  flexqos -install            install   script"
+	echo "  flexqos -uninstall          uninstall script && delete from disk "
 	echo ""
-	echo "  FreshJR_QOS -enable             enable    script "
-	echo "  FreshJR_QOS -disable            disable   script but do not delete from disk"
+	echo "  flexqos -enable             enable    script "
+	echo "  flexqos -disable            disable   script but do not delete from disk"
 	echo ""
-	echo "  FreshJR_QOS -debug              print traffic control parameters"
-	echo "  FreshJR_QOS -debug2             print parsed nvram parameters"
+	echo "  flexqos -debug              print traffic control parameters"
 	echo ""
-	echo '  FreshJR_QOS -menu               interactive main menu'
+	echo '  flexqos -menu               interactive main menu'
 	echo ""
 } # show_help
 
@@ -1313,9 +1312,9 @@ case "$arg1" in
 		uninstall
 		;;
 	'disable')		# TURNS OFF SCRIPT BUT KEEP FILES
-		sed -i '/FreshJR_QOS/d' /jffs/scripts/firewall-start  2>/dev/null
-		sed -i '/FreshJR_QOS/d' /jffs/scripts/service-event-end  2>/dev/null
-		cru d FreshJR_QOS
+		sed -i '/flexqos/d' /jffs/scripts/firewall-start  2>/dev/null
+		sed -i '/flexqos/d' /jffs/scripts/service-event-end  2>/dev/null
+		cru d flexqos
 		remove_webui
 		;;
 	'debug*')
