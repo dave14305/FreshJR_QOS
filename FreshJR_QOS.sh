@@ -33,7 +33,7 @@ release=12/31/2020
 . /usr/sbin/helper.sh
 
 # Global variables
-GIT_REPO="https://raw.githubusercontent.com/dave14305/FreshJR_QOS"
+GIT_REPO="https://raw.githubusercontent.com/dave14305/FlexQoS"
 GIT_BRANCH="dev"
 GIT_URL="${GIT_REPO}/${GIT_BRANCH}"
 ADDON_DIR="/jffs/addons/flexqos"
@@ -206,7 +206,7 @@ set_tc_variables(){
 		esac
 
 	done <<EOF
-		$(sed -E '/^ceil_/d;s/rule=//g;/\{/q' /tmp/bwdpi/qosd.conf | head -n -1)
+$(sed -E '/^ceil_/d;s/rule=//g;/\{/q' /tmp/bwdpi/qosd.conf | head -n -1)
 EOF
 
 	#calculate up/down rates
@@ -267,7 +267,7 @@ EOF
 			DownBurst7=$( echo "${line}" | sed -n -e 's/.* burst \([a-zA-z0-9]*\).*/\1/p' )
 			DownCburst7=$( echo "${line}" | sed -n -e 's/.*cburst \([a-zA-z0-9]*\).*/\1/p' )
 		fi
-	done < $( tc class show dev br0 | /bin/grep "parent 1:1 " )
+	done < $(tc class show dev br0 | /bin/grep "parent 1:1 ")
 
 	#read existing burst/cburst per upload class
 	while read -r line;
@@ -311,7 +311,7 @@ EOF
 			UpBurst7=$( echo "${line}" | sed -n -e 's/.* burst \([a-zA-z0-9]*\).*/\1/p' )
 			UpCburst7=$( echo "${line}" | sed -n -e 's/.*cburst \([a-zA-z0-9]*\).*/\1/p' )
 		fi
-	done < $( tc class show dev "$wan" | /bin/grep "parent 1:1 " )
+	done < $(tc class show dev "$wan" | /bin/grep "parent 1:1 ")
 
 	#read parameters for fakeTC
 	PARMS=""
@@ -362,12 +362,15 @@ appdb(){
 	done
 }
 
+scriptinfo() {
+	echo "FlexQoS v${version} released ${release}"
+} # scriptinfo
+
 ## Main Menu -debug function
 debug(){
-	echo "FreshJR QOS v${version}"
+	scriptinfo
 	echo "Debug:"
 	echo ""
-	read_nvram
 	set_tc_variables
 	current_undf_rule="$(tc filter show dev br0 | /bin/grep -v "/" | /bin/grep "000ffff" -B1)"
 	if [ -n "$current_undf_rule" ]; then
@@ -378,36 +381,36 @@ debug(){
 		undf_prio=2
 	fi
 
-	logger -t "adaptive QOS" -s "Undf Prio: $undf_prio"
-	logger -t "adaptive QOS" -s "Undf FlowID: $undf_flowid"
-	logger -t "adaptive QOS" -s "Classes Present: $ClassesPresent"
-	logger -t "adaptive QOS" -s "Down Band: $DownCeil"
-	logger -t "adaptive QOS" -s "Up Band  : $UpCeil"
-	logger -t "adaptive QOS" -s "***********"
-	logger -t "adaptive QOS" -s "Net = ${Net}"
-	logger -t "adaptive QOS" -s "VOIP = ${VOIP}"
-	logger -t "adaptive QOS" -s "Gaming = ${Gaming}"
-	logger -t "adaptive QOS" -s "Others = ${Others}"
-	logger -t "adaptive QOS" -s "Web = ${Web}"
-	logger -t "adaptive QOS" -s "Streaming = ${Streaming}"
-	logger -t "adaptive QOS" -s "Downloads = ${Downloads}"
-	logger -t "adaptive QOS" -s "Defaults = ${Defaults}"
-	logger -t "adaptive QOS" -s "***********"
-	logger -t "adaptive QOS" -s "Downrates -- $DownRate0, $DownRate1, $DownRate2, $DownRate3, $DownRate4, $DownRate5, $DownRate6, $DownRate7"
-	logger -t "adaptive QOS" -s "Downceils -- $DownCeil0, $DownCeil1, $DownCeil2, $DownCeil3, $DownCeil4, $DownCeil5, $DownCeil6, $DownCeil7"
-	logger -t "adaptive QOS" -s "Downbursts -- $DownBurst0, $DownBurst1, $DownBurst2, $DownBurst3, $DownBurst4, $DownBurst5, $DownBurst6, $DownBurst7"
-	logger -t "adaptive QOS" -s "DownCbursts -- $DownCburst0, $DownCburst1, $DownCburst2, $DownCburst3, $DownCburst4, $DownCburst5, $DownCburst6, $DownCburst7"
-	logger -t "adaptive QOS" -s "***********"
-	logger -t "adaptive QOS" -s "Uprates -- $UpRate0, $UpRate1, $UpRate2, $UpRate3, $UpRate4, $UpRate5, $UpRate6, $UpRate7"
-	logger -t "adaptive QOS" -s "Upceils -- $UpCeil0, $UpCeil1, $UpCeil2, $UpCeil3, $UpCeil4, $UpCeil5, $UpCeil6, $UpCeil7"
-	logger -t "adaptive QOS" -s "Upbursts -- $UpBurst0, $UpBurst1, $UpBurst2, $UpBurst3, $UpBurst4, $UpBurst5, $UpBurst6, $UpBurst7"
-	logger -t "adaptive QOS" -s "UpCbursts -- $UpCburst0, $UpCburst1, $UpCburst2, $UpCburst3, $UpCburst4, $UpCburst5, $UpCburst6, $UpCburst7"
+	logger -t "FlexQoS" -s "Undf Prio: $undf_prio"
+	logger -t "FlexQoS" -s "Undf FlowID: $undf_flowid"
+	logger -t "FlexQoS" -s "Classes Present: $ClassesPresent"
+	logger -t "FlexQoS" -s "Down Band: $DownCeil"
+	logger -t "FlexQoS" -s "Up Band  : $UpCeil"
+	logger -t "FlexQoS" -s "***********"
+	logger -t "FlexQoS" -s "Net Control = $Net"
+	logger -t "FlexQoS" -s "Work-From-Home = $VOIP"
+	logger -t "FlexQoS" -s "Gaming = $Gaming"
+	logger -t "FlexQoS" -s "Others = $Others"
+	logger -t "FlexQoS" -s "Web Surfing = $Web"
+	logger -t "FlexQoS" -s "Streaming = $Streaming"
+	logger -t "FlexQoS" -s "Downloads = $Downloads"
+	logger -t "FlexQoS" -s "Defaults = $Defaults"
+	logger -t "FlexQoS" -s "***********"
+	logger -t "FlexQoS" -s "Downrates -- $DownRate0, $DownRate1, $DownRate2, $DownRate3, $DownRate4, $DownRate5, $DownRate6, $DownRate7"
+	logger -t "FlexQoS" -s "Downceils -- $DownCeil0, $DownCeil1, $DownCeil2, $DownCeil3, $DownCeil4, $DownCeil5, $DownCeil6, $DownCeil7"
+	logger -t "FlexQoS" -s "Downbursts -- $DownBurst0, $DownBurst1, $DownBurst2, $DownBurst3, $DownBurst4, $DownBurst5, $DownBurst6, $DownBurst7"
+	logger -t "FlexQoS" -s "DownCbursts -- $DownCburst0, $DownCburst1, $DownCburst2, $DownCburst3, $DownCburst4, $DownCburst5, $DownCburst6, $DownCburst7"
+	logger -t "FlexQoS" -s "***********"
+	logger -t "FlexQoS" -s "Uprates -- $UpRate0, $UpRate1, $UpRate2, $UpRate3, $UpRate4, $UpRate5, $UpRate6, $UpRate7"
+	logger -t "FlexQoS" -s "Upceils -- $UpCeil0, $UpCeil1, $UpCeil2, $UpCeil3, $UpCeil4, $UpCeil5, $UpCeil6, $UpCeil7"
+	logger -t "FlexQoS" -s "Upbursts -- $UpBurst0, $UpBurst1, $UpBurst2, $UpBurst3, $UpBurst4, $UpBurst5, $UpBurst6, $UpBurst7"
+	logger -t "FlexQoS" -s "UpCbursts -- $UpCburst0, $UpCburst1, $UpCburst2, $UpCburst3, $UpCburst4, $UpCburst5, $UpCburst6, $UpCburst7"
+	logger -t "FlexQoS" -s "***********"
 	write_iptables_rules
-	cat /tmp/flexqos_iprules | logger -t "adaptive QOS"
-	parse_tcrule "${r1}" "${d1}" tc1_down tc1_up
-	parse_tcrule "${r2}" "${d2}" tc2_down tc2_up
-	parse_tcrule "${r3}" "${d3}" tc3_down tc3_up
-	parse_tcrule "${r4}" "${d4}" tc4_down tc4_up
+	cat /tmp/flexqos_iprules | logger -t "FlexQoS" -s
+	logger -t "FlexQoS" -s "***********"
+	write_appdb_rules
+	cat /tmp/flexqos_tcrules | logger -t "FlexQoS" -s
 }
 
 ## helper function to parse csv nvram variables
@@ -444,30 +447,35 @@ EOF
 
 	IFS=$OLDIFS
 
-	if [ -z "$(am_settings_get freshjr_iptables)" ]; then
+	if [ -z "$(am_settings_get flexqos_iptables)" ]; then
 		if [ "$gameCIDR" ]; then
 			tmp_iptables_rules="<${gameCIDR}>>both>>!80,443>000000>1"
 		fi
 		tmp_iptables_rules="${tmp_iptables_rules}<>>udp>>500,4500>>3<>>udp>16384:16415>>>3<>>tcp>>119,563>>5<>>tcp>>80,443>08****>7"
 		tmp_iptables_rules="${tmp_iptables_rules}<${e1}>${e2}>${e3}>${e4}>${e5}>${e6}>${e7}<${f1}>${f2}>${f3}>${f4}>${f5}>${f6}>${f7}<${g1}>${g2}>${g3}>${g4}>${g5}>${g6}>${g7}<${h1}>${h2}>${h3}>${h4}>${h5}>${h6}>${h7}"
 		tmp_iptables_rules=$(echo "$tmp_iptables_rules" | sed 's/<>>>>>>//g')
-		am_settings_set freshjr_iptables "$tmp_iptables_rules"
+		am_settings_set flexqos_iptables "$tmp_iptables_rules"
 	fi
 
 	if [ -z "$(am_settings_get freshjr_appdb)" ]; then
 		tmp_appdb_rules="<000000>6<00006B>6<0D0007>5<0D0086>5<0D00A0>5<12003F>4<13****>4<14****>4<1A****>5"
 		tmp_appdb_rules="${tmp_appdb_rules}<${r1}>${d1}<${r2}>${d2}<${r3}>${d3}<${r4}>${d4}"
 		tmp_appdb_rules=$(echo "$tmp_appdb_rules" | sed 's/<>//g')
-		am_settings_set freshjr_appdb "$tmp_appdb_rules"
+		am_settings_set flexqos_appdb "$tmp_appdb_rules"
 	fi
 
-	if [ -z "$(am_settings_get freshjr_bandwidth)" ]; then
-		am_settings_set freshjr_bandwidth "<${drp0}>${drp1}>${drp2}>${drp3}>${drp4}>${drp5}>${drp6}>${drp7}<${dcp0}>${dcp1}>${dcp2}>${dcp3}>${dcp4}>${dcp5}>${dcp6}>${dcp7}<${urp0}>${urp1}>${urp2}>${urp3}>${urp4}>${urp5}>${urp6}>${urp7}<${ucp0}>${ucp1}>${ucp2}>${ucp3}>${ucp4}>${ucp5}>${ucp6}>${ucp7}"
+	if [ -z "$(am_settings_get flexqos_bandwidth)" ]; then
+		am_settings_set flexqos_bandwidth "<${drp0}>${drp1}>${drp2}>${drp3}>${drp4}>${drp5}>${drp6}>${drp7}<${dcp0}>${dcp1}>${dcp2}>${dcp3}>${dcp4}>${dcp5}>${dcp6}>${dcp7}<${urp0}>${urp1}>${urp2}>${urp3}>${urp4}>${urp5}>${urp6}>${urp7}<${ucp0}>${ucp1}>${ucp2}>${ucp3}>${ucp4}>${ucp5}>${ucp6}>${ucp7}"
 	fi
 
-	# nvram set fb_comment=""
-	# nvram set fb_email_dbg=""
-	# nvram commit
+	{
+		echo "nvram set fb_comment=\"$(nvram get fb_comment)\""
+		echo "nvram set fb_email_dbg=\"$(nvram get fb_email_dbg)\""
+		echo "nvram commit"
+	} > "${ADDON_DIR}/restore_freshjr_nvram.sh"
+	nvram set fb_comment=""
+	nvram set fb_email_dbg=""
+	nvram commit
 }
 
 ## helper function for interactive menu mode
@@ -744,27 +752,23 @@ parse_iptablerule() {
 
 about() {
 	# clear
-	echo "FreshJR_QOS v${version} released ${release}"
+	scriptinfo
 	echo ""
-	echo 'License'
-	echo '  FreshJR_QOS is free to use under the GNU General Public License, version 3 (GPL-3.0).'
-	echo '  https://opensource.org/licenses/GPL-3.0'
+	echo "License"
+	echo "  FlexQoS is free to use under the GNU General Public License, version 3 (GPL-3.0)."
+	echo "  https://opensource.org/licenses/GPL-3.0"
 	echo ""
-	echo 'For discussion visit this thread:'
-	echo '  https://www.snbforums.com/threads/release-freshjr-adaptive-qos-improvements-custom-rules-and-inner-workings.36836/'
-	echo "  https://github.com/FreshJR07/FreshJR_QOS (Source Code)"
+	echo "For discussion visit this thread:"
+	echo "  https://www.snbforums.com/threads/release-freshjr-adaptive-qos-improvements-custom-rules-and-inner-workings.36836/"
+	echo "  https://github.com/dave14305/FlexQoS (Source Code)"
 	echo ""
-	echo "FreshJR QOS v${version}"
 	echo "About"
 	echo '  Script Changes Unidentified traffic destination away from "Defaults" into "Others"'
-	echo '  Script Changes HTTPS traffic destination away from "Net Control" into "Web Surfing" '
+	echo '  Script Changes HTTPS traffic destination away from "Net Control" into "Web Surfing"'
 	echo '  Script Changes Guaranteed Bandwidth per QOS category into logical percentages of upload and download.'
+	echo '  Script Repurposes "Learn-From-Home" to contain "Game Downloads"'
 	echo ""
-	echo '  Script Repurposes "Defaults" to contain "Game Downloads" '
-	echo '    "Game Downloads" container moved into 6th position'
-	echo '    "Lowest Defined" container moved into 7th position'
-	echo ""
-	echo '  Script includes misc hardcoded rules '
+	echo '  Script includes misc default rules'
 	echo '   (Wifi Calling)  -  UDP traffic on remote ports 500 & 4500 moved into VOIP'
 	echo '   (Facetime)      -  UDP traffic on local  ports 16384 - 16415 moved into VOIP '
 	echo '   (Usenet)        -  TCP traffic on remote ports 119 & 563 moved into Downloads '
@@ -782,14 +786,6 @@ about() {
 	echo '  Gaming traffic originating from ports 80 & 443 is primarily downloads & patches (some lobby/login protocols mixed within)'
 	echo '  Manually configurable rule will take untracked traffic for specified devices, not originating from server ports 80/443, and place it into Gaming'
 	echo '  Use of this gaming rule REQUIRES devices to have a continous static ip assignment && this range needs to be passed into the script'
-	echo ""
-	echo "How to Use Advanced Functionality"
-	echo '  Interactive terminal mode can be accessed by running the -menu command:'
-	echo '      (interactive mode) :  /jffs/scripts/FreshJR_QOS -menu'
-	echo ""
-	echo 'Development'
-	echo '  Tested with ASUS AC-68U, FW384.9, using Adaptive QOS with Manual Bandwidth Settings'
-	echo '  Copyright (C) 2017-2019 FreshJR - All Rights Reserved '
 }
 
 # From Adamm00
@@ -812,18 +808,18 @@ check_connection() {
 download_file() {
 	if [ "$(curl -fsL --retry 3 --connect-timeout 3 "${GIT_URL}/${1}" | md5sum | awk '{print $1}')" != "$(md5sum "$2" 2>/dev/null | awk '{print $1}')" ]; then
 		if curl -fsL --retry 3 --connect-timeout 3 "${GIT_URL}/${1}" -o "$2"; then
-			logger -t "adaptive QoS" "Updated $(echo "$1" | awk -F / '{print $NF}')"
+			logger -t "FlexQoS" "Updated $(echo "$1" | awk -F / '{print $NF}')"
 		else
-			logger -t "adaptive QoS" "Updating $(echo "$1" | awk -F / '{print $NF}') failed"
+			logger -t "FlexQoS" "Updating $(echo "$1" | awk -F / '{print $NF}') failed"
 		fi
 	else
-		logger -t "adaptive QoS" "File $(echo $2 | awk -F / '{print $NF}') is already up-to-date"
+		logger -t "FlexQoS" "File $(echo $2 | awk -F / '{print $NF}') is already up-to-date"
 	fi
 } # download_file
 
 update() {
 	# clear
-	echo "FreshJR QOS v${version}"
+	scriptinfo
 	echo "Checking for updates"
 	echo ""
 	url="${GIT_URL}/FreshJR_QOS.sh"
@@ -878,14 +874,12 @@ prompt_restart() {
 } # prompt_restart
 
 menu() {
-	read_nvram
 	# clear
-	echo "FreshJR QOS v${version} released ${release}"
-	echo "  (1) about               explain functionality"
-	echo "  (2) update              check for updates "
-	echo "  (5) debug               traffic control parameters"
-	echo "  (6) debug2              parsed nvram parameters"
-	echo "  (u) uninstall           uninstall script"
+	echo "FlexQoS v${version} released ${release}"
+	echo "  (1) about        explain functionality"
+	echo "  (2) update       check for updates "
+	echo "  (3) debug        traffic control parameters"
+	echo "  (u) uninstall    uninstall script"
 	echo "  (e) exit"
 	echo ""
 	echo -n "Make a selection: "
@@ -897,17 +891,14 @@ menu() {
 		'2')
 			update
 			;;
-		'5')
+		'3')
 			debug
-			;;
-		'6')
-			debug2
 			;;
 		'u'|'U')
 			# clear
-			echo "FreshJR QOS v${version} released ${release}"
+			echo "FlexQoS v${version} released ${release}"
 			echo ""
-			echo -n " Confirm you want to [uninstall] FreshJR_QOS [1=Yes 2=No] : "
+			echo -n " Confirm you want to uninstall FlexQoS [1=Yes 2=No] : "
 			read -r yn
 			if [ "${yn}" = "1" ]; then
 				echo ""
@@ -916,7 +907,7 @@ menu() {
 				exit
 			fi
 			echo ""
-			echo "FreshJR QOS has NOT been uninstalled"
+			echo "FlexQoS has NOT been uninstalled"
 			;;
 		'e'|'E')
 			return
@@ -926,59 +917,54 @@ menu() {
 }
 
 remove_webui() {
-	if nvram get rc_support | /bin/grep -q am_addons; then
+	am_get_webui_page "$WEBUIPATH"
 
-		am_get_webui_page ${WEBUIPATH}
-
-		if [ -n "$am_webui_page" ] && [ "$am_webui_page" != "none" ]; then
-			if [ -f /tmp/menuTree.js ]; then
-				#Merlin
-				sed -i "\~tabName: \"FreshJR QoS\"},~d" /tmp/menuTree.js
-				umount /www/require/modules/menuTree.js 2>/dev/null
-				if diff /tmp/menuTree.js /www/require/modules/menuTree.js; then
-					rm /tmp/menuTree.js
-				else
-					# Still some modifications from another script so remount
-					mount -o bind /tmp/menuTree.js /www/require/modules/menuTree.js
-				fi
-				if [ -f /www/user/"$am_webui_page" ]; then
-					rm /www/user/"$am_webui_page"
-				fi
+	if [ -n "$am_webui_page" ] && [ "$am_webui_page" != "none" ]; then
+		if [ -f /tmp/menuTree.js ]; then
+			umount /www/require/modules/menuTree.js 2>/dev/null
+			sed -i "\~tabName: \"FlexQoS\"},~d" /tmp/menuTree.js
+			if diff /tmp/menuTree.js /www/require/modules/menuTree.js; then
+				rm /tmp/menuTree.js
+			else
+				# Still some modifications from another script so remount
+				mount -o bind /tmp/menuTree.js /www/require/modules/menuTree.js
 			fi
-			for i in $(/bin/grep -l FreshJR_QOS /www/user/user*.asp 2>/dev/null)
-			do
-				rm "$i"
-			done
+			if [ -f /www/user/"$am_webui_page" ]; then
+				rm /www/user/"$am_webui_page"
+			fi
 		fi
+		for i in $(/bin/grep -l FlexQoS /www/user/user*.asp 2>/dev/null)
+		do
+			rm "$i"
+		done
 	fi
+	rm -rf /www/user/flexqos		# remove js helper scripts
 }
 
 install_webui() {
-	if nvram get rc_support | /bin/grep -q am_addons; then
-		if ! [ -f "$WEBUIPATH" ]; then
-			curl "${GIT_URL}/FreshJR_QoS_Stats.asp" -o "$WEBUIPATH"
+	if [ -z "$1" ]; then
+		download_file "${GIT_URL}/flexqos.asp" "$WEBUIPATH"
+		mkdir -p "${ADDON_DIR}/table"
+		download_file "${GIT_URL|/table.js" "${ADDON_DIR}/table/table.js"
+		download_file "${GIT_URL|/tableValidator.js" "${ADDON_DIR}/table/tableValidator.js"
+	fi
+	am_get_webui_page "$WEBUIPATH"
+	if [ "$am_webui_page" = "none" ]; then
+		logger -t "FlexQoS" -s "No API slots to install web page"
+	elif [ ! -f /www/user/"$am_webui_page" ]; then
+		cp "$WEBUIPATH" /www/user/"$am_webui_page"
+		if [ ! -f /tmp/menuTree.js ]; then
+			cp /www/require/modules/menuTree.js /tmp/
+			mount -o bind /tmp/menuTree.js /www/require/modules/menuTree.js
 		fi
-		am_get_webui_page ${WEBUIPATH}
-		if [ "$am_webui_page" = "none" ]
-		then
-			logger -t "adaptive QOS" -s "No slots to install web page"
-		elif [ ! -f /www/user/"$am_webui_page" ]; then
-			cp ${WEBUIPATH} /www/user/"$am_webui_page"
-			if [ ! -f /tmp/menuTree.js ]; then
-				cp /www/require/modules/menuTree.js /tmp/
-				mount -o bind /tmp/menuTree.js /www/require/modules/menuTree.js
-			fi
-			if ! /bin/grep -q "{url: \"$am_webui_page\", tabName: \"FreshJR QoS\"}," /tmp/menuTree.js; then
-				umount /www/require/modules/menuTree.js 2>/dev/null
-				sed -i "\~tabName: \"FreshJR QoS\"},~d" /tmp/menuTree.js
-				sed -i "/url: \"QoS_Stats.asp\", tabName:/a {url: \"$am_webui_page\", tabName: \"FreshJR QoS\"}," /tmp/menuTree.js
-				mount -o bind /tmp/menuTree.js /www/require/modules/menuTree.js
-			fi
+		if ! /bin/grep -q "{url: \"$am_webui_page\", tabName: \"FlexQoS\"}," /tmp/menuTree.js; then
+			umount /www/require/modules/menuTree.js 2>/dev/null
+			sed -i "\~tabName: \"FlexQoS\"},~d" /tmp/menuTree.js
+			sed -i "/url: \"QoS_Stats.asp\", tabName:/a {url: \"$am_webui_page\", tabName: \"FlexQoS\"}," /tmp/menuTree.js
+			mount -o bind /tmp/menuTree.js /www/require/modules/menuTree.js
 		fi
-	else
-		echo "This firmware version does not support the Addon API"
-		exit 1
-	fi # rc_support
+	fi
+	ln -sf "${ADDON_DIR}/table" /www/user/flexqos
 }
 
 Auto_ServiceEventEnd() {
@@ -1099,13 +1085,13 @@ install() {
 	if ! [ -x "$SCRIPTPATH" ]; then
 		chmod 0755 "$SCRIPTPATH"
 	fi
-	Auto_Crontab
+	install_webui
 	Auto_FirewallStart
 	Auto_ServiceEventEnd
-	install_webui
+	Auto_Crontab
 	setup_aliases
 
-	echo "FreshJR QOS v${version} has been installed \033[0m"
+	scriptinfo
 	echo ""
 	echo -n " Advanced configuration available via: "
 	echo "http://$(nvram get lan_ipaddr_rt):$(nvram get http_lanport)/$am_webui_page"		# TODO add logic to detect https only
@@ -1113,29 +1099,31 @@ install() {
 } # install
 
 uninstall() {
-	sed -i '/FreshJR_QOS/d' /jffs/scripts/firewall-start 2>/dev/null		#remove FreshJR_QOS from firewall start
-	sed -i '/freshjr/d' /jffs/configs/profile.add 2>/dev/null		#remove aliases used to launch interactive mode
-	sed -i '/FreshJR/d' /jffs/configs/profile.add 2>/dev/null
-	cru d FreshJR_QOS
-	rm -f ${SCRIPTPATH}
+	sed -i '/FlexQoS/d' /jffs/scripts/firewall-start 2>/dev/null
+	sed -i '\~\"wrs\".*# FlexQoS Addition~d' /jffs/scripts/service-event-end
+	sed -i '/flexqos/d' /jffs/configs/profile.add 2>/dev/null
+	cru d FlexQoS
+	sed -i '/flexqos/d' /jffs/configs/profile.add
+	rm -f /opt/bin/flexqos
+	rm -f "$SCRIPTPATH"
 
 	remove_webui
 	rm -f "${WEBUIPATH}"
 
-	sed -i '/^freshjr_/d' /jffs/addons/custom_settings.txt
-	echo "FreshJR QOS has been uninstalled"
+	sed -i '/^flexqos_/d' /jffs/addons/custom_settings.txt
+	echo "FlexQoS has been uninstalled"
 } # uninstall
 
 get_config() {
-	iptables_rules="$(am_settings_get freshjr_iptables)"
-	appdb_rules="$(am_settings_get freshjr_appdb)"
+	iptables_rules="$(am_settings_get flexqos_iptables)"
+	appdb_rules="$(am_settings_get flexqos_appdb)"
 	read \
 		drp0 drp1 drp2 drp3 drp4 drp5 drp6 drp7 \
 		dcp0 dcp1 dcp2 dcp3 dcp4 dcp5 dcp6 dcp7 \
 		urp0 urp1 urp2 urp3 urp4 urp5 urp6 urp7 \
 		ucp0 ucp1 ucp2 ucp3 ucp4 ucp5 ucp6 ucp7 \
 <<EOF
-$(am_settings_get freshjr_bandwidth | sed 's/^<//g;s/[<>]/ /g')
+$(am_settings_get flexqos_bandwidth | sed 's/^<//g;s/[<>]/ /g')
 EOF
 } # get_config
 
@@ -1183,22 +1171,18 @@ check_qos_tc() {
 } # check_qos_tc
 
 start() {
-	cru a FreshJR_QOS "30 3 * * * ${SCRIPTPATH} -check"		#makes sure daily check if active
-
 	if [ "$(nvram get qos_enable)" = "1" ] && [ "$(nvram get qos_type)" = "1" ]; then
-		for pid in $(pidof FreshJR_QOS); do
+		for pid in $(pidof flexqos); do
 			if [ "$pid" != $$ ]; then
 				if ! ps -w | /bin/grep -q "^\s*${pid}\s.*\(install\|menu\)"; then		#kill all previous instances of FreshJR_QOS (-install, -menu instances are whitelisted)
 					kill "$pid"
-					logger -t "adaptive QOS" -s "Delayed Start Canceled (${pid})"
+					logger -t "FlexQoS" -s "Delayed Start Canceled (${pid})"
 				fi
 			fi
 		done
 
-		##check if should mount QoS_stats page
-		install_webui
+		install_webui mount
 		generate_bwdpi_arrays
-		read_nvram	#needs to be set before parse_iptablerule or custom rates
 		get_config
 
 		if [ -n "$1" ]; then
@@ -1206,25 +1190,25 @@ start() {
 
 			write_iptables_rules
 			exit
-			iptables_static_rules 2>&1 | logger -t "adaptive QOS"
+			iptables_static_rules 2>&1 | logger -t "FlexQoS"
 			if [ -s "/tmp/flexqos_iprules" ]; then
-				logger -t "adaptive QOS" "Applying custom user rules"
-				. /tmp/flexqos_iprules | logger -t "adaptive QOS"
-				logger -t "adaptive QOS" "Finished applying custom user rules"
+				logger -t "FlexQoS" "Applying custom user rules"
+				. /tmp/flexqos_iprules | logger -t "FlexQoS"
+				logger -t "FlexQoS" "Finished applying custom user rules"
 			fi
 
 			sleepdelay=0
 			while [ "$(tc class show dev br0 | /bin/grep -c "parent 1:1 ")" -lt 8 ] && [ "$(tc class show dev eth0 | /bin/grep -c "parent 1:1 ")" -lt 8 ];
 			do
-				[ "$sleepdelay" = "0" ] && logger -t "adaptive QOS" -s "TC Modification Delayed Start"
+				[ "$sleepdelay" = "0" ] && logger -t "FlexQoS" -s "TC Modification Delayed Start"
 				sleep 10s
 				if [ "$sleepdelay" -gt 300 ]; then
-					logger -t "adaptive QOS" -s "TC Modification Delay reached maximum 300 seconds"
+					logger -t "FlexQoS" -s "TC Modification Delay reached maximum 300 seconds"
 					break
 				fi
 				sleepdelay=$((sleepdelay+10))
 			done
-			logger -t "adaptive QOS" -s "TC Modification Delay ended after $sleepdelay seconds"
+			logger -t "FlexQoS" -s "TC Modification Delay ended after $sleepdelay seconds"
 		fi
 
 		current_undf_rule="$(tc filter show dev br0 | /bin/grep "00ffff" -B1)"
@@ -1240,27 +1224,26 @@ start() {
 		if [ "${undf_flowid}" = "1:17" ] || [ -z "${undf_flowid}" ]; then
 			if [ -z "$1" ]; then
 				# check action was called without a WAN interface passed
-				logger -t "adaptive QOS" -s "Scheduled Persistence Check -> Reapplying Changes"
+				logger -t "FlexQoS" -s "Scheduled Persistence Check -> Reapplying Changes"
 			fi # check
 
 			set_tc_variables 	#needs to be set before parse_tcrule
-			##last two arguments are variables that get set "ByRef"
 			write_appdb_rules
-			tc_redirection_static_rules 2>&1 | logger -t "adaptive QOS"		#forwards terminal output & errors to logger
+			tc_redirection_static_rules 2>&1 | logger -t "FlexQoS"		#forwards terminal output & errors to logger
 
 			if [ "$ClassesPresent" -lt "8" ]; then
-				logger -t "adaptive QOS" -s "Adaptive QOS not fully done setting up prior to modification script"
-				logger -t "adaptive QOS" -s "(Skipping class modification, delay trigger time period needs increase)"
+				logger -t "FlexQoS" -s "Adaptive QOS not fully done setting up prior to modification script"
+				logger -t "FlexQoS" -s "(Skipping class modification, delay trigger time period needs increase)"
 			else
 				if [ "$DownCeil" -gt "500" ] && [ "$UpCeil" -gt "500" ]; then
-					custom_rates 2>&1 | logger -t "adaptive QOS"		#forwards terminal output & errors to logger
+					custom_rates 2>&1 | logger -t "FlexQoS"		#forwards terminal output & errors to logger
 				fi
 			fi # Classes less than 8
 		else # 1:17
 			if [ "$1" = "check" ]; then
-				logger -t "adaptive QOS" -s "Scheduled Persistence Check -> No modifications necessary"
+				logger -t "FlexQoS" -s "Scheduled Persistence Check -> No modifications necessary"
 			else
-				logger -t "adaptive QOS" -s "No modifications necessary"
+				logger -t "FlexQoS" -s "No modifications necessary"
 			fi
 		fi # 1:17
 	fi # adaptive qos enabled
@@ -1268,7 +1251,7 @@ start() {
 
 show_help() {
 	# clear
-	echo "FreshJR QOS v${version}"
+	scriptinfo
 	echo "released ${release}"
 	echo ""
 	echo "You have inputted an UNRECOGNIZED COMMAND"

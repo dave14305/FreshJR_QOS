@@ -1814,7 +1814,6 @@ function SetCurrentPage() {
    </tr>
 </tbody>
 </table>
-
 <!-- FreshJR Connection Table End-->
 </td>
 </tr>
